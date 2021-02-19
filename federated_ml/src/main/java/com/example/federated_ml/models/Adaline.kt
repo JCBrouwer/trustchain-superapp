@@ -5,7 +5,7 @@ import java.util.*
 
 class Adaline(learningRate: Double, amountFeatures: Int): OnlineClassifier<Array<Double>>{
     private val learningRate = learningRate
-    private var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble()}
+    internal var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble()}
     private var bias = Random().nextDouble()
 
     override fun update(x: Array<Double>, y: Int){
@@ -66,6 +66,13 @@ class Adaline(learningRate: Double, amountFeatures: Int): OnlineClassifier<Array
         }
 
         return (correct / x.size)
+    }
+
+
+    fun merge(otherModel: Pegasos){
+        for (idx in weights.indices){
+            weights[idx] = (weights[idx] + otherModel.weights[idx]) / 2
+        }
     }
 
 }

@@ -6,12 +6,7 @@ import java.util.*
 class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int): OnlineClassifier<Array<Double>> {
     private val regularization = regularization
     private val iterations = iterations
-    private var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble() * 3}
-
-    set(value) {
-        field = value
-    }
-    get() = field
+    internal var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble() * 3}
 
     override fun update(x: Array<Double>, y: Int){
         var eta = 1.0 / regularization
@@ -86,6 +81,12 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int): Onl
         }
 
         return (correct / x.size)
+    }
+
+    fun merge(otherModel: Adaline){
+        for (idx in weights.indices){
+            weights[idx] = (weights[idx] + otherModel.weights[idx]) / 2
+        }
     }
 
 }

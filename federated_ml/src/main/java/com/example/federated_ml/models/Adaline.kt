@@ -3,7 +3,7 @@ import smile.classification.OnlineClassifier
 import java.util.*
 
 
-class Adaline(learningRate: Float, amountFeatures: Int): OnlineClassifier<Array<Double>>{
+class Adaline(learningRate: Double, amountFeatures: Int): OnlineClassifier<Array<Double>>{
     private val learningRate = learningRate
     private var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble()}
     private var bias = Random().nextDouble()

@@ -3,7 +3,7 @@ import smile.classification.OnlineClassifier
 import java.util.*
 
 
-class Pegasos(regularization: Float, amountFeatures: Int, iterations: Int): OnlineClassifier<Array<Double>> {
+class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int): OnlineClassifier<Array<Double>> {
     private val regularization = regularization
     private val iterations = iterations
     private var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble() * 3}

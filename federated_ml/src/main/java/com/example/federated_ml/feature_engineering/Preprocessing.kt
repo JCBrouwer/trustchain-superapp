@@ -1,4 +1,4 @@
-package com.example.federated_ml
+package com.example.federated_ml.feature_engineering
 import kotlin.random.Random.Default.nextDouble
 import kotlin.random.Random.Default.nextInt
 

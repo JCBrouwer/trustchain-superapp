@@ -1,15 +1,14 @@
 package com.example.federated_ml.models
-import smile.classification.OnlineClassifier
 import java.util.*
 
 
-class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int): OnlineClassifier<Array<Double>> {
+class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int):
+    OnlineModel(amountFeatures) {
     private val regularization = regularization
     private val iterations = iterations
-    internal var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble() * 3}
 
     override fun update(x: Array<Double>, y: Int){
-        var eta = 1.0 / regularization
+        val eta = 1.0 / regularization
         gradientSVM(x, y, eta)
     }
 
@@ -19,20 +18,11 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int): Onl
         }
 
         for (iteration in 0..iterations){
-            var i = Random().nextInt(x.size)
-            var eta = 1.0 / (regularization * (i + 1))
+            val i = Random().nextInt(x.size)
+            val eta = 1.0 / (regularization * (i + 1))
 
             gradientSVM(x[i], y[i], eta)
         }
-    }
-
-    override fun predict(x: Array<Array<Double>>): IntArray {
-        val result  = IntArray(x.size)
-        for((idx, item) in x.withIndex()){
-            result[idx] = predict(item)
-        }
-
-        return result
     }
 
     private fun activation(x: Double): Double {
@@ -49,7 +39,7 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int): Onl
 
 
     override fun predict(x: Array<Double>): Int {
-        var weightedSum = weightedSum(x)
+        val weightedSum = weightedSum(x)
 
         if (activation(weightedSum) >= 0.0) {
             return 1
@@ -59,7 +49,7 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int): Onl
     }
 
     private fun gradientSVM(x: Array<Double>, y: Int, eta: Double) {
-        var score = weightedSum(x)
+        val score = weightedSum(x)
         if (y * score < 1){
             for (idx in weights.indices){
                 weights[idx] =  (1 - eta * regularization) * weights[idx] + eta * y
@@ -70,24 +60,5 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int): Onl
             }
         }
     }
-
-    fun score(x: Array<Array<Double>>, y: IntArray): Double{
-        var correct = 0.0
-        for (i in x.indices) {
-            var output = predict(x[i])
-            if (output == y[i]) {
-                correct ++
-            }
-        }
-
-        return (correct / x.size)
-    }
-
-    fun merge(otherModel: Adaline){
-        for (idx in weights.indices){
-            weights[idx] = (weights[idx] + otherModel.weights[idx]) / 2
-        }
-    }
-
 }
 

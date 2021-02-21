@@ -1,11 +1,10 @@
 package com.example.federated_ml.models
-import smile.classification.OnlineClassifier
 import java.util.*
 
 
-class Adaline(learningRate: Double, amountFeatures: Int): OnlineClassifier<Array<Double>>{
+class Adaline(learningRate: Double, amountFeatures: Int):
+    OnlineModel(amountFeatures) {
     private val learningRate = learningRate
-    internal var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble()}
     private var bias = Random().nextDouble()
 
     override fun update(x: Array<Double>, y: Int){
@@ -23,15 +22,6 @@ class Adaline(learningRate: Double, amountFeatures: Int): OnlineClassifier<Array
         for (i in x.indices) {
             update(x[i], y[i])
         }
-    }
-
-    override fun predict(x: Array<Array<Double>>): IntArray {
-        val result  = IntArray(x.size)
-        for((idx, item) in x.withIndex()){
-            result[idx] = predict(item)
-        }
-
-        return result
     }
 
     override fun predict(x: Array<Double>): Int {
@@ -54,25 +44,6 @@ class Adaline(learningRate: Double, amountFeatures: Int): OnlineClassifier<Array
         }
 
         return weightedSum
-    }
-
-    fun score(x: Array<Array<Double>>, y: IntArray): Double{
-        var correct = 0.0
-        for (i in x.indices) {
-            var output = predict(x[i])
-            if (output == y[i]) {
-                correct ++
-            }
-        }
-
-        return (correct / x.size)
-    }
-
-
-    fun merge(otherModel: Pegasos){
-        for (idx in weights.indices){
-            weights[idx] = (weights[idx] + otherModel.weights[idx]) / 2
-        }
     }
 
 }

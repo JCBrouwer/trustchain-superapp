@@ -5,8 +5,8 @@ import com.example.federated_ml.models.Pegasos
 import kotlin.random.Random
 
 
-class WeakLearner(id: Int) {
-    private val amountFeatures = 10
+class WeakLearner(id: Int, songsHistory: Array<Int>) {
+    // total amount of known songs
     private val amountSongs = 10
 
     private val AMOUNT_MODELS = 5
@@ -14,14 +14,22 @@ class WeakLearner(id: Int) {
     private lateinit var ensemmbleModel: OnlineModel
     private var modelCache = mutableListOf<OnlineModel>()
 
-    // user data, explicitly setting to random vars for now
-    // TODO: lateinit and extract from user db later on
-    private var features: Array<Array<Double>> = Array(amountSongs) { _ -> Array<Double>(amountFeatures){ Random.nextDouble(0.0, 5.0) }}
+    private var features: Array<Array<Double>> = Array(amountSongs) { _ -> Array<Double>(amountSongs){ Random.nextDouble(0.0, 5.0) }}
     private var labels = IntArray(amountSongs) { Random.nextInt(0, 2) }
 
     init {
         println("Init weak learner $leanerId")
+
         initEnsembleModel()
+        initFeatures(songsHistory)
+    }
+
+    fun initFeatures(songsHistory: Array<Int>){
+        // map identical songs
+        val feature_matrix = Array(amountSongs) { row -> Array(amountSongs) { col ->
+            if (songsHistory.contains(row) and songsHistory.contains(col)) 1.0 else 0.0 }}
+        features = feature_matrix
+        labels = Array(amountSongs) { song -> if (songsHistory.contains(song)) 1 else 0 }.toIntArray()
     }
 
     fun initEnsembleModel(){

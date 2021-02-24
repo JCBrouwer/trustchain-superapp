@@ -13,6 +13,8 @@ import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 
+import com.example.federated_ml.models.OnlineModel
+
 class MusicCommunity(
     settings: TrustChainSettings,
     database: TrustChainStore,
@@ -21,6 +23,10 @@ class MusicCommunity(
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
     var swarmHealthMap = mutableMapOf<Sha1Hash, SwarmHealth>() // All recent swarm health data that
     // has been received from peers
+    var onlineModelExists = false
+
+    // general model in community
+    private var onlineModel: OnlineModel?
 
     class Factory(
         private val settings: TrustChainSettings,
@@ -33,6 +39,7 @@ class MusicCommunity(
     }
 
     init {
+        this.onlineModel = null
         messageHandlers[MessageId.KEYWORD_SEARCH_MESSAGE] = ::onKeywordSearch
         messageHandlers[MessageId.SWARM_HEALTH_MESSAGE] = ::onSwarmHealth
     }
@@ -136,6 +143,36 @@ class MusicCommunity(
             sendBlock(it.value, peer)
         }
         return count
+    }
+
+    /**
+     * Communicate an existing online model
+     */
+    fun communicateOnlineModels(): Int {
+        // might want to add more tracking lately to where the model can be
+        if (!this.onlineModelExists){
+            this.initiateOnlineModels()
+            this.onlineModelExists = true
+        }
+        return 1
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * Initiate online model
+     */
+    private fun initiateOnlineModels(){
+        val peer = pickRandomPeer() ?: return
+        // TODO: here we need to take ALL SONGS from a database
+        // val allSongs = database.getAllSongs("publish_release")
+
+        // this creates model for all songs as features
+        this.onlineModel = OnlineModel(10)
+        val maxModels = 1
+        for(i in 0..maxModels){
+            sendModel(onlineModel!!, peer)
+        }
+        TODO("Not yet implemented")
     }
 
     object MessageId {

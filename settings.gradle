@@ -1,3 +1,6 @@
+include ':federated_ml'
+include ':federated_ml'
+include ':federated_ml'
 include ':eurotoken'
 rootProject.name = 'TrustChain'
 
@@ -25,3 +28,6 @@ include ':trustchain-voter'
 include ':musicdao'
 include ':peerchat'
 include ':eurotoken'
+
+include ':federated_ml'
+project(':federated_ml').projectDir = new File(settingsDir, 'federated_ml')

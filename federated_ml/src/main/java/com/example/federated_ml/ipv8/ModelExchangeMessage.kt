@@ -1,5 +1,6 @@
 package com.example.federated_ml.ipv8
 
+import com.example.federated_ml.models.OnlineModel
 import nl.tudelft.ipv8.messaging.*
 
 /**
@@ -9,12 +10,13 @@ class ModelExchangeMessage(
     val originPublicKey: ByteArray,
     var ttl: UInt,
     val modelType: String,
-    val model: WeakLearner
+    val model: OnlineModel
 ) : Serializable {
+
     override fun serialize(): ByteArray {
         return originPublicKey +
             serializeUInt(ttl) +
-            serializeVarLen(keyword.toByteArray(Charsets.US_ASCII)) // TODO how serialize?
+            serializeVarLen(model.serialize()) // TODO how serialize?
     }
 
     fun checkTTL(): Boolean {

@@ -13,7 +13,8 @@ import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 
-import com.example.federated_ml.models.WeakLearner
+import com.example.federated_ml.WeakLearner
+import com.example.federated_ml.models.OnlineModel
 
 class RecommenderCommunity(
     settings: TrustChainSettings,
@@ -21,8 +22,11 @@ class RecommenderCommunity(
     crawler: TrustChainCrawler = TrustChainCrawler()
 ) : TrustChainCommunity(settings, database, crawler) {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
-    var swarmHealthMap = mutableMapOf<Sha1Hash, SwarmHealth>()
-    val defaultModelType = "WeakLearner"
+    // has been received from peers
+    var onlineModelExists = false
+
+    // general model in community
+    private var onlineModel: OnlineModel?
 
     class Factory(
         private val settings: TrustChainSettings,
@@ -35,14 +39,15 @@ class RecommenderCommunity(
     }
 
     init {
-        messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::onModelExchange
+        this.onlineModel = null
+        messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::communicateOnlineModels
     }
 
     fun performRemoteModelExchange(
         model: WeakLearner,
         modelType: String = "WeakLearner",
         ttl: UInt = 1u,
-        originPublicKey: ByteArray = myPeer.publicKey.keyToBin(),
+        originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
         val maxPeersToAsk = 20 // This is a magic number, tweak during/after experiments
         var count = 0
@@ -68,13 +73,7 @@ class RecommenderCommunity(
         // update local model with it and respond
         // something like this?
         val localFeatures = database.getBlocksWithType(modelType)
-        if (localFeatures != null) {
-            localModel.updateWithNewModel(peerFeatures)
-        }
-        else {
-            if (!payload.checkTTL()) return
-            performRemoteModelExchange(peerFeatures, modelType, payload.ttl, payload.originPublicKey)
-        }
+        localModel.updateWithNewModel(peerFeatures)
 
         Log.i("ModelExchange from", peer.mid)
     }
@@ -91,23 +90,39 @@ class RecommenderCommunity(
     }
 
     /**
-     * Communicate local model to one or a few random peers
-     * @return the amount of blocks that were sent
+     * Communicate an existing online model
      */
-    fun broadcastModel(): Int {
-        val peer = pickRandomPeer() ?: return 0
-        val releaseBlocks = database.getBlocksWithType(modelType)
-        val maxBlocks = 3
-        var count = 0
-        releaseBlocks.shuffled().withIndex().forEach {
-            count += 1
-            if (it.index >= maxBlocks) return count
-            sendBlock(it.value, peer)
+    fun communicateOnlineModels(): Int {
+        // might want to add more tracking lately to where the model can be
+        if (!this.onlineModelExists){
+            this.initiateOnlineModels()
+            this.onlineModelExists = true
         }
-        return count
+        return 1
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * Initiate online model
+     */
+    private fun initiateOnlineModels(){
+        val peer = pickRandomPeer() ?: return
+        // TODO: here we need to take ALL SONGS from a database
+        // val allSongs = database.getAllSongs("publish_release")
+
+        // this creates model for all songs as features
+        this.onlineModel = OnlineModel(10)
+        val maxModels = 1
+        for(i in 0..maxModels){
+            sendModel(onlineModel!!, peer)
+        }
+        TODO("Not yet implemented")
     }
 
     object MessageId {
-        const val MODEL_EXCHANGE_MESSAGE = 10
+        val MODEL_EXCHANGE_MESSAGE: Int
+            get() {
+                TODO()
+            }
     }
 }

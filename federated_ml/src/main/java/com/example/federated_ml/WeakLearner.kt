@@ -2,6 +2,16 @@ package com.example.federated_ml
 import com.example.federated_ml.models.Adaline
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
+import com.squareup.sqldelight.db.SqlDriver
+import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
+import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver.Companion.IN_MEMORY
+import nl.tudelft.ipv8.attestation.trustchain.ANY_COUNTERPARTY_PK
+import nl.tudelft.ipv8.attestation.trustchain.EMPTY_SIG
+import nl.tudelft.ipv8.attestation.trustchain.GENESIS_HASH
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
+import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
+import nl.tudelft.ipv8.sqldelight.Database
+import java.util.*
 import kotlin.random.Random
 
 
@@ -90,6 +100,7 @@ class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boole
         incomingModel.update(features, labels)
         return ensemmbleModel!!.merge(incomingModel)
     }
+
     fun createModelMU(incomingModel: OnlineModel): OnlineModel {
         val newModel = ensemmbleModel!!.merge(incomingModel)
         newModel.update(features, labels)

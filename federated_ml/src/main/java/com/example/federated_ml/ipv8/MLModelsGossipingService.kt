@@ -1,13 +1,12 @@
-package com.example.musicdao
-import com.example.federated_ml.WeakLearner
+package com.example.federated_ml.ipv8
+
+import kotlinx.coroutines.*
+import kotlin.system.exitProcess
 import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import com.example.musicdao.ipv8.MusicCommunity
-import kotlinx.coroutines.*
 import nl.tudelft.ipv8.android.IPv8Android
-import kotlin.system.exitProcess
 
 class MLModelsGossipingService: Service() {
     // placeholder for now
@@ -58,9 +57,9 @@ class MLModelsGossipingService: Service() {
         // here should be something like
         // weakLeaner.updateWithNewModel(incomingModel)
 
-        val musicCommunity = IPv8Android.getInstance().getOverlay<MusicCommunity>()
+        val recommenderCommunity = IPv8Android.getInstance().getOverlay<RecommenderCommunity>()
         while (scope.isActive) {
-            musicCommunity?.communicateOnlineModels()
+            recommenderCommunity?.communicateOnlineModels()
             delay(10000)
         }
         TODO("Not yet implemented")

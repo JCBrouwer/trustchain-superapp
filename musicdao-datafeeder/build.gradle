@@ -19,7 +19,7 @@ dependencies {
 
     implementation files('libs/jlibtorrent-1.2.10.0.jar')
 
-    implementation project (':federated_ml')
+//    implementation project (':federated_ml')
 }
 
 application {

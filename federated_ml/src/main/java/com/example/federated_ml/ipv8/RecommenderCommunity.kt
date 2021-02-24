@@ -22,7 +22,7 @@ class RecommenderCommunity(
 ) : TrustChainCommunity(settings, database, crawler) {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
     var swarmHealthMap = mutableMapOf<Sha1Hash, SwarmHealth>()
-    val modelType = "Adaline"
+    val defaultModelType = "WeakLearner"
 
     class Factory(
         private val settings: TrustChainSettings,
@@ -40,7 +40,7 @@ class RecommenderCommunity(
 
     fun performRemoteModelExchange(
         model: OnlineModel,
-        modelType: String = "Adaline",
+        modelType: String = "WeakLearner",
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin(),
     ): Int {
@@ -63,17 +63,17 @@ class RecommenderCommunity(
 
         // packet contains model type and weights from peer
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
-        val peerModel = payload.model // how is this serialized?
+        val peerFeatures = payload.model // how is this serialized?
 
         // update local model with it and respond
         // something like this?
-        val localModel = (OnlineModel) database.getBlocksWithType(modelType).transaction["modelWeights"]
-        if (localWeights != null) {
-            localModel.updateWithNewModel(peerModel)
+        val localFeatures = database.getBlocksWithType(modelType)
+        if (localFeatures != null) {
+            localModel.updateWithNewModel(peerFeatures)
         }
         else {
             if (!payload.checkTTL()) return
-            performRemoteModelExchange(peerModel, modelType, payload.ttl, payload.originPublicKey)
+            performRemoteModelExchange(peerFeatures, modelType, payload.ttl, payload.originPublicKey)
         }
 
         Log.i("ModelExchange from", peer.mid)

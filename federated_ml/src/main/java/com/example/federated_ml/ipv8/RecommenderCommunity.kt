@@ -13,7 +13,7 @@ import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 
-import com.example.federated_ml.models.OnlineModel
+import com.example.federated_ml.models.WeakLearner
 
 class RecommenderCommunity(
     settings: TrustChainSettings,
@@ -39,7 +39,7 @@ class RecommenderCommunity(
     }
 
     fun performRemoteModelExchange(
-        model: OnlineModel,
+        model: WeakLearner,
         modelType: String = "WeakLearner",
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin(),
@@ -50,7 +50,7 @@ class RecommenderCommunity(
             if (index >= maxPeersToAsk) break
             val packet = serializePacket(
                 MessageId.MODEL_EXCHANGE_MESSAGE,
-                ModelExchangeMessage(originPublicKey, ttl, model, modelType)
+                ModelExchangeMessage(originPublicKey, ttl, modelType, model)
             )
             send(peer, packet)
             count += 1
@@ -109,6 +109,5 @@ class RecommenderCommunity(
 
     object MessageId {
         const val MODEL_EXCHANGE_MESSAGE = 10
-        const val SWARM_HEALTH_MESSAGE = 11
     }
 }

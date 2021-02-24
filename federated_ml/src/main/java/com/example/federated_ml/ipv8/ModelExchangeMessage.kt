@@ -9,7 +9,7 @@ class ModelExchangeMessage(
     val originPublicKey: ByteArray,
     var ttl: UInt,
     val modelType: String,
-    val model: OnlineModel
+    val model: WeakLearner
 ) : Serializable {
     override fun serialize(): ByteArray {
         return originPublicKey +

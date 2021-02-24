@@ -95,4 +95,23 @@ class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boole
         newModel.update(features, labels)
         return incomingModel
     }
+
+    fun storeModel() {
+        val driver: SqlDriver = JdbcSqliteDriver(IN_MEMORY)
+        Database.Schema.create(driver)
+        val database = Database(driver)
+        val store = TrustChainSQLiteStore(database)
+        val modelBlock = TrustChainBlock(
+            "WeakLearner",
+            features.toByteArray(Charsets.US_ASCII),
+            getPrivateKey().pub().keyToBin(),
+            1u,
+            ANY_COUNTERPARTY_PK,
+            0u,
+            GENESIS_HASH,
+            EMPTY_SIG,
+            Date()
+        )
+        store.addBlock(modelBlock)
+    }
 }

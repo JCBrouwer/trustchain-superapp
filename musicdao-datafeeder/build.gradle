@@ -18,6 +18,8 @@ dependencies {
     implementation 'org.bitcoinj:bitcoinj-core:0.15.7'
 
     implementation files('libs/jlibtorrent-1.2.10.0.jar')
+
+    implementation project (':federated_ml')
 }
 
 application {

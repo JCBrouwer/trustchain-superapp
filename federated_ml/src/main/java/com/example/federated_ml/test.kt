@@ -1,9 +1,5 @@
 package com.example.federated_ml
 
-import com.example.federated_ml.feature_engineering.Preprocessing
-import com.example.federated_ml.models.OnlineModel
-import smile.classification.DiscreteNaiveBayes
-import kotlin.random.Random
 import kotlin.random.Random.Default.nextDouble
 import kotlin.random.Random.Default.nextInt
 
@@ -19,7 +15,7 @@ fun main(){
         val songsHistory = Array<Int>(amountSongs){ nextInt(totalAmountSongs) }
 
         // initiate user / learner with this songs history
-        val wl = WeakLearner(i, songsHistory)
+        val wl = WeakLearner(i, songsHistory, false)
         weakLearners.add(wl)
     }
 

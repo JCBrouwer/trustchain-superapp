@@ -5,13 +5,13 @@ import com.example.federated_ml.models.Pegasos
 import kotlin.random.Random
 
 
-class WeakLearner(id: Int, songsHistory: Array<Int>) {
+class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boolean) {
     // total amount of known songs
     private val amountSongs = 10
 
     private val AMOUNT_MODELS = 5
     private val leanerId = id
-    private lateinit var ensemmbleModel: OnlineModel
+    private var ensemmbleModel: OnlineModel? = null
     private var modelCache = mutableListOf<OnlineModel>()
 
     private var features: Array<Array<Double>> = Array(amountSongs) { _ -> Array<Double>(amountSongs){ Random.nextDouble(0.0, 5.0) }}
@@ -20,7 +20,10 @@ class WeakLearner(id: Int, songsHistory: Array<Int>) {
     init {
         println("Init weak learner $leanerId")
 
-        initEnsembleModel()
+        if (shouldHaveLocalModel){
+            initEnsembleModel()
+        }
+
         initFeatures(songsHistory)
     }
 
@@ -44,15 +47,27 @@ class WeakLearner(id: Int, songsHistory: Array<Int>) {
         ensemmbleModel = model1.merge(model2)
     }
 
-    fun updateWithNewModel(incomingModel: OnlineModel) {
+    fun updateWithNewModel(incomingModel: OnlineModel): OnlineModel {
         modelCache.add(incomingModel)
         if (modelCache.size > AMOUNT_MODELS){
             modelCache.removeAt(0)
         }
+
+        return if (this.ensemmbleModel != null){
+            createModelUM(incomingModel)
+        } else {
+            createModelRW(incomingModel)
+        }
     }
 
     fun makePrediction(testFeatures: Array<Array<Double>>){
-        val prediction = this.ensemmbleModel.predict(testFeatures)
+        var prediction: IntArray
+
+        if (this.ensemmbleModel != null){
+            prediction = this.ensemmbleModel!!.predict(testFeatures)
+        } else {
+            prediction = this.modelCache.last().predict(testFeatures)
+        }
         println("Prediction for sample of learner $leanerId : ")
         for(i in testFeatures[0]){
             print(i)
@@ -73,10 +88,10 @@ class WeakLearner(id: Int, songsHistory: Array<Int>) {
 
     fun createModelUM(incomingModel: OnlineModel): OnlineModel {
         incomingModel.update(features, labels)
-        return ensemmbleModel.merge(incomingModel)
+        return ensemmbleModel!!.merge(incomingModel)
     }
     fun createModelMU(incomingModel: OnlineModel): OnlineModel {
-        val newModel = ensemmbleModel.merge(incomingModel)
+        val newModel = ensemmbleModel!!.merge(incomingModel)
         newModel.update(features, labels)
         return incomingModel
     }

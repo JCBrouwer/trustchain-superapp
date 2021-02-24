@@ -90,6 +90,7 @@ class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boole
         incomingModel.update(features, labels)
         return ensemmbleModel!!.merge(incomingModel)
     }
+
     fun createModelMU(incomingModel: OnlineModel): OnlineModel {
         val newModel = ensemmbleModel!!.merge(incomingModel)
         newModel.update(features, labels)

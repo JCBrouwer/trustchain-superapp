@@ -14,7 +14,7 @@ class ModelExchangeMessage(
     override fun serialize(): ByteArray {
         return originPublicKey +
             serializeUInt(ttl) +
-            serializeVarLen(keyword.toByteArray(Charsets.US_ASCII)) // TODO how serialize?
+            serializeVarLen(model.serialize()) // TODO how serialize?
     }
 
     fun checkTTL(): Boolean {
@@ -35,12 +35,13 @@ class ModelExchangeMessage(
             localOffset += SERIALIZED_UINT_SIZE
             // val (keyword, keywordSize) = deserializeVarLen(buffer, offset + localOffset)
             // localOffset += keywordSize
+            serialModel = model.serialize();
             return Pair(
                 ModelExchangeMessage(
                     originPublicKey,
                     ttl,
                     modelType.toString(Charsets.US_ASCII),
-                    model
+                    serialModel
                 ), localOffset
             )
         }

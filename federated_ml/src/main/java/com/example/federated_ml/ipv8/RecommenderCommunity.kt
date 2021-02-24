@@ -67,6 +67,9 @@ class RecommenderCommunity(
 
         // update local model with it and respond
         // something like this?
+
+        database.dbModelQueries.addModel()
+
         val localFeatures = database.getBlocksWithType(modelType)
         if (localFeatures != null) {
             localModel.updateWithNewModel(peerFeatures)

@@ -1,6 +1,6 @@
 package com.example.federated_ml.models
 import kotlinx.serialization.*
-import kotlinx.serialization.json.JSON
+import kotlinx.serialization.json.*
 
 import smile.classification.OnlineClassifier
 import java.util.*
@@ -47,6 +47,8 @@ open class OnlineModel (amountFeatures: Int): OnlineClassifier<Array<Double>> {
 
     fun serialize(): String {
         val weightString = JSON.stringify(Array.serializer(), weights)
-        return JSON.stringify(HashMap.serializer(), HashMap<String, String>("weights": weightString))
+        val modelMap = HashMap<String, String>()
+
+        return JSON.stringify(HashMap.serializer(), "weights": weightString))
     }
 }

@@ -60,5 +60,6 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int):
             }
         }
     }
+
 }
 

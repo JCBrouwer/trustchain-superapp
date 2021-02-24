@@ -1,6 +1,15 @@
 package com.example.federated_ml.models
+import com.squareup.sqldelight.db.SqlDriver
+import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import kotlinx.serialization.*
-import kotlinx.serialization.json.JSON
+import kotlinx.serialization.json.Json
+import nl.tudelft.ipv8.attestation.trustchain.ANY_COUNTERPARTY_PK
+import nl.tudelft.ipv8.attestation.trustchain.EMPTY_SIG
+import nl.tudelft.ipv8.attestation.trustchain.GENESIS_HASH
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
+import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
+import nl.tudelft.ipv8.sqldelight.Database
+import kotlin.js.*
 
 import smile.classification.OnlineClassifier
 import java.util.*
@@ -46,9 +55,27 @@ open class OnlineModel (amountFeatures: Int): OnlineClassifier<Array<Double>> {
     override fun update(x: Array<Double>, y: Int) {}
 
     fun serialize(): String {
-        val weightString = JSON.stringify(Array.serializer(), weights)
-        val modelMap = HashMap<String, String>()
-        modelMap.put("weights", weightString)
-        return JSON.stringify(HashMap.serializer(), modelMap)
+        val modelString = Json.encodeToString(this)
+        return modelString
     }
+
+    fun store(privateKey: ByteArray) {
+        val driver: SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        Database.Schema.create(driver)
+        val database = Database(driver)
+        val store = TrustChainSQLiteStore(database)
+        val modelBlock = TrustChainBlock(
+            this::class::simpleName.toString(),
+            this.serialize().toByteArray(Charsets.US_ASCII),
+            privateKey,
+            1u,
+            ANY_COUNTERPARTY_PK,
+            0u,
+            GENESIS_HASH,
+            EMPTY_SIG,
+            Date()
+        )
+        store.addBlock(modelBlock)
+    }
+
 }

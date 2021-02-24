@@ -4,17 +4,15 @@ import android.util.Log
 import com.frostwire.jlibtorrent.Sha1Hash
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.Peer
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainSettings
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
 import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
 
-import com.example.federated_ml.WeakLearner
 import com.example.federated_ml.models.OnlineModel
+import nl.tudelft.ipv8.attestation.trustchain.*
 
 class RecommenderCommunity(
     settings: TrustChainSettings,
@@ -22,11 +20,6 @@ class RecommenderCommunity(
     crawler: TrustChainCrawler = TrustChainCrawler()
 ) : TrustChainCommunity(settings, database, crawler) {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
-    // has been received from peers
-    var onlineModelExists = false
-
-    // general model in community
-    private var onlineModel: OnlineModel?
 
     class Factory(
         private val settings: TrustChainSettings,
@@ -39,13 +32,12 @@ class RecommenderCommunity(
     }
 
     init {
-        this.onlineModel = null
         messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::communicateOnlineModels
     }
 
     fun performRemoteModelExchange(
-        model: WeakLearner,
-        modelType: String = "WeakLearner",
+        model: OnlineModel,
+        modelType: String = ,
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
@@ -68,17 +60,56 @@ class RecommenderCommunity(
 
         // packet contains model type and weights from peer
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
-        val peerFeatures = payload.model // how is this serialized?
+        var peerModel = payload.model // how is this serialized?
 
-        // update local model with it and respond
-        // something like this?
+        // we need to deserialize model somehow
+        val localModel = Json.decodeFromString<OnlineModel>(database.getBlocksWithType(modelType).get(0)
+            .toString())
 
-        database.dbModelQueries.addModel()
+        // TODO: how to get own peer key?
+        val myKey = trustChainCommunity.myPeer.publicKey.keyToBin()
+        val songsHistory = database.getLatestBlocks(myKey, 1000)
+        val labelVector = Array<String>(songsHistory.size){_ -> ""}
+        for ((i, block) in songsHistory.withIndex()){
+            labelVector[i] = block.blockId
+        }
+        var processedSongHistory = processSongs(labelVector)
 
-        val localFeatures = database.getBlocksWithType(modelType)
-        localModel.updateWithNewModel(peerFeatures)
+        val models = this.createModelMU(localModel, peerModel, processedSongHistory.first,
+            processedSongHistory.second)
+
+        models.first.store(myKey)
+        communicateOnlineModels(models.second, myKey)
 
         Log.i("ModelExchange from", peer.mid)
+    }
+
+    fun processSongs(songsList: Array<String>): Pair<Array<Array<Double>>, IntArray>{
+        TODO("How can we distinguish songs by their id and " +
+            "not different blocks with the same song?")
+    }
+
+    fun createModelRW(incomingModel: OnlineModel, localModel: OnlineModel,
+                      features: Array<Array<Double>>, labels: IntArray):
+        Pair<OnlineModel, OnlineModel> {
+        incomingModel.update(features, labels)
+        return Pair(localModel, incomingModel)
+    }
+
+    fun createModelUM(incomingModel: OnlineModel, localModel: OnlineModel,
+                      features: Array<Array<Double>>, labels: IntArray):
+        Pair<OnlineModel, OnlineModel> {
+        incomingModel.update(features, labels)
+        localModel.merge(incomingModel)
+        return Pair(localModel, incomingModel)
+    }
+
+    fun createModelMU(incomingModel: OnlineModel, localModel: OnlineModel,
+                      features: Array<Array<Double>>, labels: IntArray):
+        Pair<OnlineModel, OnlineModel> {
+        localModel.merge(incomingModel)
+        incomingModel.update(features, labels)
+        return Pair(localModel, incomingModel)
     }
 
     private fun pickRandomPeer(): Peer? {
@@ -95,31 +126,20 @@ class RecommenderCommunity(
     /**
      * Communicate an existing online model
      */
-    fun communicateOnlineModels(): Int {
-        // might want to add more tracking lately to where the model can be
-        if (!this.onlineModelExists){
-            this.initiateOnlineModels()
-            this.onlineModelExists = true
-        }
-        return 1
-        TODO("Not yet implemented")
-    }
-
-    /**
-     * Initiate online model
-     */
-    private fun initiateOnlineModels(){
-        val peer = pickRandomPeer() ?: return
-        // TODO: here we need to take ALL SONGS from a database
-        // val allSongs = database.getAllSongs("publish_release")
-
-        // this creates model for all songs as features
-        this.onlineModel = OnlineModel(10)
-        val maxModels = 1
-        for(i in 0..maxModels){
-            sendModel(onlineModel!!, peer)
-        }
-        TODO("Not yet implemented")
+    fun communicateOnlineModels(peerModel: OnlineModel, myKey: ByteArray) {
+        val peer = pickRandomPeer() ?: return 0
+        val releaseBlock = TrustChainBlock(
+            peerModel::class::simpleName.toString(),
+            peerModel.serialize().toByteArray(Charsets.US_ASCII),
+            myKey,
+            GENESIS_SEQ,
+            ANY_COUNTERPARTY_PK,
+            UNKNOWN_SEQ,
+            GENESIS_HASH,
+            EMPTY_SIG,
+            Date(0)
+        )
+        sendBlock(releaseBlock, peer)
     }
 
     object MessageId {

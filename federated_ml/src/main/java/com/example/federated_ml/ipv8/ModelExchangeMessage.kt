@@ -42,7 +42,7 @@ class ModelExchangeMessage(
                 ModelExchangeMessage(
                     originPublicKey,
                     ttl,
-                    modelType.toString(Charsets.US_ASCII),
+                    model::class.simpleName.toString(Charsets.US_ASCII),
                     serialModel
                 ), localOffset
             )

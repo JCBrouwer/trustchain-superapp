@@ -70,8 +70,8 @@ class RecommenderCommunity(
         //  otherwise we're just getting the 1000 songs we've most recently received from peers
         val myKey = this.myPeer.publicKey.keyToBin()
         val songsHistory = database.getLatestBlocks(myKey, 1000)
-        val labelVector = Array<String>(songsHistory.size){_ -> ""}
-        for ((i, block) in songsHistory.withIndex()){
+        val labelVector = Array<String>(songsHistory.size) { _ -> "" }
+        for ((i, block) in songsHistory.withIndex()) {
             labelVector[i] = block.blockId
         }
         val processedSongHistory = processSongs(labelVector)
@@ -85,28 +85,40 @@ class RecommenderCommunity(
         Log.i("ModelExchange from", peer.mid)
     }
 
-    fun processSongs(songsList: Array<String>): Pair<Array<Array<Double>>, IntArray>{
+    fun processSongs(songsList: Array<String>): Pair<Array<Array<Double>>, IntArray> {
         // TODO "How can we distinguish songs by their id and not different blocks with the same song?
-        return Pair(Array(10, {a->Array(20, {b->b*0.25+a})}), IntArray(10, {a->roundToInt(a*0.5, java.math.RoundingMode.FLOOR)}))
+        return Pair(Array(10, { a -> Array(20, { b -> b * 0.25 + a }) }), IntArray(10, { a -> roundToInt(a * 0.5, java.math.RoundingMode.FLOOR) }))
     }
 
-    fun createModelRW(incomingModel: OnlineModel, localModel: OnlineModel,
-                      features: Array<Array<Double>>, labels: IntArray):
+    fun createModelRW(
+        incomingModel: OnlineModel,
+        localModel: OnlineModel,
+        features: Array<Array<Double>>,
+        labels: IntArray
+    ):
         Pair<OnlineModel, OnlineModel> {
         incomingModel.update(features, labels)
         return Pair(localModel, incomingModel)
     }
 
-    fun createModelUM(incomingModel: OnlineModel, localModel: OnlineModel,
-                      features: Array<Array<Double>>, labels: IntArray):
+    fun createModelUM(
+        incomingModel: OnlineModel,
+        localModel: OnlineModel,
+        features: Array<Array<Double>>,
+        labels: IntArray
+    ):
         Pair<OnlineModel, OnlineModel> {
         incomingModel.update(features, labels)
         localModel.merge(incomingModel)
         return Pair(localModel, incomingModel)
     }
 
-    fun createModelMU(incomingModel: OnlineModel, localModel: OnlineModel,
-                      features: Array<Array<Double>>, labels: IntArray):
+    fun createModelMU(
+        incomingModel: OnlineModel,
+        localModel: OnlineModel,
+        features: Array<Array<Double>>,
+        labels: IntArray
+    ):
         Pair<OnlineModel, OnlineModel> {
         localModel.merge(incomingModel)
         incomingModel.update(features, labels)

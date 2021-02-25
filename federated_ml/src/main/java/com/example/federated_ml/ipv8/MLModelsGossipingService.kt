@@ -6,9 +6,8 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import nl.tudelft.ipv8.android.IPv8Android
 
-class MLModelsGossipingService: Service() {
+class MLModelsGossipingService : Service() {
     // placeholder for now
     private val binder = LocalBinder()
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -64,6 +63,4 @@ class MLModelsGossipingService: Service() {
         }
         TODO("Not yet implemented")
     }
-
-
 }

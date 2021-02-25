@@ -1,7 +1,6 @@
 package com.example.federated_ml.ipv8
 
 import com.example.federated_ml.models.OnlineModel
-import com.frostwire.jlibtorrent.Sha1Hash
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import io.mockk.every

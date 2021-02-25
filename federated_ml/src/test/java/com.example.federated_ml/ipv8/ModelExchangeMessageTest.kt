@@ -2,7 +2,6 @@ package com.example.federated_ml.ipv8
 
 import com.goterl.lazycode.lazysodium.LazySodiumJava
 import com.goterl.lazycode.lazysodium.SodiumJava
-import io.mockk.InternalPlatformDsl.toStr
 import nl.tudelft.ipv8.keyvault.LibNaClSK
 import nl.tudelft.ipv8.util.hexToBytes
 import org.junit.Assert

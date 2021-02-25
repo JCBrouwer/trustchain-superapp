@@ -57,17 +57,11 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.3.3'
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.3'
     implementation 'com.google.android:flexbox:2.0.1'
-//    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0'
+
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:0.20.0"
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0'
     implementation "com.github.haifengl:smile-kotlin:2.6.0"
-
-    // implementation 'org.openmined.kotlinsyft:syft:0.1.3'
-    // https://mvnrepository.com/artifact/org.openmined.kotlinsyft/syft
-    // implementation group: 'org.openmined.kotlinsyft', name: 'syft', version: '0.1.3'
-
     implementation 'org.nield:kotlin-statistics:1.2.1'
-
-//    implementation "org.jetbrains.kotlinx:kotlinx-serialization"
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0"
 
     // BitTorrent/Libtorrent libraries
     implementation 'com.turn:ttorrent-core:1.5'

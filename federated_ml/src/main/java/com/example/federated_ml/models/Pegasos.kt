@@ -1,13 +1,12 @@
 package com.example.federated_ml.models
 import java.util.*
 
-
-class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int):
+class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
     OnlineModel(amountFeatures) {
     private val regularization = regularization
     private val iterations = iterations
 
-    override fun update(x: Array<Double>, y: Int){
+    override fun update(x: Array<Double>, y: Int) {
         val eta = 1.0 / regularization
         gradientSVM(x, y, eta)
     }
@@ -17,7 +16,7 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int):
             String.format("Input vector x of size %d not equal to length %d of y", x.size, y.size)
         }
 
-        for (iteration in 0..iterations){
+        for (iteration in 0..iterations) {
             val i = Random().nextInt(x.size)
             val eta = 1.0 / (regularization * (i + 1))
 
@@ -29,14 +28,13 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int):
         return x
     }
 
-    fun weightedSum(x: Array<Double>): Double{
+    fun weightedSum(x: Array<Double>): Double {
         var weightedSum = 0.0
-        for(pair in this.weights.zip(x)){
+        for (pair in this.weights.zip(x)) {
             weightedSum += pair.first * pair.second
         }
         return weightedSum
     }
-
 
     override fun predict(x: Array<Double>): Int {
         val weightedSum = weightedSum(x)
@@ -50,16 +48,14 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int):
 
     private fun gradientSVM(x: Array<Double>, y: Int, eta: Double) {
         val score = weightedSum(x)
-        if (y * score < 1){
-            for (idx in weights.indices){
-                weights[idx] =  (1 - eta * regularization) * weights[idx] + eta * y
+        if (y * score < 1) {
+            for (idx in weights.indices) {
+                weights[idx] = (1 - eta * regularization) * weights[idx] + eta * y
             }
         } else {
-            for (idx in weights.indices){
-                weights[idx] *=  (1 - eta * regularization)
+            for (idx in weights.indices) {
+                weights[idx] *= (1 - eta * regularization)
             }
         }
     }
-
 }
-

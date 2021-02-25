@@ -1,26 +1,15 @@
 package com.example.federated_ml.models
-import com.squareup.sqldelight.db.SqlDriver
-import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import nl.tudelft.ipv8.attestation.trustchain.ANY_COUNTERPARTY_PK
-import nl.tudelft.ipv8.attestation.trustchain.EMPTY_SIG
-import nl.tudelft.ipv8.attestation.trustchain.GENESIS_HASH
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
-import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
-import nl.tudelft.ipv8.sqldelight.Database
 import java.util.*
 
-
-class Adaline(learningRate: Double, amountFeatures: Int):
+class Adaline(learningRate: Double, amountFeatures: Int) :
     OnlineModel(amountFeatures) {
     private val learningRate = learningRate
     private var bias = Random().nextDouble()
 
-    override fun update(x: Array<Double>, y: Int){
+    override fun update(x: Array<Double>, y: Int) {
         var error = y - activation(forward(x))
         this.bias += this.learningRate * error
-        for((idx, item) in x.withIndex()){
+        for ((idx, item) in x.withIndex()) {
             weights[idx] += learningRate * error * item
         }
     }
@@ -49,12 +38,10 @@ class Adaline(learningRate: Double, amountFeatures: Int):
 
     private fun forward(x: Array<Double>): Double {
         var weightedSum = this.bias
-        for(pair in this.weights.zip(x)){
+        for (pair in this.weights.zip(x)) {
             weightedSum += pair.first * pair.second
         }
 
         return weightedSum
     }
-
 }
-

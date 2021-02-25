@@ -1,7 +1,5 @@
 package com.example.federated_ml.ipv8
 
-import android.util.Log
-import com.frostwire.jlibtorrent.Sha1Hash
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.Peer
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
@@ -12,6 +10,7 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 
 import com.example.federated_ml.models.OnlineModel
+import com.google.android.exoplayer2.util.Log
 import nl.tudelft.ipv8.attestation.trustchain.*
 
 class RecommenderCommunity(
@@ -32,12 +31,12 @@ class RecommenderCommunity(
     }
 
     init {
-        messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::communicateOnlineModels
+        messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::onModelExchange
     }
 
     fun performRemoteModelExchange(
         model: OnlineModel,
-        modelType: String = ,
+        modelType: String,
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
@@ -60,14 +59,15 @@ class RecommenderCommunity(
 
         // packet contains model type and weights from peer
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
-        var peerModel = payload.model // how is this serialized?
+        var peerModel = payload.model
 
         // we need to deserialize model somehow
         val localModel = Json.decodeFromString<OnlineModel>(database.getBlocksWithType(modelType).get(0)
             .toString())
 
-        // TODO: how to get own peer key?
-        val myKey = trustChainCommunity.myPeer.publicKey.keyToBin()
+        // TODO(We should get the song history from Esmee's local database rather than trustchain,
+        //  otherwise we're just getting the 1000 songs we've most recently received from peers)
+        val myKey = this.myPeer.publicKey.keyToBin()
         val songsHistory = database.getLatestBlocks(myKey, 1000)
         val labelVector = Array<String>(songsHistory.size){_ -> ""}
         for ((i, block) in songsHistory.withIndex()){
@@ -127,25 +127,27 @@ class RecommenderCommunity(
      * Communicate an existing online model
      */
     fun communicateOnlineModels(peerModel: OnlineModel, myKey: ByteArray) {
-        val peer = pickRandomPeer() ?: return 0
-        val releaseBlock = TrustChainBlock(
-            peerModel::class::simpleName.toString(),
-            peerModel.serialize().toByteArray(Charsets.US_ASCII),
-            myKey,
-            GENESIS_SEQ,
-            ANY_COUNTERPARTY_PK,
-            UNKNOWN_SEQ,
-            GENESIS_HASH,
-            EMPTY_SIG,
-            Date(0)
-        )
-        sendBlock(releaseBlock, peer)
+        val peer = pickRandomPeer()
+        if (peer == null) {
+            val releaseBlock = TrustChainBlock(
+                peerModel::class::simpleName.toString(),
+                peerModel.serialize().toByteArray(Charsets.US_ASCII),
+                myKey,
+                GENESIS_SEQ,
+                ANY_COUNTERPARTY_PK,
+                UNKNOWN_SEQ,
+                GENESIS_HASH,
+                EMPTY_SIG,
+                Date(0)
+            )
+            sendBlock(releaseBlock, peer)
+        }
     }
 
     object MessageId {
         val MODEL_EXCHANGE_MESSAGE: Int
             get() {
-                TODO()
+                return 27
             }
     }
 }

@@ -56,27 +56,9 @@ open class OnlineModel : OnlineClassifier<Array<Double>> {
 
     override fun update(x: Array<Double>, y: Int) {}
 
+    @ImplicitReflectionSerializer
     @OptIn(UnstableDefault::class)
     open fun serialize(): String {
-        return Json.encodeToString(this)
-    }
-
-    fun store(privateKey: ByteArray) {
-        val driver: SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        Database.Schema.create(driver)
-        val database = Database(driver)
-        val store = TrustChainSQLiteStore(database)
-        val modelBlock = TrustChainBlock(
-            this::class::simpleName.toString(),
-            this.serialize().toByteArray(Charsets.US_ASCII),
-            privateKey,
-            1u,
-            ANY_COUNTERPARTY_PK,
-            0u,
-            GENESIS_HASH,
-            EMPTY_SIG,
-            Date()
-        )
-        store.addBlock(modelBlock)
+        return Json.toJson(this).toString()
     }
 }

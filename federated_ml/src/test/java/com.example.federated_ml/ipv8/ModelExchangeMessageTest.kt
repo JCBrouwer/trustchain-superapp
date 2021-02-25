@@ -7,6 +7,7 @@ import nl.tudelft.ipv8.util.hexToBytes
 import org.junit.Assert
 import org.junit.Test
 import com.example.federated_ml.models.OnlineModel
+import kotlinx.serialization.ImplicitReflectionSerializer
 
 private val lazySodium = LazySodiumJava(SodiumJava())
 
@@ -21,16 +22,18 @@ class ModelExchangeMessageTest {
     private val modelType = model::class::simpleName.toString()
     private val payload = ModelExchangeMessage(originPublicKey, ttl, modelType, model)
 
+    @ImplicitReflectionSerializer
     @Test
     fun checkTTL() {
         Assert.assertTrue(payload.checkTTL())
         Assert.assertFalse(payload.checkTTL())
     }
 
+    @ImplicitReflectionSerializer
     @Test
     fun serializeAndDeserialize() {
         val serialized = payload.serialize()
-        val (deserialized, size) = com.example.federated_ml.ipv8.ModelExchangeMessage.deserialize(
+        val (deserialized, size) = com.example.federated_ml.ipv8.ModelExchangeMessage.deserialize( // TODO why is this crashing?!
             serialized
         )
         Assert.assertEquals(serialized.size, size)

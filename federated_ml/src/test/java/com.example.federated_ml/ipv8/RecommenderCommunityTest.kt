@@ -8,6 +8,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.serialization.ImplicitReflectionSerializer
 import nl.tudelft.ipv8.Peer
 import nl.tudelft.ipv8.attestation.trustchain.*
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
@@ -29,6 +30,7 @@ class RecommenderCommunityTest {
         return TrustChainSQLiteStore(database)
     }
 
+    @ImplicitReflectionSerializer
     private fun getCommunity(): RecommenderCommunity {
         val settings = TrustChainSettings()
         val store = createTrustChainStore()
@@ -41,6 +43,7 @@ class RecommenderCommunityTest {
         return community
     }
 
+    @ImplicitReflectionSerializer
     @Test
     fun modelExchangeStoresCorrectly() = runBlockingTest {
         val crawler = TrustChainCrawler()
@@ -48,7 +51,6 @@ class RecommenderCommunityTest {
         crawler.trustChainCommunity = community
 
         val newKey = JavaCryptoProvider.generateKey()
-        val myPeer = Peer(newKey)
 
         // 1 peer: send to 1 person, because we have 1 block
         val newKey2 = JavaCryptoProvider.generateKey()
@@ -58,13 +60,14 @@ class RecommenderCommunityTest {
         } returns listOf(neighborPeer)
 
         val model = OnlineModel(20)
-        val count = community.performRemoteModelExchange(model, model::class::simpleName.toString(), 2u, newKey.keyToBin())
+        val count = community.performRemoteModelExchange(model, model::class::simpleName.toString(), 1u, newKey.keyToBin())
         Assert.assertEquals(1, count)
 
         // the exchanged model should be in the database now
-        Assert.assertEquals(1, community.database.getAllBlocks().size)
+        Assert.assertEquals(1, community.database.getAllBlocks().size) // TODO why is the database empty here?!
     }
 
+    @ImplicitReflectionSerializer
     @Test
     fun communicateReleaseBlocks() {
         val community = spyk(getCommunity())

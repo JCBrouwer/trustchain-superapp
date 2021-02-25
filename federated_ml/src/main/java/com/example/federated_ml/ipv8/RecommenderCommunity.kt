@@ -3,7 +3,9 @@ package com.example.federated_ml.ipv8
 import com.example.federated_ml.models.OnlineModel
 import com.google.android.exoplayer2.util.Log
 import com.google.common.math.DoubleMath.roundToInt
+import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.UnstableDefault
+import kotlinx.serialization.json.Json
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.Peer
 import nl.tudelft.ipv8.attestation.trustchain.*
@@ -12,10 +14,11 @@ import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.parse
+import kotlinx.serialization.stringify
+import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 
+@ImplicitReflectionSerializer
 class RecommenderCommunity(
     settings: TrustChainSettings,
     database: TrustChainStore,
@@ -58,6 +61,7 @@ class RecommenderCommunity(
     }
 
     @OptIn(UnstableDefault::class)
+    @ImplicitReflectionSerializer
     private fun onModelExchange(packet: Packet) {
         val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
@@ -65,7 +69,7 @@ class RecommenderCommunity(
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         val peerModel = payload.model
 
-        val localModel = Json.decodeFromString<OnlineModel>(
+        val localModel = Json.parse<OnlineModel>(
             database.getBlocksWithType(modelType).get(0).toString()
         )
 
@@ -82,7 +86,19 @@ class RecommenderCommunity(
         val models = this.createModelMU(localModel, peerModel, processedSongHistory.first,
             processedSongHistory.second)
 
-        models.first.store(myKey)
+        val modelBlock = TrustChainBlock(
+            models.first::class::simpleName.toString(),
+            models.first.serialize().toByteArray(Charsets.US_ASCII),
+            myKey,
+            1u,
+            ANY_COUNTERPARTY_PK,
+            0u,
+            GENESIS_HASH,
+            EMPTY_SIG,
+            Date()
+        )
+        database.addBlock(modelBlock)
+
         communicateOnlineModels(models.second)
 
         Log.i("ModelExchange from", peer.mid)

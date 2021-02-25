@@ -2,6 +2,7 @@ package com.example.federated_ml.ipv8
 
 import kotlinx.serialization.json.*
 import com.example.federated_ml.models.OnlineModel
+import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.messaging.*
 import nl.tudelft.ipv8.messaging.Serializable
@@ -30,6 +31,7 @@ class ModelExchangeMessage(
     }
 
     companion object Deserializer : Deserializable<ModelExchangeMessage> {
+        @OptIn(UnstableDefault::class)
         override fun deserialize(buffer: ByteArray, offset: Int): Pair<ModelExchangeMessage, Int> {
             var localOffset = 0
             val originPublicKey = buffer.copyOfRange(
@@ -44,12 +46,12 @@ class ModelExchangeMessage(
             val (model, modelSize) = deserializeVarLen(buffer, offset + localOffset)
             localOffset += modelSize
             return Pair(
-                ModelExchangeMessage(
-                    originPublicKey,
-                    ttl,
-                    modelType.toString(Charsets.US_ASCII),
-                    Json.decodeFromString(model.toString(Charsets.US_ASCII))
-                ), localOffset
+                first = ModelExchangeMessage(
+                    originPublicKey = originPublicKey,
+                    ttl = ttl,
+                    modelType = modelType.toString(Charsets.US_ASCII),
+                    model = Json.decodeFromString(model.toString(Charsets.US_ASCII))
+                ), second = localOffset
             )
         }
     }

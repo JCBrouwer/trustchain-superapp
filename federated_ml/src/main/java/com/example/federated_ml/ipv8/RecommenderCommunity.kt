@@ -1,18 +1,20 @@
 package com.example.federated_ml.ipv8
 
+import com.example.federated_ml.models.OnlineModel
+import com.google.android.exoplayer2.util.Log
+import com.google.common.math.DoubleMath.roundToInt
+import kotlinx.serialization.UnstableDefault
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.Peer
+import nl.tudelft.ipv8.attestation.trustchain.*
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
 import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
 
-import com.example.federated_ml.models.OnlineModel
-import com.google.android.exoplayer2.util.Log
-import com.google.common.math.DoubleMath.roundToInt
-import nl.tudelft.ipv8.attestation.trustchain.*
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class RecommenderCommunity(
     settings: TrustChainSettings,
@@ -55,6 +57,7 @@ class RecommenderCommunity(
         return count
     }
 
+    @OptIn(UnstableDefault::class)
     private fun onModelExchange(packet: Packet) {
         val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
@@ -62,9 +65,9 @@ class RecommenderCommunity(
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         val peerModel = payload.model
 
-        // we need to deserialize model somehow
-        val localModel = Json.decodeFromString<OnlineModel>(database.getBlocksWithType(modelType).get(0)
-            .toString())
+        val localModel = Json.decodeFromString<OnlineModel>(
+            database.getBlocksWithType(modelType).get(0).toString()
+        )
 
         // TODO We should get the song history from Esmee's local database rather than trustchain,
         //  otherwise we're just getting the 1000 songs we've most recently received from peers

@@ -9,13 +9,16 @@ import nl.tudelft.ipv8.attestation.trustchain.GENESIS_HASH
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import nl.tudelft.ipv8.sqldelight.Database
-import kotlin.js.*
 
 import smile.classification.OnlineClassifier
 import java.util.*
 
-open class OnlineModel(amountFeatures: Int) : OnlineClassifier<Array<Double>> {
-    internal var weights: Array<Double> = Array(amountFeatures) { _ -> Random().nextDouble() * 3 }
+@Serializable
+open class OnlineModel : OnlineClassifier<Array<Double>> {
+    internal var weights: Array<Double>
+    constructor(amountFeatures: Int) {
+        weights = Array(amountFeatures) { _ -> Random().nextDouble() * 3 }
+    }
 
     fun merge(otherOnlineModel: OnlineModel): OnlineModel {
         for (idx in weights.indices) {
@@ -36,7 +39,7 @@ open class OnlineModel(amountFeatures: Int) : OnlineClassifier<Array<Double>> {
     fun score(x: Array<Array<Double>>, y: IntArray): Double {
         var correct = 0.0
         for (i in x.indices) {
-            var output = predict(x[i])
+            val output = predict(x[i])
             if (output == y[i]) {
                 correct ++
             }
@@ -53,9 +56,9 @@ open class OnlineModel(amountFeatures: Int) : OnlineClassifier<Array<Double>> {
 
     override fun update(x: Array<Double>, y: Int) {}
 
-    fun serialize(): String {
-        val modelString = Json.encodeToString(this)
-        return modelString
+    @OptIn(UnstableDefault::class)
+    open fun serialize(): String {
+        return Json.encodeToString(this)
     }
 
     fun store(privateKey: ByteArray) {

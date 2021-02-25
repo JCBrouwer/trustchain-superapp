@@ -57,9 +57,9 @@ class MLModelsGossipingService: Service() {
         // here should be something like
         // weakLeaner.updateWithNewModel(incomingModel)
 
-        val recommenderCommunity = IPv8Android.getInstance().getOverlay<RecommenderCommunity>()
+//        val recommenderCommunity = IPv8Android.getInstance().getOverlay<RecommenderCommunity>()
         while (scope.isActive) {
-            recommenderCommunity?.communicateOnlineModels()
+//            recommenderCommunity?.communicateOnlineModels()
             delay(10000)
         }
         TODO("Not yet implemented")

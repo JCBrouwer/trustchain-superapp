@@ -29,7 +29,7 @@ class ModelExchangeMessage(
         return true
     }
 
-    companion object Deserializer : Deserializable<ModelExchangeMessage> {  // TODO how deserialize?
+    companion object Deserializer : Deserializable<ModelExchangeMessage> {
         override fun deserialize(buffer: ByteArray, offset: Int): Pair<ModelExchangeMessage, Int> {
             var localOffset = 0
             val originPublicKey = buffer.copyOfRange(

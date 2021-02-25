@@ -7,7 +7,6 @@ dependencies {
 //    implementation project(':common')
     implementation project(':ipv8-jvm')
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'io.github.microutils:kotlin-logging:1.7.7'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.7'
@@ -29,6 +28,5 @@ application {
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
     kotlinOptions.freeCompilerArgs += [
         "-Xuse-experimental=kotlin.Experimental,kotlin.ExperimentalUnsignedTypes",
-        "-Werror" // Set Kotlin compiler warnings as errors
     ]
 }

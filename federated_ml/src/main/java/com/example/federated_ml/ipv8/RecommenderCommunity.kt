@@ -11,6 +11,7 @@ import kotlinx.serialization.json.*
 
 import com.example.federated_ml.models.OnlineModel
 import com.google.android.exoplayer2.util.Log
+import com.google.common.math.DoubleMath.roundToInt
 import nl.tudelft.ipv8.attestation.trustchain.*
 
 class RecommenderCommunity(
@@ -59,34 +60,34 @@ class RecommenderCommunity(
 
         // packet contains model type and weights from peer
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
-        var peerModel = payload.model
+        val peerModel = payload.model
 
         // we need to deserialize model somehow
         val localModel = Json.decodeFromString<OnlineModel>(database.getBlocksWithType(modelType).get(0)
             .toString())
 
-        // TODO(We should get the song history from Esmee's local database rather than trustchain,
-        //  otherwise we're just getting the 1000 songs we've most recently received from peers)
+        // TODO We should get the song history from Esmee's local database rather than trustchain,
+        //  otherwise we're just getting the 1000 songs we've most recently received from peers
         val myKey = this.myPeer.publicKey.keyToBin()
         val songsHistory = database.getLatestBlocks(myKey, 1000)
         val labelVector = Array<String>(songsHistory.size){_ -> ""}
         for ((i, block) in songsHistory.withIndex()){
             labelVector[i] = block.blockId
         }
-        var processedSongHistory = processSongs(labelVector)
+        val processedSongHistory = processSongs(labelVector)
 
         val models = this.createModelMU(localModel, peerModel, processedSongHistory.first,
             processedSongHistory.second)
 
         models.first.store(myKey)
-        communicateOnlineModels(models.second, myKey)
+        communicateOnlineModels(models.second)
 
         Log.i("ModelExchange from", peer.mid)
     }
 
     fun processSongs(songsList: Array<String>): Pair<Array<Array<Double>>, IntArray>{
-        TODO("How can we distinguish songs by their id and " +
-            "not different blocks with the same song?")
+        // TODO "How can we distinguish songs by their id and not different blocks with the same song?
+        return Pair(Array(10, {a->Array(20, {b->b*0.25+a})}), IntArray(10, {a->roundToInt(a*0.5, java.math.RoundingMode.FLOOR)}))
     }
 
     fun createModelRW(incomingModel: OnlineModel, localModel: OnlineModel,
@@ -126,22 +127,21 @@ class RecommenderCommunity(
     /**
      * Communicate an existing online model
      */
-    fun communicateOnlineModels(peerModel: OnlineModel, myKey: ByteArray) {
-        val peer = pickRandomPeer()
-        if (peer == null) {
-            val releaseBlock = TrustChainBlock(
-                peerModel::class::simpleName.toString(),
-                peerModel.serialize().toByteArray(Charsets.US_ASCII),
-                myKey,
-                GENESIS_SEQ,
-                ANY_COUNTERPARTY_PK,
-                UNKNOWN_SEQ,
-                GENESIS_HASH,
-                EMPTY_SIG,
-                Date(0)
-            )
-            sendBlock(releaseBlock, peer)
-        }
+    fun communicateOnlineModels(peerModel: OnlineModel): Int {
+        val peer = pickRandomPeer() ?: return 0
+        val releaseBlock = TrustChainBlock(
+            peerModel::class::simpleName.toString(),
+            peerModel.serialize().toByteArray(Charsets.US_ASCII),
+            this.myPeer.publicKey.keyToBin(),
+            GENESIS_SEQ,
+            ANY_COUNTERPARTY_PK,
+            UNKNOWN_SEQ,
+            GENESIS_HASH,
+            EMPTY_SIG,
+            Date(0)
+        )
+        sendBlock(releaseBlock, peer)
+        return 1
     }
 
     object MessageId {

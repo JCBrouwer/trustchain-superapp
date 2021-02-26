@@ -62,7 +62,7 @@ class RecommenderCommunity(
 
     @OptIn(UnstableDefault::class)
     @ImplicitReflectionSerializer
-    private fun onModelExchange(packet: Packet) {
+    fun onModelExchange(packet: Packet) {
         val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
         // packet contains model type and weights from peer
@@ -99,7 +99,7 @@ class RecommenderCommunity(
         )
         database.addBlock(modelBlock)
 
-        communicateOnlineModels(models.second)
+        performRemoteModelExchange(models.second, models.second::class::simpleName.toString())
 
         Log.i("ModelExchange from", peer.mid)
     }
@@ -142,37 +142,6 @@ class RecommenderCommunity(
         localModel.merge(incomingModel)
         incomingModel.update(features, labels)
         return Pair(localModel, incomingModel)
-    }
-
-    private fun pickRandomPeer(): Peer? {
-        val peers = getPeers()
-        if (peers.isEmpty()) return null
-        var index = 0
-        // Pick a random peer if we have more than 1 connected
-        if (peers.size > 1) {
-            index = Random.nextInt(peers.size - 1)
-        }
-        return peers[index]
-    }
-
-    /**
-     * Communicate an existing online model
-     */
-    fun communicateOnlineModels(peerModel: OnlineModel): Int {
-        val peer = pickRandomPeer() ?: return 0
-        val releaseBlock = TrustChainBlock(
-            peerModel::class::simpleName.toString(),
-            peerModel.serialize().toByteArray(Charsets.US_ASCII),
-            this.myPeer.publicKey.keyToBin(),
-            GENESIS_SEQ,
-            ANY_COUNTERPARTY_PK,
-            UNKNOWN_SEQ,
-            GENESIS_HASH,
-            EMPTY_SIG,
-            Date(0)
-        )
-        sendBlock(releaseBlock, peer)
-        return 1
     }
 
     object MessageId {

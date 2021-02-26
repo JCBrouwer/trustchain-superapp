@@ -16,8 +16,8 @@ android {
     useLibrary 'android.test.base'
     useLibrary 'android.test.mock'
 
-    viewBinding {
-        enabled = true
+    buildFeatures{
+        viewBinding = true
     }
 
     defaultConfig {
@@ -90,6 +90,9 @@ dependencies {
 
     // Logging
     implementation 'io.github.microutils:kotlin-logging:1.7.7'
+
+    compile "com.github.kotlin-graphics:kotlin-unsigned:v3.2.3"
+
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

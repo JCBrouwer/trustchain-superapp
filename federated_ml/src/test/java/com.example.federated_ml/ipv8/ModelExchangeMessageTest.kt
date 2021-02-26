@@ -33,9 +33,7 @@ class ModelExchangeMessageTest {
     @Test
     fun serializeAndDeserialize() {
         val serialized = payload.serialize()
-        val (deserialized, size) = com.example.federated_ml.ipv8.ModelExchangeMessage.deserialize( // TODO why is this crashing?!
-            serialized
-        )
+        val (deserialized, size) = ModelExchangeMessage.deserialize(serialized, 0)
         Assert.assertEquals(serialized.size, size)
         Assert.assertEquals(payload.modelType, deserialized.modelType)
         Assert.assertEquals(payload.model, deserialized.model)

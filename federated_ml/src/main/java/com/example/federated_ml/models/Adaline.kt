@@ -4,7 +4,7 @@ import java.util.*
 class Adaline(learningRate: Double, amountFeatures: Int) :
     OnlineModel(amountFeatures) {
     private val learningRate = learningRate
-    private var bias = Random().nextDouble()
+    var bias = Random().nextDouble()
 
     override fun update(x: Array<Double>, y: Int) {
         var error = y - activation(forward(x))

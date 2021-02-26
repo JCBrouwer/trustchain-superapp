@@ -1,5 +1,6 @@
 package com.example.federated_ml.ipv8
 
+import com.example.federated_ml.models.Adaline
 import com.goterl.lazycode.lazysodium.LazySodiumJava
 import com.goterl.lazycode.lazysodium.SodiumJava
 import nl.tudelft.ipv8.keyvault.LibNaClSK
@@ -36,7 +37,10 @@ class ModelExchangeMessageTest {
         val (deserialized, size) = ModelExchangeMessage.deserialize(serialized, 0)
         Assert.assertEquals(serialized.size, size)
         Assert.assertEquals(payload.modelType, deserialized.modelType)
-        Assert.assertEquals(payload.model, deserialized.model)
+        Assert.assertEquals(payload.model.weights, deserialized.model.weights)
+        if (payload.model is Adaline && deserialized.model is Adaline){
+            Assert.assertEquals((payload.model as Adaline).bias, (deserialized.model as Adaline).bias)
+        }
         Assert.assertEquals(payload.ttl, deserialized.ttl)
         Assert.assertArrayEquals(payload.originPublicKey, deserialized.originPublicKey)
     }

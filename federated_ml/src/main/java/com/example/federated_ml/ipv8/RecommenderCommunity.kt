@@ -1,6 +1,7 @@
 package com.example.federated_ml.ipv8
 
 import com.example.federated_ml.models.OnlineModel
+import com.example.federated_ml.models.Pegasos
 import com.google.android.exoplayer2.util.Log
 import com.google.common.math.DoubleMath.roundToInt
 import kotlinx.serialization.ImplicitReflectionSerializer
@@ -17,6 +18,8 @@ import kotlin.random.Random
 import kotlinx.serialization.parse
 import kotlinx.serialization.stringify
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
+import nl.tudelft.ipv8.messaging.Deserializable
+import nl.tudelft.ipv8.messaging.payload.GlobalTimeDistributionPayload
 
 @ImplicitReflectionSerializer
 class RecommenderCommunity(
@@ -63,15 +66,26 @@ class RecommenderCommunity(
     @OptIn(UnstableDefault::class)
     @ImplicitReflectionSerializer
     fun onModelExchange(packet: Packet) {
-        val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
+        // TODO: ASK ABOUT IPV8 SERIALIZATION
+        //  this is super sneaky way of doing things, not nice :/
+        //  maybe make packet open class?? still bad but better than this
+        val remainder = packet.data.copyOfRange(Packet.SERVICE_ID_SIZE + 1, packet.data.size)
+        val payload = ModelExchangeMessage.deserialize(remainder, 0).first
 
         // packet contains model type and weights from peer
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         val peerModel = payload.model
 
-        val localModel = Json.parse<OnlineModel>(
-            database.getBlocksWithType(modelType).get(0).toString()
-        )
+        var localModel = Pegasos(0.01, 20, 10)
+
+        try {
+            localModel = Json.parse(
+                database.getBlocksWithType(modelType).get(0).toString()
+            )
+        } catch (e: Exception){
+//            Log.i("Error: ", e.toString())
+//            Log.i("Create new model for peer ", peer.mid)
+        }
 
         // TODO We should get the song history from Esmee's local database rather than trustchain,
         //  otherwise we're just getting the 1000 songs we've most recently received from peers
@@ -101,12 +115,13 @@ class RecommenderCommunity(
 
         performRemoteModelExchange(models.second, models.second::class::simpleName.toString())
 
-        Log.i("ModelExchange from", peer.mid)
+//        Log.i("ModelExchange from", peer.mid)
     }
 
     fun processSongs(songsList: Array<String>): Pair<Array<Array<Double>>, IntArray> {
         // TODO "How can we distinguish songs by their id and not different blocks with the same song?
-        return Pair(Array(10, { a -> Array(20, { b -> b * 0.25 + a }) }), IntArray(10, { a -> roundToInt(a * 0.5, java.math.RoundingMode.FLOOR) }))
+        return Pair(Array(10) { a -> Array(20) { b -> b * 0.25 + a } },
+            IntArray(10) { a -> roundToInt(a * 0.5, java.math.RoundingMode.FLOOR) })
     }
 
     fun createModelRW(

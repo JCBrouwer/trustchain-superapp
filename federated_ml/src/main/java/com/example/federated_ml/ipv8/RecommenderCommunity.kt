@@ -46,7 +46,7 @@ class RecommenderCommunity(
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
-        val maxPeersToAsk = 20 // This is a magic number, tweak during/after experiments
+        val maxPeersToAsk = 1 // This is a magic number, tweak during/after experiments
         var count = 0
         for ((index, peer) in getPeers().withIndex()) {
             if (index >= maxPeersToAsk) break

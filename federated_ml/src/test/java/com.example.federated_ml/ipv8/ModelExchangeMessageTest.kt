@@ -33,13 +33,14 @@ class ModelExchangeMessageTest {
     @ImplicitReflectionSerializer
     @Test
     fun serializeAndDeserialize() {
+        val delta = 0.01
         val serialized = payload.serialize()
         val (deserialized, size) = ModelExchangeMessage.deserialize(serialized, 0)
         Assert.assertEquals(serialized.size, size)
         Assert.assertEquals(payload.modelType, deserialized.modelType)
-        Assert.assertEquals(payload.model.weights, deserialized.model.weights)
+        Assert.assertArrayEquals(payload.model.weights, deserialized.model.weights)
         if (payload.model is Adaline && deserialized.model is Adaline){
-            Assert.assertEquals((payload.model as Adaline).bias, (deserialized.model as Adaline).bias)
+            Assert.assertEquals((payload.model as Adaline).bias, (deserialized.model as Adaline).bias, delta)
         }
         Assert.assertEquals(payload.ttl, deserialized.ttl)
         Assert.assertArrayEquals(payload.originPublicKey, deserialized.originPublicKey)

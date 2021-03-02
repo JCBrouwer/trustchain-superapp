@@ -66,11 +66,7 @@ class RecommenderCommunity(
     @OptIn(UnstableDefault::class)
     @ImplicitReflectionSerializer
     fun onModelExchange(packet: Packet) {
-        // TODO: ASK ABOUT IPV8 SERIALIZATION
-        //  this is super sneaky way of doing things, not nice :/
-        //  maybe make packet open class?? still bad but better than this
-        val remainder = packet.data.copyOfRange(Packet.SERVICE_ID_SIZE + 1, packet.data.size)
-        val payload = ModelExchangeMessage.deserialize(remainder, 0).first
+        val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
         // packet contains model type and weights from peer
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)

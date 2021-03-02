@@ -2,25 +2,18 @@ package com.example.federated_ml.ipv8
 
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
-import com.google.android.exoplayer2.util.Log
 import com.google.common.math.DoubleMath.roundToInt
 import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.json.Json
 import nl.tudelft.ipv8.Overlay
-import nl.tudelft.ipv8.Peer
 import nl.tudelft.ipv8.attestation.trustchain.*
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
 import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
-import kotlin.random.Random
-
 import kotlinx.serialization.parse
-import kotlinx.serialization.stringify
-import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
-import nl.tudelft.ipv8.messaging.Deserializable
-import nl.tudelft.ipv8.messaging.payload.GlobalTimeDistributionPayload
 
+@kotlinx.serialization.UnstableDefault
+@ExperimentalUnsignedTypes
 @ImplicitReflectionSerializer
 class RecommenderCommunity(
     settings: TrustChainSettings,
@@ -43,6 +36,7 @@ class RecommenderCommunity(
         messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::onModelExchange
     }
 
+    @ExperimentalUnsignedTypes
     fun performRemoteModelExchange(
         model: OnlineModel,
         modelType: String,
@@ -63,7 +57,8 @@ class RecommenderCommunity(
         return count
     }
 
-    @OptIn(UnstableDefault::class)
+    @ExperimentalUnsignedTypes
+    @kotlinx.serialization.UnstableDefault
     @ImplicitReflectionSerializer
     fun onModelExchange(packet: Packet) {
         // TODO: ASK ABOUT IPV8 SERIALIZATION
@@ -80,7 +75,7 @@ class RecommenderCommunity(
 
         try {
             localModel = Json.parse(
-                database.getBlocksWithType(modelType).get(0).toString()
+                database.getBlocksWithType(modelType)[0].toString()
             )
         } catch (e: Exception){
 //            Log.i("Error: ", e.toString())

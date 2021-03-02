@@ -39,10 +39,10 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
     override fun predict(x: Array<Double>): Int {
         val weightedSum = weightedSum(x)
 
-        if (activation(weightedSum) >= 0.0) {
-            return 1
+        return if (activation(weightedSum) >= 0.0) {
+            1
         } else {
-            return 0
+            0
         }
     }
 

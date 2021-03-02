@@ -4,6 +4,7 @@ import kotlin.UInt
 import kotlinx.serialization.json.*
 import com.example.federated_ml.models.OnlineModel
 import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.parse
 import nl.tudelft.ipv8.messaging.*
 
@@ -12,7 +13,7 @@ const val SERIALIZED_PUBLIC_KEY_SIZE = 74
 /**
  * This is a message from a peer sending and asking for a model from other peers
  */
-open class ModelExchangeMessage(
+open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
     val originPublicKey: ByteArray,
     var ttl: UInt,
     val modelType: String,
@@ -28,6 +29,7 @@ open class ModelExchangeMessage(
     }
 
     @ImplicitReflectionSerializer
+    @kotlin.ExperimentalUnsignedTypes
     fun checkTTL(): Boolean {
         ttl -= 1u
         if (ttl < 1u) return false
@@ -36,6 +38,8 @@ open class ModelExchangeMessage(
 
     @ImplicitReflectionSerializer
     companion object Deserializer: Deserializable<ModelExchangeMessage> {
+        @ExperimentalUnsignedTypes
+        @kotlinx.serialization.UnstableDefault
         @ImplicitReflectionSerializer
         @JvmStatic
         override fun deserialize(buffer: ByteArray, offset: Int): Pair<ModelExchangeMessage, Int> {

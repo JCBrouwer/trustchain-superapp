@@ -7,7 +7,7 @@ class Adaline(learningRate: Double, amountFeatures: Int) :
     var bias = Random().nextDouble()
 
     override fun update(x: Array<Double>, y: Int) {
-        var error = y - activation(forward(x))
+        val error = y - activation(forward(x))
         this.bias += this.learningRate * error
         for ((idx, item) in x.withIndex()) {
             weights[idx] += learningRate * error * item
@@ -24,10 +24,10 @@ class Adaline(learningRate: Double, amountFeatures: Int) :
     }
 
     override fun predict(x: Array<Double>): Int {
-        if (activation(forward(x)) >= 0.0) {
-            return 1
+        return if (activation(forward(x)) >= 0.0) {
+            1
         } else {
-            return 0
+            0
         }
     }
 

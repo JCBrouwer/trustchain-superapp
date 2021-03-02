@@ -1,19 +1,11 @@
 package com.example.federated_ml.models
-import com.squareup.sqldelight.db.SqlDriver
-import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
-import nl.tudelft.ipv8.attestation.trustchain.ANY_COUNTERPARTY_PK
-import nl.tudelft.ipv8.attestation.trustchain.EMPTY_SIG
-import nl.tudelft.ipv8.attestation.trustchain.GENESIS_HASH
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
-import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
-import nl.tudelft.ipv8.sqldelight.Database
-
+import kotlinx.serialization.UnstableDefault
 import smile.classification.OnlineClassifier
 import java.util.*
 
-@Serializable
+@kotlinx.serialization.Serializable
 open class OnlineModel : OnlineClassifier<Array<Double>> {
     internal var weights: Array<Double>
     constructor(amountFeatures: Int) {
@@ -57,7 +49,7 @@ open class OnlineModel : OnlineClassifier<Array<Double>> {
     override fun update(x: Array<Double>, y: Int) {}
 
     @ImplicitReflectionSerializer
-    @OptIn(UnstableDefault::class)
+    @kotlinx.serialization.UnstableDefault
     open fun serialize(): String {
         return Json.toJson(this).toString()
     }

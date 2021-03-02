@@ -4,13 +4,8 @@ import kotlin.UInt
 import kotlinx.serialization.json.*
 import com.example.federated_ml.models.OnlineModel
 import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.parse
-import nl.tudelft.ipv8.Peer
 import nl.tudelft.ipv8.messaging.*
-import nl.tudelft.ipv8.messaging.payload.GlobalTimeDistributionPayload
-import unsigned.Ubyte
-import unsigned.Uint
 
 const val SERIALIZED_UINT_SIZE = 4
 const val SERIALIZED_PUBLIC_KEY_SIZE = 74
@@ -41,7 +36,6 @@ open class ModelExchangeMessage(
 
     @ImplicitReflectionSerializer
     companion object Deserializer: Deserializable<ModelExchangeMessage> {
-        @OptIn(UnstableDefault::class)
         @ImplicitReflectionSerializer
         @JvmStatic
         override fun deserialize(buffer: ByteArray, offset: Int): Pair<ModelExchangeMessage, Int> {
@@ -66,31 +60,6 @@ open class ModelExchangeMessage(
                     model = Json.parse(model.toString(Charsets.US_ASCII))
                 ), second = localOffset
             )
-        }
-
-        fun deserializeVarLen(buffer: ByteArray, offset: Int = 0): Pair<ByteArray, Int> {
-            val len = deserializeUInt(buffer, offset).toInt()
-            val payload = buffer.copyOfRange(offset + SERIALIZED_UINT_SIZE,
-                offset + SERIALIZED_UINT_SIZE + len)
-            return Pair(payload, SERIALIZED_UINT_SIZE + len)
-        }
-
-        fun deserializeUInt(buffer: ByteArray, offset: Int = 0): UInt {
-            val ubuffer = UbyteArray(buffer)
-            var result = Uint(0)
-            for (i in 0 until SERIALIZED_UINT_SIZE) {
-                result = (result shl 8) or ubuffer[offset + i].toUint()
-            }
-            return result.toInt().toUInt()
-        }
-
-        class UbyteArray(val data: ByteArray) {
-
-            operator fun get(index: Int) = Ubyte(data[index])
-
-            operator fun set(index: Int, value: Ubyte) {
-                data[index] = value.v
-            }
         }
     }
 }

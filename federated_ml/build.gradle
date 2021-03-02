@@ -97,4 +97,8 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         "-Xuse-experimental=kotlin.Experimental,kotlin.ExperimentalUnsignedTypes,org.jetbrains.kotlinx.serialization.ExperimentalSerializationApi,kotlin.UnstableDefault",
         "-Xopt-in=kotlin.RequiresOptIn"
     ]
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
 }

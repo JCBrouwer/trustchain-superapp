@@ -30,15 +30,15 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
 
     fun weightedSum(x: Array<Double>): Double {
         var weightedSum = 0.0
-        for (pair in this.weights.zip(x)) {
-            weightedSum += pair.first * pair.second
+        var weightedSum = this.bias
+        for (idx in 1..x.size) {
+            weightedSum += this.weights.valueAt(idx) * x[idx]
         }
         return weightedSum
     }
 
     override fun predict(x: Array<Double>): Int {
         val weightedSum = weightedSum(x)
-
         return if (activation(weightedSum) >= 0.0) {
             1
         } else {
@@ -49,12 +49,12 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
     private fun gradientSVM(x: Array<Double>, y: Int, eta: Double) {
         val score = weightedSum(x)
         if (y * score < 1) {
-            for (idx in weights.indices) {
-                weights[idx] = (1 - eta * regularization) * weights[idx] + eta * y
+            for (idx in 1..weights.size()) {
+                this.weights.put(idx, (1 - eta * regularization) * this.weights.valueAt(idx) + eta * y)
             }
         } else {
-            for (idx in weights.indices) {
-                weights[idx] *= (1 - eta * regularization)
+            for (idx in 1..weights.size()) {
+                this.weights.put(idx, (1 - eta * regularization) * this.weights.valueAt(idx))
             }
         }
     }

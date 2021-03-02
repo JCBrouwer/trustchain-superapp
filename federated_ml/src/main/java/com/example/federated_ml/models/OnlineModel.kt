@@ -1,25 +1,29 @@
 package com.example.federated_ml.models
+import android.util.SparseArray
+import androidx.core.util.set
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.UnstableDefault
-import smile.classification.OnlineClassifier
 import java.util.*
 
 @kotlinx.serialization.Serializable
-open class OnlineModel : OnlineClassifier<Array<Double>> {
-    internal var weights: Array<Double>
+open class OnlineModel {
+    internal var weights: SparseArray<Double>
+
     constructor(amountFeatures: Int) {
-        weights = Array(amountFeatures) { _ -> Random().nextDouble() * 3 }
+        weights = SparseArray(amountFeatures)
+        for (idx in 1..amountFeatures) {
+            weights.append(idx, Random().nextDouble() * 3 )
+        }
     }
 
     fun merge(otherOnlineModel: OnlineModel): OnlineModel {
-        for (idx in weights.indices) {
-            weights[idx] = (weights[idx] + otherOnlineModel.weights[idx]) / 2
+        for (idx in 1..weights.size()) {
+            weights.put(idx, (weights.valueAt(idx) + otherOnlineModel.weights.valueAt(idx)) / 2)
         }
         return this
     }
 
-    override fun predict(x: Array<Array<Double>>): IntArray {
+    fun predict(x: Array<Array<Double>>): IntArray {
         val result = IntArray(x.size)
         for ((idx, item) in x.withIndex()) {
             result[idx] = predict(item)
@@ -40,13 +44,13 @@ open class OnlineModel : OnlineClassifier<Array<Double>> {
         return (correct / x.size)
     }
 
-    override fun update(x: Array<Array<Double>>, y: IntArray) {}
+    fun update(x: Array<Array<Double>>, y: IntArray) {}
 
-    override fun predict(x: Array<Double>): Int {
+    fun predict(x: Array<Double>): Int {
         return 1
     }
 
-    override fun update(x: Array<Double>, y: Int) {}
+    fun update(x: Array<Double>, y: Int) {}
 
     @ImplicitReflectionSerializer
     @kotlinx.serialization.UnstableDefault

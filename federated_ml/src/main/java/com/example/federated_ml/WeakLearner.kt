@@ -29,9 +29,9 @@ class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boole
 
     fun initFeatures(songsHistory: Array<Int>) {
         // map identical songs
-        val feature_matrix = Array(amountSongs) { row -> Array(amountSongs) { col ->
+        val featureMatrix = Array(amountSongs) { row -> Array(amountSongs) { col ->
             if (songsHistory.contains(row) and songsHistory.contains(col)) 1.0 else 0.0 } }
-        features = feature_matrix
+        features = featureMatrix
         labels = Array(amountSongs) { song -> if (songsHistory.contains(song)) 1 else 0 }.toIntArray()
     }
 
@@ -61,12 +61,10 @@ class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boole
     }
 
     fun makePrediction(testFeatures: Array<Array<Double>>) {
-        var prediction: IntArray
-
-        if (this.ensemmbleModel != null) {
-            prediction = this.ensemmbleModel!!.predict(testFeatures)
+        val prediction: IntArray = if (this.ensemmbleModel != null) {
+            this.ensemmbleModel!!.predict(testFeatures)
         } else {
-            prediction = this.modelCache.last().predict(testFeatures)
+            this.modelCache.last().predict(testFeatures)
         }
         println("Prediction for sample of learner $leanerId : ")
         for (i in testFeatures[0]) {

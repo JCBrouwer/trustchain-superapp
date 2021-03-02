@@ -1,5 +1,6 @@
 package com.example.federated_ml.ipv8
 
+import android.util.Log
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.google.common.math.DoubleMath.roundToInt
@@ -74,8 +75,8 @@ class RecommenderCommunity(
                 database.getBlocksWithType(modelType)[0].toString()
             )
         } catch (e: Exception){
-//            Log.i("Error: ", e.toString())
-//            Log.i("Create new model for peer ", peer.mid)
+            Log.i("Error: ", e.toString())
+            Log.i("Created model for peer ", peer.mid)
         }
 
         // TODO We should get the song history from Esmee's local database rather than trustchain,

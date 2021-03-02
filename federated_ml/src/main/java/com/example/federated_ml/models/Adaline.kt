@@ -10,7 +10,7 @@ class Adaline(learningRate: Double, amountFeatures: Int) :
         val error = y - activation(forward(x))
         this.bias += this.learningRate * error
         for ((idx, item) in x.withIndex()) {
-            weights[idx] += learningRate * error * item
+            weights.put(idx, weights.valueAt(idx) + learningRate * error * item)
         }
     }
 
@@ -38,10 +38,9 @@ class Adaline(learningRate: Double, amountFeatures: Int) :
 
     private fun forward(x: Array<Double>): Double {
         var weightedSum = this.bias
-        for (pair in this.weights.zip(x)) {
-            weightedSum += pair.first * pair.second
+        for (idx in 1..x.size) {
+            weightedSum += this.weights.valueAt(idx) * x[idx]
         }
-
         return weightedSum
     }
 }

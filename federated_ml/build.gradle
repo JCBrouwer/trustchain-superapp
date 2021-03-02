@@ -56,7 +56,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.3'
     implementation 'com.google.android:flexbox:2.0.1'
 
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0'
     implementation "com.github.haifengl:smile-kotlin:2.6.0"
     implementation 'org.nield:kotlin-statistics:1.2.1'
 
@@ -92,7 +92,6 @@ dependencies {
     implementation 'io.github.microutils:kotlin-logging:1.7.7'
 
     compile "com.github.kotlin-graphics:kotlin-unsigned:v2.1"
-
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

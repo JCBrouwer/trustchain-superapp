@@ -5,6 +5,7 @@ apply plugin: "androidx.navigation.safeargs"
 apply plugin: 'org.jlleitschuh.gradle.ktlint'
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
+apply plugin: 'kotlinx-serialization'
 
 buildscript {
     repositories {
@@ -86,6 +87,7 @@ repositories {
     maven {
         url = 'https://raw.githubusercontent.com/blockchain/api-v1-client-java/mvn-repo/'
     }
+    mavenCentral()
 }
 
 dependencies {
@@ -101,7 +103,9 @@ dependencies {
     implementation project(':musicdao')
     implementation project(':peerchat')
     implementation project(':eurotoken')
-//    implementation project(':federated_ml')
+
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0'
+    implementation project(':federated_ml')
 
     // AndroidX
     implementation 'androidx.appcompat:appcompat:1.1.0'
@@ -144,7 +148,7 @@ dependencies {
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
     kotlinOptions.freeCompilerArgs += [
-        "-Xuse-experimental=kotlin.Experimental,kotlin.ExperimentalUnsignedTypes",
+        "-Xuse-experimental=kotlin.Experimental,kotlin.ExperimentalUnsignedTypes,org.jetbrains.kotlinx.serialization.ExperimentalSerializationApi,kotlin.UnstableDefault",
         "-Xopt-in=kotlin.RequiresOptIn"
     ]
 }

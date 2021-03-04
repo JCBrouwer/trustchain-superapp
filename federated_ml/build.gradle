@@ -72,9 +72,6 @@ dependencies {
     implementation 'org.knowm.xchange:xchange-parent:5.0.1'
     implementation 'org.knowm.xchange:xchange-binance:5.0.1'
 
-    // Crypto library for testing
-    testImplementation "com.goterl.lazycode:lazysodium-java:4.2.4"
-
     // Testing
     testImplementation 'junit:junit:4.12'
     testImplementation "io.mockk:mockk:1.9.3"
@@ -90,7 +87,7 @@ dependencies {
     // Logging
     implementation 'io.github.microutils:kotlin-logging:1.7.7'
 
-    compile "com.github.kotlin-graphics:kotlin-unsigned:v2.1"
+    implementation "com.github.kotlin-graphics:kotlin-unsigned:v2.1"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

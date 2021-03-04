@@ -5,22 +5,18 @@ import com.example.federated_ml.db.RecommenderStore
 import com.example.federated_ml.ipv8.ModelExchangeMessage
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
-import com.google.common.math.DoubleMath.roundToInt
 import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.Json
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.*
-import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
 import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
-import kotlinx.serialization.parse
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 
 @kotlinx.serialization.UnstableDefault
 @ExperimentalUnsignedTypes
 @ImplicitReflectionSerializer
-class RecommenderCommunity(
+open class RecommenderCommunity(
     settings: TrustChainSettings,
     recommendStore: TrustChainSQLiteStore,
     musicStore: TrustChainSQLiteStore,

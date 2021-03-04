@@ -46,13 +46,21 @@ class RecommenderStore(private val recommendStore: TrustChainSQLiteStore,
         return Json.parse(recommendStore.getBlocksWithType(modelType)[0].toString())
     }
 
-    private fun processSongs(data: Array<Triple<String?, String?, String?>>): Array<Array<Double>> {
-        // TODO "How can we distinguish songs by their id and not different blocks with the same song?
-        return Array(10) { a -> Array(20) { b -> b * 0.25 + a } }
+    private fun processSongs(data: Array<Triple<String?, String?, String?>>): Pair<Array<Array<Double>>, IntArray> {
+        val features = Array(data.size) { _ -> Array(data.size) { _ -> 0.0 } }
+        val localSongs = this.getPlayCounts(data)
+        for (i in 0..data.size){
+            for (j in i..data.size){
+                if (localSongs[i] == 1 && localSongs[j] == 1){
+                    features[i][j] = 1.0
+                    features[j][i] = 1.0
+                }
+            }
+        }
+        return Pair(features, localSongs)
     }
 
-    private fun getSongData(limit: Int = 1000 ) : Pair<Array<Array<Double>>,
-        Array<Triple<String?, String?, String?>>> {
+    private fun getSongData(limit: Int = 1000 ) : Pair<Array<Array<Double>>, IntArray> {
 
         val songsHistory = musicStore.getLatestBlocks(key, limit)
         val data = Array<Triple<String?, String?, String?>>(songsHistory.size) { _ ->
@@ -77,16 +85,15 @@ class RecommenderStore(private val recommendStore: TrustChainSQLiteStore,
 
             data[i] = Triple(artist, title, year)
         }
-        val processedFeatures = processSongs(data)
 
-        return Pair(processedFeatures, data)
+        return processSongs(data)
     }
 
     fun getData(): Pair<Array<Array<Double>>, IntArray>{
         // TODO get proper local dir with stored files
         val data = getSongData()
         val features = data.first
-        val labels = getPlayCounts(data.second)
+        val labels = data.second
         return Pair(features, labels)
     }
 

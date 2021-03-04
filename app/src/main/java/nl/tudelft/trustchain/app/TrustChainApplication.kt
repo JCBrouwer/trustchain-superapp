@@ -42,9 +42,13 @@ import nl.tudelft.trustchain.eurotoken.community.EuroTokenCommunity
 import nl.tudelft.trustchain.peerchat.community.PeerChatCommunity
 import nl.tudelft.trustchain.peerchat.db.PeerChatStore
 import nl.tudelft.trustchain.voting.VotingCommunity
-import com.example.federated_ml.RecommenderCommunity as RecommenderCommunity1
+import com.example.federated_ml.RecommenderCommunity
 
+@kotlinx.serialization.UnstableDefault
+@ExperimentalUnsignedTypes
+@ImplicitReflectionSerializer
 class TrustChainApplication : Application() {
+    @ImplicitReflectionSerializer
     override fun onCreate() {
         super.onCreate()
 
@@ -53,6 +57,8 @@ class TrustChainApplication : Application() {
         initIPv8()
     }
 
+    @OptIn(UnstableDefault::class)
+    @ImplicitReflectionSerializer
     private fun initIPv8() {
         val config = IPv8Configuration(
             overlays = listOf(
@@ -65,7 +71,8 @@ class TrustChainApplication : Application() {
                 createMarketCommunity(),
                 createCoinCommunity(),
                 createVotingCommunity(),
-                createMusicCommunity()
+                createMusicCommunity(),
+                createRecommenderCommunity()
             ), walkerInterval = 5.0
         )
 
@@ -233,7 +240,7 @@ class TrustChainApplication : Application() {
 
     @kotlinx.serialization.UnstableDefault
     @kotlinx.serialization.ImplicitReflectionSerializer
-    private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity1> {
+    private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
         val settings = TrustChainSettings()
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
         val musicStore = TrustChainSQLiteStore(Database(musicDriver))
@@ -241,7 +248,7 @@ class TrustChainApplication : Application() {
         val recommendStore = TrustChainSQLiteStore(Database(driver))
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(
-            RecommenderCommunity1.Factory(settings, recommendStore, musicStore),
+            RecommenderCommunity.Factory(settings, recommendStore, musicStore),
             listOf(randomWalk)
         )
     }

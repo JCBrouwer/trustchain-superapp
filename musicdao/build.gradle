@@ -113,7 +113,7 @@ dependencies {
     // Logging
     implementation 'io.github.microutils:kotlin-logging:1.7.7'
 
-//    implementation project (':federated_ml')
+    implementation project (':federated_ml')
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

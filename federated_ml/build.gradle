@@ -39,7 +39,7 @@ dependencies {
     implementation project(':common')
     implementation project(':ipv8-android')
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.4.30"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation "androidx.preference:preference-ktx:1.1.1"
@@ -54,7 +54,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.3'
     implementation 'com.google.android:flexbox:2.0.1'
 
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0'
     implementation "com.github.haifengl:smile-kotlin:2.6.0"
     implementation 'org.nield:kotlin-statistics:1.2.1'
 
@@ -77,7 +77,7 @@ dependencies {
     // Testing
     testImplementation 'junit:junit:4.12'
     testImplementation "io.mockk:mockk:1.9.3"
-    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.3'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.7'
     testImplementation "org.robolectric:robolectric:3.4.2"
 
     // Testing and generating example data
@@ -97,8 +97,4 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         "-Xuse-experimental=kotlin.Experimental,kotlin.ExperimentalUnsignedTypes,org.jetbrains.kotlinx.serialization.ExperimentalSerializationApi,kotlin.UnstableDefault",
         "-Xopt-in=kotlin.RequiresOptIn"
     ]
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-
 }

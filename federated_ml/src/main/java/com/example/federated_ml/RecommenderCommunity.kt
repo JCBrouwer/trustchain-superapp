@@ -1,6 +1,8 @@
-package com.example.federated_ml.ipv8
+package com.example.federated_ml
 
 import android.util.Log
+import com.example.federated_ml.db.RecommenderStore
+import com.example.federated_ml.ipv8.ModelExchangeMessage
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.google.common.math.DoubleMath.roundToInt
@@ -12,24 +14,28 @@ import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
 import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlinx.serialization.parse
+import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 
 @kotlinx.serialization.UnstableDefault
 @ExperimentalUnsignedTypes
 @ImplicitReflectionSerializer
 class RecommenderCommunity(
     settings: TrustChainSettings,
-    database: TrustChainStore,
+    recommendStore: TrustChainSQLiteStore,
+    musicStore: TrustChainSQLiteStore,
     crawler: TrustChainCrawler = TrustChainCrawler()
-) : TrustChainCommunity(settings, database, crawler) {
+) : TrustChainCommunity(settings, recommendStore, crawler) {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
+    private val store = RecommenderStore(recommendStore, musicStore, this.myPeer.publicKey.keyToBin())
 
     class Factory(
         private val settings: TrustChainSettings,
-        private val database: TrustChainStore,
+        private val recommendStore: TrustChainSQLiteStore,
+        private val musicStore: TrustChainSQLiteStore,
         private val crawler: TrustChainCrawler = TrustChainCrawler()
     ) : Overlay.Factory<RecommenderCommunity>(RecommenderCommunity::class.java) {
         override fun create(): RecommenderCommunity {
-            return RecommenderCommunity(settings, database, crawler)
+            return RecommenderCommunity(settings, recommendStore, musicStore, crawler)
         }
     }
 
@@ -71,49 +77,21 @@ class RecommenderCommunity(
         var localModel = Pegasos(0.01, 20, 10)
 
         try {
-            localModel = Json.parse(
-                database.getBlocksWithType(modelType)[0].toString()
-            )
+            localModel = store.getLocalModel(modelType) as Pegasos
         } catch (e: Exception){
             Log.i("Error: ", e.toString())
             Log.i("Created model for peer ", peer.mid)
         }
 
-        // TODO We should get the song history from Esmee's local database rather than trustchain,
-        //  otherwise we're just getting the 1000 songs we've most recently received from peers
-        val myKey = this.myPeer.publicKey.keyToBin()
-        val songsHistory = database.getLatestBlocks(myKey, 1000)
-        val labelVector = Array<String>(songsHistory.size) { _ -> "" }
-        for ((i, block) in songsHistory.withIndex()) {
-            labelVector[i] = block.blockId
-        }
-        val processedSongHistory = processSongs(labelVector)
+        val songFeatures = store.getSongFeatures()
+        val playcounts = store.getPlayCounts()
+        val models = this.createModelMU(localModel, peerModel, songFeatures, playcounts)
 
-        val models = this.createModelMU(localModel, peerModel, processedSongHistory.first,
-            processedSongHistory.second)
-
-        val modelBlock = TrustChainBlock(
-            models.first::class::simpleName.toString(),
-            models.first.serialize().toByteArray(Charsets.US_ASCII),
-            myKey,
-            1u,
-            ANY_COUNTERPARTY_PK,
-            0u,
-            GENESIS_HASH,
-            EMPTY_SIG,
-            Date()
-        )
-        database.addBlock(modelBlock)
+        store.storeModel(models.first)
 
         performRemoteModelExchange(models.second, models.second::class::simpleName.toString())
 
-//        Log.i("ModelExchange from", peer.mid)
-    }
-
-    fun processSongs(songsList: Array<String>): Pair<Array<Array<Double>>, IntArray> {
-        // TODO "How can we distinguish songs by their id and not different blocks with the same song?
-        return Pair(Array(10) { a -> Array(20) { b -> b * 0.25 + a } },
-            IntArray(10) { a -> roundToInt(a * 0.5, java.math.RoundingMode.FLOOR) })
+        Log.i("ModelExchange from", peer.mid)
     }
 
     fun createModelRW(

@@ -1,20 +1,18 @@
 package com.example.federated_ml.ipv8
 
-import com.example.federated_ml.models.OnlineModel
+import com.example.federated_ml.RecommenderCommunity
 import com.example.federated_ml.models.Pegasos
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.serialization.ImplicitReflectionSerializer
 import nl.tudelft.ipv8.Peer
 import nl.tudelft.ipv8.attestation.trustchain.*
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import nl.tudelft.ipv8.keyvault.JavaCryptoProvider
-import nl.tudelft.ipv8.messaging.Address
 import nl.tudelft.ipv8.messaging.EndpointAggregator
 import nl.tudelft.ipv8.messaging.Packet
 import nl.tudelft.ipv8.peerdiscovery.Network
@@ -22,9 +20,8 @@ import nl.tudelft.ipv8.sqldelight.Database
 
 import org.junit.Assert
 import org.junit.Test
-import java.util.*
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@kotlinx.coroutines.ExperimentalCoroutinesApi
 class RecommenderCommunityTest {
     private fun createTrustChainStore(): TrustChainSQLiteStore {
         val driver: SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -33,11 +30,14 @@ class RecommenderCommunityTest {
         return TrustChainSQLiteStore(database)
     }
 
+    @ExperimentalUnsignedTypes
+    @kotlinx.serialization.UnstableDefault
     @ImplicitReflectionSerializer
     private fun getCommunity(): RecommenderCommunity {
         val settings = TrustChainSettings()
-        val store = createTrustChainStore()
-        val community = RecommenderCommunity.Factory(settings = settings, database = store).create()
+        val recommendStore = createTrustChainStore()
+        val musicStore = createTrustChainStore()
+        val community = RecommenderCommunity.Factory(settings = settings, recommendStore = recommendStore, musicStore = musicStore).create()
         val newKey = JavaCryptoProvider.generateKey()
         community.myPeer = Peer(newKey)
         community.endpoint = spyk(EndpointAggregator(mockk(relaxed = true), null))
@@ -46,6 +46,8 @@ class RecommenderCommunityTest {
         return community
     }
 
+    @ExperimentalUnsignedTypes
+    @kotlinx.serialization.UnstableDefault
     @ImplicitReflectionSerializer
     @Test
     fun modelStoresCorrectly() = runBlockingTest {
@@ -75,6 +77,8 @@ class RecommenderCommunityTest {
         Assert.assertEquals(1, community.database.getAllBlocks().size)
     }
 
+    @kotlinx.serialization.UnstableDefault
+    @ExperimentalUnsignedTypes
     @ImplicitReflectionSerializer
     @Test
     fun communicateReleaseBlocks() {

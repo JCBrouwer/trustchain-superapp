@@ -15,6 +15,7 @@ import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlinx.serialization.parse
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
+import java.io.File
 
 @kotlinx.serialization.UnstableDefault
 @ExperimentalUnsignedTypes
@@ -26,7 +27,10 @@ class RecommenderCommunity(
     crawler: TrustChainCrawler = TrustChainCrawler()
 ) : TrustChainCommunity(settings, recommendStore, crawler) {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
-    private val store = RecommenderStore(recommendStore, musicStore, this.myPeer.publicKey.keyToBin())
+    // TODO: chnage it to a proper directory
+    private val dummyDir = File("mySongs")
+    private val store = RecommenderStore(recommendStore, musicStore,
+        this.myPeer.publicKey.keyToBin(), dummyDir)
 
     class Factory(
         private val settings: TrustChainSettings,
@@ -83,8 +87,9 @@ class RecommenderCommunity(
             Log.i("Created model for peer ", peer.mid)
         }
 
-        val songFeatures = store.getSongFeatures()
-        val playcounts = store.getPlayCounts()
+        val data = store.getData()
+        val songFeatures = data.first
+        val playcounts = data.second
         val models = this.createModelMU(localModel, peerModel, songFeatures, playcounts)
 
         store.storeModel(models.first)

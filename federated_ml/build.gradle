@@ -38,6 +38,7 @@ android {
 dependencies {
     implementation project(':common')
     implementation project(':ipv8-android')
+    implementation project(':musicdao-datafeeder')
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.4.30"
 

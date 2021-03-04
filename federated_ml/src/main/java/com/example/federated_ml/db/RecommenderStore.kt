@@ -3,7 +3,6 @@ package com.example.federated_ml.db
 import com.example.federated_ml.models.OnlineModel
 import com.google.common.math.DoubleMath
 import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.parse
 import nl.tudelft.ipv8.attestation.trustchain.ANY_COUNTERPARTY_PK
@@ -46,12 +45,12 @@ class RecommenderStore(private val recommendStore: TrustChainSQLiteStore, privat
             IntArray(10) { a -> DoubleMath.roundToInt(a * 0.5, RoundingMode.FLOOR) })
     }
 
-    fun getSongFeatures() : Array<Array<Double>> {
-//        val labelVector = Array<String>(songsHistory.size) { _ -> "" }
-//        for ((i, block) in songsHistory.withIndex()) {
-//            labelVector[i] = block.blockId
-//        }
-//        val processedSongHistory = processSongs(labelVector)
+    fun getSongFeatures(limit: Int = 1000 ) : Array<Array<Double>> {
+        val songsHistory = musicStore.getLatestBlocks(key, limit)
+        val labelVector = Array<String>(songsHistory.size) { _ -> "" }
+        for ((i, block) in songsHistory.withIndex()) {
+            labelVector[i] = block.blockId
+        }
         return processSongs().first
     }
 

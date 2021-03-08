@@ -29,12 +29,11 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
     }
 
     fun weightedSum(x: Array<Double>): Double {
-        var weightedSum = 0.0
-        var weightedSum = this.bias
+        var totalSum = 0.0
         for (idx in 1..x.size) {
-            weightedSum += this.weights.valueAt(idx) * x[idx]
+            totalSum += this.weights.valueAt(idx) * x[idx]
         }
-        return weightedSum
+        return totalSum
     }
 
     override fun predict(x: Array<Double>): Int {

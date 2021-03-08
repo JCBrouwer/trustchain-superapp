@@ -44,13 +44,13 @@ open class OnlineModel {
         return (correct / x.size)
     }
 
-    fun update(x: Array<Array<Double>>, y: IntArray) {}
+    open fun update(x: Array<Array<Double>>, y: IntArray) {}
 
-    fun predict(x: Array<Double>): Int {
+    open fun predict(x: Array<Double>): Int {
         return 1
     }
 
-    fun update(x: Array<Double>, y: Int) {}
+    open fun update(x: Array<Double>, y: Int) {}
 
     @ImplicitReflectionSerializer
     @kotlinx.serialization.UnstableDefault

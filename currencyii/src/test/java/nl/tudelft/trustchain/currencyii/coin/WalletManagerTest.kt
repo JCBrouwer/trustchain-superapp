@@ -1,16 +1,6 @@
 package nl.tudelft.trustchain.currencyii.coin
 
-import nl.tudelft.ipv8.util.hexToBytes
-import org.bitcoinj.core.Coin
-import org.bitcoinj.core.ECKey
-import org.bitcoinj.core.LegacyAddress
-import org.bitcoinj.core.Sha256Hash
-import org.bitcoinj.params.MainNetParams
-import org.bitcoinj.script.ScriptPattern
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
-import org.junit.Test
 import java.io.File
 
 class WalletManagerTest {

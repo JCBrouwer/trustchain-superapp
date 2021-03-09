@@ -7,8 +7,7 @@ import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
 import com.example.musicdao.ipv8.MusicCommunity
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.UnstableDefault
+import com.example.federated_ml.RecommenderCommunity
 import com.squareup.sqldelight.android.AndroidSqliteDriver
 import nl.tudelft.ipv8.IPv8Configuration
 import nl.tudelft.ipv8.Overlay
@@ -42,13 +41,9 @@ import nl.tudelft.trustchain.eurotoken.community.EuroTokenCommunity
 import nl.tudelft.trustchain.peerchat.community.PeerChatCommunity
 import nl.tudelft.trustchain.peerchat.db.PeerChatStore
 import nl.tudelft.trustchain.voting.VotingCommunity
-import com.example.federated_ml.RecommenderCommunity
 
-@kotlinx.serialization.UnstableDefault
 @ExperimentalUnsignedTypes
-@ImplicitReflectionSerializer
 class TrustChainApplication : Application() {
-    @ImplicitReflectionSerializer
     override fun onCreate() {
         super.onCreate()
 
@@ -57,8 +52,6 @@ class TrustChainApplication : Application() {
         initIPv8()
     }
 
-    @OptIn(UnstableDefault::class)
-    @ImplicitReflectionSerializer
     private fun initIPv8() {
         val config = IPv8Configuration(
             overlays = listOf(
@@ -238,8 +231,6 @@ class TrustChainApplication : Application() {
         )
     }
 
-    @kotlinx.serialization.UnstableDefault
-    @kotlinx.serialization.ImplicitReflectionSerializer
     private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
         val settings = TrustChainSettings()
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")

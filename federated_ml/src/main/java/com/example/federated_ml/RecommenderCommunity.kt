@@ -5,7 +5,6 @@ import com.example.federated_ml.db.RecommenderStore
 import com.example.federated_ml.ipv8.ModelExchangeMessage
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
-import kotlinx.serialization.ImplicitReflectionSerializer
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.*
 import nl.tudelft.ipv8.messaging.Packet
@@ -13,9 +12,7 @@ import java.util.*
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 
-@kotlinx.serialization.UnstableDefault
 @ExperimentalUnsignedTypes
-@ImplicitReflectionSerializer
 open class RecommenderCommunity(
     settings: TrustChainSettings,
     recommendStore: TrustChainSQLiteStore,
@@ -23,10 +20,9 @@ open class RecommenderCommunity(
     crawler: TrustChainCrawler = TrustChainCrawler()
 ) : TrustChainCommunity(settings, recommendStore, crawler) {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
-    // TODO: chnage it to a proper directory
+    // TODO: change it to a proper directory
     private val dummyDir = File("mySongs")
-    private val store = RecommenderStore(recommendStore, musicStore,
-        this.myPeer.publicKey.keyToBin(), dummyDir)
+    val store = RecommenderStore(recommendStore, musicStore, dummyDir)
 
     class Factory(
         private val settings: TrustChainSettings,
@@ -65,8 +61,6 @@ open class RecommenderCommunity(
     }
 
     @ExperimentalUnsignedTypes
-    @kotlinx.serialization.UnstableDefault
-    @ImplicitReflectionSerializer
     fun onModelExchange(packet: Packet) {
         val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
@@ -78,7 +72,7 @@ open class RecommenderCommunity(
 
         try {
             localModel = store.getLocalModel(modelType) as Pegasos
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Log.i("Error: ", e.toString())
             Log.i("Created model for peer ", peer.mid)
         }

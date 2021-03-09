@@ -79,7 +79,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.3.3'
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.3'
     implementation 'com.google.android:flexbox:2.0.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:1.0-M1-1.4.0-rc'
 
     // BitTorrent/Libtorrent libraries
     implementation 'com.turn:ttorrent-core:1.5'

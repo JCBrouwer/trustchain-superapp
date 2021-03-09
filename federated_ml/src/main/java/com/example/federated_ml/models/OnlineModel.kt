@@ -1,18 +1,18 @@
 package com.example.federated_ml.models
-import android.util.SparseArray
-import androidx.core.util.set
+import com.example.federated_ml.ipv8.SerializableSparseArray as SparseArray
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import java.util.*
 
-@kotlinx.serialization.Serializable
+@Serializable
 open class OnlineModel {
+    @Contextual
     internal var weights: SparseArray<Double>
 
     constructor(amountFeatures: Int) {
         weights = SparseArray(amountFeatures)
         for (idx in 1..amountFeatures) {
-            weights.append(idx, Random().nextDouble() * 3 )
+            weights.append(idx, Random().nextDouble() * 3)
         }
     }
 
@@ -52,9 +52,7 @@ open class OnlineModel {
 
     open fun update(x: Array<Double>, y: Int) {}
 
-    @ImplicitReflectionSerializer
-    @kotlinx.serialization.UnstableDefault
     open fun serialize(): String {
-        return Json.toJson(this).toString()
+        return Json.encodeToString(this)
     }
 }

@@ -3,9 +3,7 @@ package com.example.federated_ml.ipv8
 import kotlin.UInt
 import kotlinx.serialization.json.*
 import com.example.federated_ml.models.OnlineModel
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.UnstableDefault
-import kotlinx.serialization.parse
+import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.messaging.*
 
 const val SERIALIZED_UINT_SIZE = 4
@@ -20,7 +18,6 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
     val model: OnlineModel
 ) : Serializable {
 
-    @ImplicitReflectionSerializer
     override fun serialize(): ByteArray {
         return originPublicKey +
             serializeUInt(ttl) +
@@ -28,7 +25,6 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
             serializeVarLen(model.serialize().toByteArray(Charsets.US_ASCII))
     }
 
-    @ImplicitReflectionSerializer
     @kotlin.ExperimentalUnsignedTypes
     fun checkTTL(): Boolean {
         ttl -= 1u
@@ -36,11 +32,8 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
         return true
     }
 
-    @ImplicitReflectionSerializer
-    companion object Deserializer: Deserializable<ModelExchangeMessage> {
+    companion object Deserializer : Deserializable<ModelExchangeMessage> {
         @ExperimentalUnsignedTypes
-        @kotlinx.serialization.UnstableDefault
-        @ImplicitReflectionSerializer
         @JvmStatic
         override fun deserialize(buffer: ByteArray, offset: Int): Pair<ModelExchangeMessage, Int> {
             var localOffset = 0
@@ -61,7 +54,7 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
                     originPublicKey = originPublicKey,
                     ttl = ttl,
                     modelType = modelType.toString(Charsets.US_ASCII),
-                    model = Json.parse(model.toString(Charsets.US_ASCII))
+                    model = Json.decodeFromString(model.toString(Charsets.US_ASCII))
                 ), second = localOffset
             )
         }

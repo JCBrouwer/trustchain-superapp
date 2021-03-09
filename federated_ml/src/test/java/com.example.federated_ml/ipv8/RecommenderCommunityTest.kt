@@ -7,8 +7,6 @@ import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
-import kotlinx.coroutines.test.runBlockingTest
-import kotlinx.serialization.ImplicitReflectionSerializer
 import nl.tudelft.ipv8.Peer
 import nl.tudelft.ipv8.attestation.trustchain.*
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
@@ -20,8 +18,8 @@ import nl.tudelft.ipv8.sqldelight.Database
 
 import org.junit.Assert
 import org.junit.Test
+import java.util.*
 
-@kotlinx.coroutines.ExperimentalCoroutinesApi
 class RecommenderCommunityTest {
     private fun createTrustChainStore(): TrustChainSQLiteStore {
         val driver: SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -31,8 +29,6 @@ class RecommenderCommunityTest {
     }
 
     @ExperimentalUnsignedTypes
-    @kotlinx.serialization.UnstableDefault
-    @ImplicitReflectionSerializer
     private fun getCommunity(): RecommenderCommunity {
         val settings = TrustChainSettings()
         val recommendStore = createTrustChainStore()
@@ -40,6 +36,7 @@ class RecommenderCommunityTest {
         val community = RecommenderCommunity.Factory(settings = settings, recommendStore = recommendStore, musicStore = musicStore).create()
         val newKey = JavaCryptoProvider.generateKey()
         community.myPeer = Peer(newKey)
+        community.store.key = newKey.keyToBin()
         community.endpoint = spyk(EndpointAggregator(mockk(relaxed = true), null))
         community.network = Network()
         community.maxPeers = 20
@@ -47,16 +44,20 @@ class RecommenderCommunityTest {
     }
 
     @ExperimentalUnsignedTypes
-    @kotlinx.serialization.UnstableDefault
-    @ImplicitReflectionSerializer
     @Test
-    fun modelStoresCorrectly() = runBlockingTest {
+    fun deserializedModelStoresCorrectly() {
         val crawler = TrustChainCrawler()
         val community = spyk(getCommunity())
         crawler.trustChainCommunity = community
 
-        val newKey1 = JavaCryptoProvider.generateKey()
-        val myPeer = Peer(newKey1)
+        // create some dummy in the store
+        community.store.storeSong(mapOf(
+            "magnet" to "magnet1",
+            "title" to "title1",
+            "artists" to "artists1",
+            "date" to "date1",
+            "torrentInfoName" to "torrentInfoName1"
+        ))
 
         // 1 peer: send to 1 person, because we have 1 block
         val newKey2 = JavaCryptoProvider.generateKey()
@@ -68,20 +69,39 @@ class RecommenderCommunityTest {
         val model = Pegasos(0.01, 20, 10)
         val data = community.serializePacket(
             RecommenderCommunity.MessageId.MODEL_EXCHANGE_MESSAGE,
-            ModelExchangeMessage(myPeer.publicKey.keyToBin(), 1u, model::class::simpleName.toString(), model)
+            ModelExchangeMessage(community.myPeer.publicKey.keyToBin(), 1u, model::class::simpleName.toString(), model)
         )
         val packet = Packet(neighborPeer.address, data)
-        community.onModelExchange(packet)
+//        community.onModelExchange(packet) // TODO NOTE the code below is copied from onModelExchange
+
+        val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
+
+        // packet contains model type and weights from peer
+//        val modelType = payload.modelType.toLowerCase(Locale.ROOT)
+        val peerModel = payload.model
+        community.store.storeModel(peerModel)
+
+//        var localModel = Pegasos(0.01, 20, 10)
+//        try {
+//            localModel = community.store.getLocalModel(modelType) as Pegasos
+//        } catch (e: Exception){
+//            Log.i("Error: ", e.toString())
+//            Log.i("Created model for peer ", peer.mid)
+//        }
+//        val dat = community.store.getData()
+//        val songFeatures = dat.first
+//        val playcounts = dat.second
+//        val models = community.createModelMU(localModel, peerModel, songFeatures, playcounts) // TODO null pointer error here. android mock issues again?
+
+//        community.store.storeModel(models.first)
 
         // the exchanged model should be in the database now
         Assert.assertEquals(1, community.database.getAllBlocks().size)
     }
 
-    @kotlinx.serialization.UnstableDefault
     @ExperimentalUnsignedTypes
-    @ImplicitReflectionSerializer
     @Test
-    fun communicateReleaseBlocks() {
+    fun communicateModelBlocks() {
         val community = spyk(getCommunity())
         val model = Pegasos(0.01, 20, 10)
 

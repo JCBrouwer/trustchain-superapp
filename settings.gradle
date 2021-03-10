@@ -12,6 +12,9 @@ include ':musicdao-datafeeder'
 include 'ipv8-jvm'
 project(':ipv8-jvm').projectDir = new File(settingsDir, 'kotlin-ipv8/ipv8-jvm')
 
+include ':federated_ml'
+project(':federated_ml').projectDir = new File(settingsDir, 'federated_ml')
+
 include ':app'
 include ':common'
 include ':trustchain-explorer'

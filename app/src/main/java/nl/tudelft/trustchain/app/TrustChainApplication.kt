@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
 import com.example.musicdao.ipv8.MusicCommunity
+import com.example.federated_ml.RecommenderCommunity
 import com.squareup.sqldelight.android.AndroidSqliteDriver
 import nl.tudelft.ipv8.IPv8Configuration
 import nl.tudelft.ipv8.Overlay
@@ -41,6 +42,7 @@ import nl.tudelft.trustchain.peerchat.community.PeerChatCommunity
 import nl.tudelft.trustchain.peerchat.db.PeerChatStore
 import nl.tudelft.trustchain.voting.VotingCommunity
 
+@ExperimentalUnsignedTypes
 class TrustChainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
@@ -62,7 +64,8 @@ class TrustChainApplication : Application() {
                 createMarketCommunity(),
                 createCoinCommunity(),
                 createVotingCommunity(),
-                createMusicCommunity()
+                createMusicCommunity(),
+                createRecommenderCommunity()
             ), walkerInterval = 5.0
         )
 
@@ -224,6 +227,19 @@ class TrustChainApplication : Application() {
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(
             MusicCommunity.Factory(settings, store),
+            listOf(randomWalk)
+        )
+    }
+
+    private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
+        val settings = TrustChainSettings()
+        val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
+        val musicStore = TrustChainSQLiteStore(Database(musicDriver))
+        val driver = AndroidSqliteDriver(Database.Schema, this, "recommend.db")
+        val recommendStore = TrustChainSQLiteStore(Database(driver))
+        val randomWalk = RandomWalk.Factory()
+        return OverlayConfiguration(
+            RecommenderCommunity.Factory(settings, recommendStore, musicStore),
             listOf(randomWalk)
         )
     }

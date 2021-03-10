@@ -13,6 +13,8 @@ import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 
+// import com.example.federated_ml.models.OnlineModel
+
 class MusicCommunity(
     settings: TrustChainSettings,
     database: TrustChainStore,
@@ -20,7 +22,6 @@ class MusicCommunity(
 ) : TrustChainCommunity(settings, database, crawler) {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
     var swarmHealthMap = mutableMapOf<Sha1Hash, SwarmHealth>() // All recent swarm health data that
-    // has been received from peers
 
     class Factory(
         private val settings: TrustChainSettings,

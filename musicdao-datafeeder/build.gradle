@@ -14,7 +14,7 @@ dependencies {
     implementation 'com.mpatric:mp3agic:0.9.1'
     implementation 'com.turn:ttorrent-core:1.5'
     implementation "com.squareup.sqldelight:coroutines-extensions:$sqldelight_version"
-    implementation 'org.bitcoinj:bitcoinj-core:0.15.7'
+    implementation 'org.bitcoinj:bitcoinj-core:0.15.8'
 
     implementation files('libs/jlibtorrent-1.2.10.0.jar')
 

@@ -100,7 +100,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
     // BitcoinJ
-    implementation 'org.bitcoinj:bitcoinj-core:0.15.7'
+    implementation 'org.bitcoinj:bitcoinj-core:0.15.8'
 
     // Google Core
 //    implementation "com.google.guava:guava:28.2-android"

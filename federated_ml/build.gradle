@@ -52,7 +52,10 @@ android {
 
 dependencies {
     implementation project(':common')
-    implementation project(':ipv8-android')
+    api(project(':ipv8-android')){
+        exclude group: 'net.java.dev.jna'
+        exclude group: 'org.bouncycastle'
+    }
     implementation project(':musicdao-datafeeder')
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
@@ -82,7 +85,7 @@ dependencies {
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.10.5'
 
     // Cryptocurrency integration
-    implementation 'org.bitcoinj:bitcoinj-core:0.15.8'
+    implementation('org.bitcoinj:bitcoinj-core:0.15.10')
     implementation 'org.knowm.xchange:xchange-parent:5.0.1'
     implementation 'org.knowm.xchange:xchange-binance:5.0.1'
 

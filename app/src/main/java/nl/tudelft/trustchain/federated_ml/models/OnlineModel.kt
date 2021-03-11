@@ -1,5 +1,5 @@
-package com.example.federated_ml.models
-import com.example.federated_ml.ipv8.SerializableSparseArray as SparseArray
+package nl.tudelft.trustchain.federated_ml.models
+import nl.tudelft.trustchain.federated_ml.ipv8.SerializableSparseArray as SparseArray
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import java.util.*

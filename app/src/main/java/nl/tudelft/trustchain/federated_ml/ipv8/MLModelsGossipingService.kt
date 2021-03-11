@@ -1,4 +1,4 @@
-package com.example.federated_ml.ipv8
+package nl.tudelft.trustchain.federated_ml.ipv8
 
 import kotlinx.coroutines.*
 import kotlin.system.exitProcess

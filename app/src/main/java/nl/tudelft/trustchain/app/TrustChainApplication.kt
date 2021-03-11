@@ -7,7 +7,7 @@ import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
 import com.example.musicdao.ipv8.MusicCommunity
-import com.example.federated_ml.RecommenderCommunity
+import nl.tudelft.trustchain.federated_ml.RecommenderCommunity
 import com.squareup.sqldelight.android.AndroidSqliteDriver
 import nl.tudelft.ipv8.IPv8Configuration
 import nl.tudelft.ipv8.Overlay

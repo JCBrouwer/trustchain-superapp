@@ -1,4 +1,4 @@
-package com.example.federated_ml.models
+package nl.tudelft.trustchain.federated_ml.models
 import java.util.*
 
 class Adaline(learningRate: Double, amountFeatures: Int) :

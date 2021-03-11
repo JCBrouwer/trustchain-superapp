@@ -1,8 +1,8 @@
-package com.example.federated_ml.ipv8
+package nl.tudelft.trustchain.federated_ml.ipv8
 
 import kotlin.UInt
 import kotlinx.serialization.json.*
-import com.example.federated_ml.models.OnlineModel
+import nl.tudelft.trustchain.federated_ml.models.OnlineModel
 import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.messaging.*
 

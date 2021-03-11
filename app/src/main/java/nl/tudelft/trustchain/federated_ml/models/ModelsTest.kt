@@ -1,6 +1,6 @@
-package com.example.federated_ml.models
+package nl.tudelft.trustchain.federated_ml.models
 
-import com.example.federated_ml.WeakLearner
+import nl.tudelft.trustchain.federated_ml.WeakLearner
 import org.junit.Assert
 import org.junit.Test
 import kotlin.random.Random

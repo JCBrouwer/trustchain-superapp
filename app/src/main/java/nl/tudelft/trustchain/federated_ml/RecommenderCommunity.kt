@@ -1,10 +1,10 @@
-package com.example.federated_ml
+package nl.tudelft.trustchain.federated_ml
 
 import android.util.Log
-import com.example.federated_ml.db.RecommenderStore
-import com.example.federated_ml.ipv8.ModelExchangeMessage
-import com.example.federated_ml.models.OnlineModel
-import com.example.federated_ml.models.Pegasos
+import nl.tudelft.trustchain.federated_ml.db.RecommenderStore
+import nl.tudelft.trustchain.federated_ml.ipv8.ModelExchangeMessage
+import nl.tudelft.trustchain.federated_ml.models.OnlineModel
+import nl.tudelft.trustchain.federated_ml.models.Pegasos
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.*
 import nl.tudelft.ipv8.messaging.Packet

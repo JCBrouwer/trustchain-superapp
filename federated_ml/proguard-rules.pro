@@ -9,10 +9,10 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
--keep,includedescriptorclasses class com.example.federated_ml.**$$serializer { *; } # <-- change package name to your app's
--keepclassmembers class com.example.federated_ml.** { # <-- change package name to your app's
+-keep,includedescriptorclasses class nl.tudelft.trustchain.federated_ml.**$$serializer { *; } # <-- change package name to your app's
+-keepclassmembers class nl.tudelft.trustchain.federated_ml.** { # <-- change package name to your app's
     *** Companion;
 }
--keepclasseswithmembers class com.example.federated_ml.** { # <-- change package name to your app's
+-keepclasseswithmembers class nl.tudelft.trustchain.federated_ml.** { # <-- change package name to your app's
     kotlinx.serialization.KSerializer serializer(...);
 }

@@ -1,13 +1,13 @@
-package nl.tudelft.trustchain.federated_ml.ipv8
+package com.example.federated_ml.ipv8
 
-import nl.tudelft.trustchain.federated_ml.models.Adaline
+import com.example.federated_ml.models.Adaline
 import com.goterl.lazycode.lazysodium.LazySodiumJava
 import com.goterl.lazycode.lazysodium.SodiumJava
 import nl.tudelft.ipv8.keyvault.LibNaClSK
 import nl.tudelft.ipv8.util.hexToBytes
 import org.junit.Assert
 import org.junit.Test
-import nl.tudelft.trustchain.federated_ml.models.OnlineModel
+import com.example.federated_ml.models.OnlineModel
 
 
 @ExperimentalUnsignedTypes

@@ -1,4 +1,4 @@
-package nl.tudelft.trustchain.federated_ml.ipv8
+package com.example.federated_ml.ipv8
 
 import android.util.SparseArray
 import java.io.IOException

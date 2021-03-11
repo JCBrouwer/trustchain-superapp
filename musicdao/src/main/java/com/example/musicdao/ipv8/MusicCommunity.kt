@@ -13,7 +13,7 @@ import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 
-// import nl.tudelft.trustchain.federated_ml.models.OnlineModel
+// import com.example.federated_ml.models.OnlineModel
 
 class MusicCommunity(
     settings: TrustChainSettings,

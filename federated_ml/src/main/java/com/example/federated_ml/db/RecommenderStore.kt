@@ -1,6 +1,6 @@
-package nl.tudelft.trustchain.federated_ml.db
+package com.example.federated_ml.db
 
-import nl.tudelft.trustchain.federated_ml.models.OnlineModel
+import com.example.federated_ml.models.OnlineModel
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.serialization.json.Json

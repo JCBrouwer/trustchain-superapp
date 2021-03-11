@@ -1,4 +1,4 @@
-package nl.tudelft.trustchain.federated_ml.models
+package com.example.federated_ml.models
 import java.util.*
 
 class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :

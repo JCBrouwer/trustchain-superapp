@@ -23,11 +23,15 @@ class Adaline(learningRate: Double, amountFeatures: Int) :
         }
     }
 
-    override fun predict(x: Array<Double>): Int {
+    override fun predict(x: Array<Double>): Double {
+        return activation(forward(x))
+    }
+
+    fun classify(x: Array<Double>): Double {
         return if (activation(forward(x)) >= 0.0) {
-            1
+            1.0
         } else {
-            0
+            0.0
         }
     }
 

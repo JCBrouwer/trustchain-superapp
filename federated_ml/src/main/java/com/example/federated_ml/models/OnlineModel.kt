@@ -23,31 +23,29 @@ open class OnlineModel {
         return this
     }
 
-    fun predict(x: Array<Array<Double>>): IntArray {
-        val result = IntArray(x.size)
+    fun predict(x: Array<Array<Double>>): DoubleArray {
+        val result = DoubleArray(x.size)
         for ((idx, item) in x.withIndex()) {
             result[idx] = predict(item)
         }
-
         return result
     }
 
     fun score(x: Array<Array<Double>>, y: IntArray): Double {
         var correct = 0.0
         for (i in x.indices) {
-            val output = predict(x[i])
+            val output = predict(x[i]).toInt()
             if (output == y[i]) {
                 correct ++
             }
         }
-
         return (correct / x.size)
     }
 
     open fun update(x: Array<Array<Double>>, y: IntArray) {}
 
-    open fun predict(x: Array<Double>): Int {
-        return 1
+    open fun predict(x: Array<Double>): Double {
+        return 1.0
     }
 
     open fun update(x: Array<Double>, y: Int) {}

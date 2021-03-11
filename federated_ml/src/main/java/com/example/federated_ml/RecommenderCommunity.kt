@@ -68,23 +68,16 @@ open class RecommenderCommunity(
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         val peerModel = payload.model
 
-        var localModel = Pegasos(0.01, 20, 10)
+        val localModel = store.getLocalModel(modelType) as Pegasos
 
-        try {
-            localModel = store.getLocalModel(modelType) as Pegasos
-        } catch (e: Exception) {
-            Log.i("Error: ", e.toString())
-            Log.i("Created model for peer ", peer.mid)
-        }
-
-        val data = store.getData()
+        val data = store.getSongData()
         val songFeatures = data.first
         val playcounts = data.second
         val models = this.createModelMU(localModel, peerModel, songFeatures, playcounts)
 
-        store.storeModel(models.first)
+        store.storeModel(models.first as Pegasos)
 
-        performRemoteModelExchange(models.second, models.second::class::simpleName.toString())
+        performRemoteModelExchange(models.second, "Pegasos")
 
         Log.i("ModelExchange from", peer.mid)
     }

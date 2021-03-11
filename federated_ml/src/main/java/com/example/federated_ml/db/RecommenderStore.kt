@@ -11,7 +11,6 @@ import java.io.File
 import java.util.*
 import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.attestation.trustchain.*
-import nl.tudelft.ipv8.keyvault.JavaCryptoProvider
 
 open class RecommenderStore(
     private val recommendStore: TrustChainSQLiteStore,
@@ -21,7 +20,7 @@ open class RecommenderStore(
     lateinit var key: ByteArray
 
     @kotlin.ExperimentalUnsignedTypes
-    fun storeModel(model: Pegasos) {
+    fun storeModel(model: OnlineModel) {
         val modelBlock = TrustChainBlock(
             "Pegasos",
             model.serialize().toByteArray(Charsets.US_ASCII),
@@ -76,8 +75,8 @@ open class RecommenderStore(
         return Pair(features, localSongs)
     }
 
-    fun getNewSongs(limit: Int):Pair<Array<Array<Double>>,List<TrustChainBlock>>? {
-        val data = getSongData(2*limit)
+    fun getNewSongs(limit: Int): Pair<Array<Array<Double>>, List<TrustChainBlock>>? {
+        val data = getSongData(2 * limit)
         val features = data.first
         val playcounts = data.second
         val blocks = data.third
@@ -93,15 +92,14 @@ open class RecommenderStore(
                 if (j == limit) break
             }
             return Pair(newFeatures, blocks)
-        }
-        else {
+        } else {
             return null
         }
     }
 
-    fun getSongData(limit: Int = 200): Triple<Array<Array<Double>>, IntArray, List<TrustChainBlock>>  {
+    fun getSongData(limit: Int = 200): Triple<Array<Array<Double>>, IntArray, List<TrustChainBlock>> {
         val songsHistory = musicStore.getLatestBlocks(key, limit)
-        Log.w("Recommend","Songs in music store: "+songsHistory.size.toString())
+        Log.w("Recommend", "Songs in music store: " + songsHistory.size.toString())
         val data = Array<Triple<String?, String?, String?>>(songsHistory.size) { _ ->
             Triple(null, null, null) }
 

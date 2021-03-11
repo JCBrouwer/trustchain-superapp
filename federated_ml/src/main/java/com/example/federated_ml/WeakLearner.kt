@@ -61,7 +61,7 @@ class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boole
     }
 
     fun makePrediction(testFeatures: Array<Array<Double>>) {
-        val prediction: IntArray = if (this.ensemmbleModel != null) {
+        val prediction: DoubleArray = if (this.ensemmbleModel != null) {
             this.ensemmbleModel!!.predict(testFeatures)
         } else {
             this.modelCache.last().predict(testFeatures)

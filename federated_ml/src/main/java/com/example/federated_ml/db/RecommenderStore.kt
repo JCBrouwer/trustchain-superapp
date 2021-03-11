@@ -1,6 +1,8 @@
 package com.example.federated_ml.db
 
+import android.util.Log
 import com.example.federated_ml.models.OnlineModel
+import com.example.federated_ml.models.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.serialization.json.Json
@@ -9,8 +11,9 @@ import java.io.File
 import java.util.*
 import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.attestation.trustchain.*
+import nl.tudelft.ipv8.keyvault.JavaCryptoProvider
 
-class RecommenderStore(
+open class RecommenderStore(
     private val recommendStore: TrustChainSQLiteStore,
     private val musicStore: TrustChainSQLiteStore,
     private val musicDir: File
@@ -18,9 +21,9 @@ class RecommenderStore(
     lateinit var key: ByteArray
 
     @kotlin.ExperimentalUnsignedTypes
-    fun storeModel(model: OnlineModel) {
+    fun storeModel(model: Pegasos) {
         val modelBlock = TrustChainBlock(
-            model::class::simpleName.toString(),
+            "Pegasos",
             model.serialize().toByteArray(Charsets.US_ASCII),
             key,
             1u,
@@ -49,7 +52,14 @@ class RecommenderStore(
     }
 
     fun getLocalModel(modelType: String): OnlineModel {
-        return Json.decodeFromString(recommendStore.getBlocksWithType(modelType)[0].toString())
+        return try {
+            Json.decodeFromString(recommendStore.getBlocksWithType(modelType)[0].toString()) as Pegasos
+        } catch (e: Exception) {
+            val model = Pegasos(0.01, 20, 10)
+//            storeModel(model)
+            Log.i("Recommend", "Initialized local model")
+            model
+        }
     }
 
     private fun processSongs(data: Array<Triple<String?, String?, String?>>): Pair<Array<Array<Double>>, IntArray> {
@@ -66,9 +76,32 @@ class RecommenderStore(
         return Pair(features, localSongs)
     }
 
-    private fun getSongData(limit: Int = 1000): Pair<Array<Array<Double>>, IntArray> {
+    fun getNewSongs(limit: Int):Pair<Array<Array<Double>>,List<TrustChainBlock>>? {
+        val data = getSongData(2*limit)
+        val features = data.first
+        val playcounts = data.second
+        val blocks = data.third
+        if (features.isNotEmpty()) {
+            val newFeatures =
+                Array<Array<Double>>(limit) { _ -> Array(features[0].size) { _ -> 0.0 } }
+            var j = 0
+            for ((i, feature) in features.withIndex()) {
+                if (playcounts[i] == 0) {
+                    newFeatures[j] = feature
+                    j += 1
+                }
+                if (j == limit) break
+            }
+            return Pair(newFeatures, blocks)
+        }
+        else {
+            return null
+        }
+    }
 
+    fun getSongData(limit: Int = 200): Triple<Array<Array<Double>>, IntArray, List<TrustChainBlock>>  {
         val songsHistory = musicStore.getLatestBlocks(key, limit)
+        Log.w("Recommend","Songs in music store: "+songsHistory.size.toString())
         val data = Array<Triple<String?, String?, String?>>(songsHistory.size) { _ ->
             Triple(null, null, null) }
 
@@ -91,16 +124,10 @@ class RecommenderStore(
 
             data[i] = Triple(artist, title, year)
         }
-
-        return processSongs(data)
-    }
-
-    fun getData(): Pair<Array<Array<Double>>, IntArray> {
-        // TODO get proper local dir with stored files
-        val data = getSongData()
-        val features = data.first
-        val labels = data.second
-        return Pair(features, labels)
+        val processed = processSongs(data)
+        val features = processed.first
+        val playcounts = processed.second
+        return Triple(features, playcounts, songsHistory)
     }
 
     private fun extractMP3Data(mp3File: Mp3File): Triple<String?, String?, String?> {

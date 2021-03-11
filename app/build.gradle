@@ -91,20 +91,21 @@ repositories {
 }
 
 dependencies {
-    implementation project(':common')
     implementation project(':trustchain-voter')
     implementation project(':trustchain-explorer')
     implementation project(':trustchain-trader')
     implementation project(':trustchain-payloadgenerator')
     implementation project(':debug')
     implementation project(':distributedai')
-    implementation project(':currencyii')
     implementation project(':freedomOfComputing')
-    implementation project(':musicdao')
     implementation project(':peerchat')
     implementation project(':eurotoken')
-    implementation project(':federated_ml')
-    implementation 'net.java.dev.jna:jna:5.5.0@aar'
+    implementation project(':common')
+    implementation project(':currencyii')
+    implementation project(':musicdao')
+    api(project(':federated_ml')){
+        exclude group: 'net.java.dev.jna'
+    }
 
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:1.0-M1-1.4.0-rc'
 
@@ -137,7 +138,8 @@ dependencies {
 
     // Logging
     implementation 'io.github.microutils:kotlin-logging:1.7.7'
-    implementation 'com.github.tony19:logback-android:2.0.0'
+    implementation ('net.java.dev.jna:jna:5.5.0@aar')
+    implementation('com.github.tony19:logback-android:2.0.0')
 
     implementation 'com.mattskala:itemadapter:0.4'
 

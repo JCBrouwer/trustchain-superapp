@@ -98,7 +98,7 @@ open class RecommenderStore(
     }
 
     fun getSongData(limit: Int = 200): Triple<Array<Array<Double>>, IntArray, List<TrustChainBlock>> {
-        val songsHistory = musicStore.getLatestBlocks(key, limit)
+        val songsHistory = musicStore.getBlocksWithType("publish_release")
         Log.w("Recommend", "Songs in music store: " + songsHistory.size.toString())
         val data = Array<Triple<String?, String?, String?>>(songsHistory.size) { _ ->
             Triple(null, null, null) }
@@ -121,6 +121,7 @@ open class RecommenderStore(
             }
 
             data[i] = Triple(artist, title, year)
+            if (data.size == limit ) break
         }
         val processed = processSongs(data)
         val features = processed.first

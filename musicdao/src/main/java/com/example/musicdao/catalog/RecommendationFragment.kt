@@ -3,56 +3,68 @@ package com.example.musicdao.catalog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import androidx.lifecycle.lifecycleScope
+import android.webkit.WebView
+import androidx.fragment.app.findFragment
+import com.example.federated_ml.models.Pegasos
 import com.example.musicdao.MusicBaseFragment
-import com.example.musicdao.MusicService
 import com.example.musicdao.R
 import com.example.musicdao.util.Util
+import kotlinx.android.synthetic.main.fragment_recommendation.*
 import kotlinx.android.synthetic.main.fragment_release_overview.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import java.io.File
+import java.lang.Thread.sleep
 
-import com.example.federated_ml.models.Pegasos
-import kotlinx.android.synthetic.main.fragment_recommendation.*
 
 /**
  * A screen showing an overview of playlists to browse through
  */
-class RecommendationFragment : MusicBaseFragment(R.layout.fragment_release_overview) {
+class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendation) {
     private val store = this.getRecommenderCommunity().store
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         store.key = getIpv8().myPeer.publicKey.keyToBin()
         Log.w("Recommend", "RecommendationFragment view created")
 
-        lifecycleScope.launchWhenCreated {
-            while (isActive && isAdded && !isDetached) {
-                if (activity is MusicService && debugText != null) {
-                    debugText.text = (activity as MusicService).getStatsOverview()
-                }
-                refreshRecommendations()
-                delay(3000)
-            }
+        refreshRecommend.setOnRefreshListener {
+            loadingRecommendations.setVisibility(View.VISIBLE)
+            loadingRecommendations.text = "Refreshing recommendations..."
+
+            val blocks = getMusicCommunity().database.getBlocksWithType("publish_release")
+
+            val transaction = activity?.supportFragmentManager?.beginTransaction()
+
+            updateRecommendFragment(blocks[blocks.indices.random()], 0)
+            updateRecommendFragment(blocks[blocks.indices.random()], 1)
+
+            loadingRecommendations.setVisibility(View.GONE)
+
+            activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
+
+            refreshRecommend.isRefreshing = false
         }
-
-
-//        refreshRecommend.setOnRefreshListener {
-//            Log.w("Recommend", "Refreshing recommendation")
-//            loadingRecommendations.text = "Refreshing recommendations..."
-//            refreshRecommendations()
-//            refreshRecommend.isRefreshing = false
-//        }
     }
 
-    private fun addCoverFragment(block: TrustChainBlock) {
+    private fun updateRecommendFragment(block: TrustChainBlock, recNum: Int) {
         Log.w("Recommend", "Adding recommendation coverFragment")
-        val coverArt = Util.findCoverArt(File(context?.cacheDir?.path + "/" + Util.sanitizeString(block.transaction["torrentInfoName"] as String)))
-        val coverFragment = PlaylistCoverFragment(block, 0, coverArt)
         val transaction = activity?.supportFragmentManager?.beginTransaction()
-        transaction?.add(R.id.recommend_layout, coverFragment, "recommendation")
+
+        val recFrag = activity?.supportFragmentManager?.findFragmentByTag("recommendation$recNum")
+        if (recFrag != null) transaction?.remove(recFrag)
+
+        val torrentName = block.transaction["torrentInfoName"]
+        val path = if (torrentName != null) {
+            context?.cacheDir?.path + "/" + Util.sanitizeString(torrentName as String)
+        }
+        else {
+            context?.cacheDir?.path + "/" + "notfound.jpg"
+        }
+        val coverArt = Util.findCoverArt(File(path))
+        val coverFragment = PlaylistCoverFragment(block, 0, coverArt)
+        transaction?.add(R.id.recommend_layout, coverFragment, "recommendation$recNum")
+
         activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
     }
 
@@ -76,8 +88,8 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_release_overv
                     best = i
                 }
             }
-            addCoverFragment(blocks[best])
-            addCoverFragment(blocks[runnerup])
+            updateRecommendFragment(blocks[best], 0)
+            updateRecommendFragment(blocks[runnerup], 1)
         }
     }
 }

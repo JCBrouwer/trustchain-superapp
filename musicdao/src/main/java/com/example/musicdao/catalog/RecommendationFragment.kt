@@ -3,29 +3,17 @@ package com.example.musicdao.catalog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.webkit.WebView
-import androidx.fragment.app.findFragment
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao.MusicBaseFragment
 import com.example.musicdao.R
 import com.example.musicdao.util.Util
 import kotlinx.android.synthetic.main.fragment_recommendation.*
-import kotlinx.android.synthetic.main.fragment_release_overview.*
-import kotlinx.coroutines.delay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import java.io.File
-import java.lang.Thread.sleep
 
-
-/**
- * A screen showing an overview of playlists to browse through
- */
 class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendation) {
-    private val store = this.getRecommenderCommunity().store
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        store.key = getIpv8().myPeer.publicKey.keyToBin()
         Log.w("Recommend", "RecommendationFragment view created")
 
         refreshRecommend.setOnRefreshListener {
@@ -74,8 +62,8 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
      */
     private fun refreshRecommendations() {
         Log.w("Recommend", "Retrieving local recommendation model")
-        val model = store.getLocalModel("Pegasos") as Pegasos
-        val data = store.getNewSongs(100)
+        val model =  getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
+        val data = getRecommenderCommunity().recommendStore.getNewSongs(100)
         if (data != null) {
             val songFeatures = data.first
             val blocks = data.second

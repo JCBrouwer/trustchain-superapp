@@ -1,63 +1,49 @@
 package com.example.federated_ml.db
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
+import com.squareup.sqldelight.android.AndroidSqliteDriver
+import com.squareup.sqldelight.runtime.coroutines.asFlow
+import com.squareup.sqldelight.runtime.coroutines.mapToList
+import com.squareup.sqldelight.runtime.coroutines.mapToOneOrNull
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
-import java.util.*
-import kotlinx.serialization.decodeFromString
-import nl.tudelft.ipv8.attestation.trustchain.*
+import nl.tudelft.federated_ml.sqldelight.Database
 
 open class RecommenderStore(
-    private val recommendStore: TrustChainSQLiteStore,
     private val musicStore: TrustChainSQLiteStore,
-    private val musicDir: File
+    context: Context
 ) {
     lateinit var key: ByteArray
+    private val driver = AndroidSqliteDriver(Database.Schema, context, "federated_ml.db")
+    private val database = Database(driver)
+    private val musicDir = File("")
 
-    @kotlin.ExperimentalUnsignedTypes
-    fun storeModel(model: OnlineModel) {
-        val modelBlock = TrustChainBlock(
-            "Pegasos",
-            model.serialize().toByteArray(Charsets.US_ASCII),
-            key,
-            1u,
-            ANY_COUNTERPARTY_PK,
-            0u,
-            GENESIS_HASH,
-            EMPTY_SIG,
-            Date()
-        )
-        recommendStore.addBlock(modelBlock)
+    fun storeModelLocally(model: OnlineModel) {
+        database.dbModelQueries.addModel(
+            name= model::class::simpleName.toString(),
+            type= model::class::simpleName.toString(),
+            parameters= model.serialize())
     }
 
-    fun storeSong(song: Map<String, String>) {
-        val songBlock = TrustChainBlock(
-            "publish_release",
-            TransactionEncoding.encode(song),
-            key,
-            1u,
-            ANY_COUNTERPARTY_PK,
-            0u,
-            GENESIS_HASH,
-            EMPTY_SIG,
-            Date()
-        )
-        musicStore.addBlock(songBlock)
-    }
-
-    fun getLocalModel(modelType: String): OnlineModel {
-        return try {
-            Json.decodeFromString(recommendStore.getBlocksWithType(modelType)[0].toString()) as Pegasos
+    fun getLocalModel(): OnlineModel {
+        try {
+            val models = database.dbModelQueries.getModel(name="Pegasos").asFlow().mapToOneOrNull()
+            val model = Json.decodeFromString(models.toString()) as Pegasos
+            return model
         } catch (e: Exception) {
             val model = Pegasos(0.01, 20, 10)
-//            storeModel(model)
+            storeModelLocally(model)
             Log.i("Recommend", "Initialized local model")
-            model
+            return model
         }
     }
 
@@ -188,5 +174,16 @@ open class RecommenderStore(
             }
         }
         return labels
+    }
+
+    companion object {
+        @SuppressLint("StaticFieldLeak")
+        private lateinit var instance: RecommenderStore
+        fun getInstance(musicStore: TrustChainSQLiteStore, context: Context): RecommenderStore {
+            if (!::instance.isInitialized) {
+                instance = RecommenderStore(musicStore, context)
+            }
+            return instance
+        }
     }
 }

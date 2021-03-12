@@ -42,6 +42,7 @@ import nl.tudelft.trustchain.eurotoken.community.EuroTokenCommunity
 import nl.tudelft.trustchain.peerchat.community.PeerChatCommunity
 import nl.tudelft.trustchain.peerchat.db.PeerChatStore
 import nl.tudelft.trustchain.voting.VotingCommunity
+import nl.tudelft.federated_ml.sqldelight.Database as MLDatabase
 
 @ExperimentalUnsignedTypes
 class TrustChainApplication : Application() {
@@ -235,10 +236,12 @@ class TrustChainApplication : Application() {
     private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
         val musicStore = TrustChainSQLiteStore(Database(musicDriver))
-        val recommendStore = RecommenderStore.getInstance(musicStore, this)
+        val driver = AndroidSqliteDriver(MLDatabase.Schema, this, "federated_ml.db")
+        val database = MLDatabase(driver)
+        val recommendStore = RecommenderStore.getInstance(musicStore, database)
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(
-            RecommenderCommunity.Factory(recommendStore, this),
+            RecommenderCommunity.Factory(recommendStore),
             listOf(randomWalk)
         )
     }

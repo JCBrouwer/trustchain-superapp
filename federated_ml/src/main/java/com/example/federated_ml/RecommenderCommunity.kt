@@ -12,17 +12,15 @@ import java.util.*
 
 @ExperimentalUnsignedTypes
 open class RecommenderCommunity(
-    private val recommendStore: RecommenderStore,
-    context: Context
+    val recommendStore: RecommenderStore
 ) : Community() {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
 
     class Factory(
         private val recommendStore: RecommenderStore,
-        private val context: Context
     ) : Overlay.Factory<RecommenderCommunity>(RecommenderCommunity::class.java) {
         override fun create(): RecommenderCommunity {
-            return RecommenderCommunity(recommendStore, context)
+            return RecommenderCommunity(recommendStore)
         }
     }
 

@@ -20,11 +20,9 @@ import nl.tudelft.federated_ml.sqldelight.Database
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
-    context: Context
+    private val database: Database
 ) {
     lateinit var key: ByteArray
-    private val driver = AndroidSqliteDriver(Database.Schema, context, "federated_ml.db")
-    private val database = Database(driver)
     private val musicDir = File("")
 
     fun storeModelLocally(model: OnlineModel) {
@@ -35,15 +33,14 @@ open class RecommenderStore(
     }
 
     fun getLocalModel(): OnlineModel {
-        try {
-            val models = database.dbModelQueries.getModel(name="Pegasos").asFlow().mapToOneOrNull()
-            val model = Json.decodeFromString(models.toString()) as Pegasos
-            return model
-        } catch (e: Exception) {
+        val dbModel = database.dbModelQueries.getModel(name="Pegasos").executeAsOneOrNull()
+        return if (dbModel != null) {
+            Json.decodeFromString(dbModel.parameters) as Pegasos
+        } else {
             val model = Pegasos(0.01, 20, 10)
             storeModelLocally(model)
             Log.i("Recommend", "Initialized local model")
-            return model
+            model
         }
     }
 
@@ -179,9 +176,9 @@ open class RecommenderStore(
     companion object {
         @SuppressLint("StaticFieldLeak")
         private lateinit var instance: RecommenderStore
-        fun getInstance(musicStore: TrustChainSQLiteStore, context: Context): RecommenderStore {
+        fun getInstance(musicStore: TrustChainSQLiteStore, database: Database): RecommenderStore {
             if (!::instance.isInitialized) {
-                instance = RecommenderStore(musicStore, context)
+                instance = RecommenderStore(musicStore, database)
             }
             return instance
         }

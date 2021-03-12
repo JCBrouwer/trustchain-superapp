@@ -53,11 +53,11 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
     private fun gradientSVM(x: Array<Double>, y: Int, eta: Double) {
         val score = weightedSum(x)
         if (y * score < 1) {
-            for (idx in 1..weights.size()) {
+            for (idx in 0 until weights.size()) {
                 this.weights.put(idx, (1 - eta * regularization) * this.weights.valueAt(idx) + eta * y)
             }
         } else {
-            for (idx in 1..weights.size()) {
+            for (idx in 0 until weights.size()) {
                 this.weights.put(idx, (1 - eta * regularization) * this.weights.valueAt(idx))
             }
         }

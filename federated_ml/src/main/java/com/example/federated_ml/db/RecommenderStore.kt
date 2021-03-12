@@ -67,7 +67,7 @@ open class RecommenderStore(
         val blocks = data.third
         return if (features.isNotEmpty()) {
             val newFeatures =
-                Array<Array<Double>>(limit) { _ -> Array(features[0].size) { _ -> 0.0 } }
+                Array<Array<Double>>(features.size) { _ -> Array(features[0].size) { _ -> 0.0 } }
             var j = 0
             for ((i, feature) in features.withIndex()) {
                 if (playcounts[i] == 0) {

@@ -17,7 +17,7 @@ open class RecommenderCommunity(
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
 
     class Factory(
-        private val recommendStore: RecommenderStore,
+        private val recommendStore: RecommenderStore
     ) : Overlay.Factory<RecommenderCommunity>(RecommenderCommunity::class.java) {
         override fun create(): RecommenderCommunity {
             return RecommenderCommunity(recommendStore)

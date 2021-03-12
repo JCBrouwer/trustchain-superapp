@@ -1,16 +1,11 @@
 package com.example.federated_ml.db
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.util.Log
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
-import com.squareup.sqldelight.android.AndroidSqliteDriver
-import com.squareup.sqldelight.runtime.coroutines.asFlow
-import com.squareup.sqldelight.runtime.coroutines.mapToList
-import com.squareup.sqldelight.runtime.coroutines.mapToOneOrNull
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
@@ -27,13 +22,13 @@ open class RecommenderStore(
 
     fun storeModelLocally(model: OnlineModel) {
         database.dbModelQueries.addModel(
-            name= model::class::simpleName.toString(),
-            type= model::class::simpleName.toString(),
-            parameters= model.serialize())
+            name = model::class::simpleName.toString(),
+            type = model::class::simpleName.toString(),
+            parameters = model.serialize())
     }
 
     fun getLocalModel(amountFeatures: Int = 20): OnlineModel {
-        val dbModel = database.dbModelQueries.getModel(name="Pegasos").executeAsOneOrNull()
+        val dbModel = database.dbModelQueries.getModel(name ="Pegasos").executeAsOneOrNull()
         return if (dbModel != null) {
             Json.decodeFromString(dbModel.parameters) as Pegasos
         } else {
@@ -106,7 +101,7 @@ open class RecommenderStore(
             }
 
             data[i] = Triple(artist, title, year)
-            if (data.size == limit ) break
+            if (data.size == limit) break
         }
         val processed = processSongs(data)
         val features = processed.first

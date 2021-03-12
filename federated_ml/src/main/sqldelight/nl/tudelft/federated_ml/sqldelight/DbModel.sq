@@ -1,5 +1,3 @@
-import kotlin.collections.List;
-
 CREATE TABLE models (
     name TEXT NOT NULL,
     type TEXT NOT NULL,

@@ -30,7 +30,7 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
 
     fun weightedSum(x: Array<Double>): Double {
         var totalSum = 0.0
-        for (idx in 1..x.size) {
+        for (idx in x.indices) {
             totalSum += this.weights.valueAt(idx) * x[idx]
         }
         return totalSum

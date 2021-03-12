@@ -20,15 +20,11 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
             loadingRecommendations.setVisibility(View.VISIBLE)
             loadingRecommendations.text = "Refreshing recommendations..."
 
-            val blocks = getMusicCommunity().database.getBlocksWithType("publish_release")
+//            val blocks = getMusicCommunity().database.getBlocksWithType("publish_release")
+            refreshRecommendations()
 
             val transaction = activity?.supportFragmentManager?.beginTransaction()
-
-            updateRecommendFragment(blocks[blocks.indices.random()], 0)
-            updateRecommendFragment(blocks[blocks.indices.random()], 1)
-
             loadingRecommendations.setVisibility(View.GONE)
-
             activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
 
             refreshRecommend.isRefreshing = false
@@ -62,14 +58,14 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
      */
     private fun refreshRecommendations() {
         Log.w("Recommend", "Retrieving local recommendation model")
-        val model =  getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
         val data = getRecommenderCommunity().recommendStore.getNewSongs(100)
         if (data != null) {
             val songFeatures = data.first
             val blocks = data.second
+            val model =  getRecommenderCommunity().recommendStore.getLocalModel(songFeatures.size) as Pegasos
             val predictions = model.predict(songFeatures)
             var best = 0
-            var runnerup = 0
+            var runnerup = 1
             for ((i, pred) in predictions.withIndex()) {
                 if (pred > predictions[best]) {
                     runnerup = best

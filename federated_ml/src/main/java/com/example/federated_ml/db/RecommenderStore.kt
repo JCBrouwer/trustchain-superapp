@@ -32,12 +32,12 @@ open class RecommenderStore(
             parameters= model.serialize())
     }
 
-    fun getLocalModel(): OnlineModel {
+    fun getLocalModel(amountFeatures: Int = 20): OnlineModel {
         val dbModel = database.dbModelQueries.getModel(name="Pegasos").executeAsOneOrNull()
         return if (dbModel != null) {
             Json.decodeFromString(dbModel.parameters) as Pegasos
         } else {
-            val model = Pegasos(0.01, 20, 10)
+            val model = Pegasos(0.01, amountFeatures, 10)
             storeModelLocally(model)
             Log.i("Recommend", "Initialized local model")
             model
@@ -63,7 +63,7 @@ open class RecommenderStore(
         val features = data.first
         val playcounts = data.second
         val blocks = data.third
-        if (features.isNotEmpty()) {
+        return if (features.isNotEmpty()) {
             val newFeatures =
                 Array<Array<Double>>(limit) { _ -> Array(features[0].size) { _ -> 0.0 } }
             var j = 0
@@ -74,9 +74,9 @@ open class RecommenderStore(
                 }
                 if (j == limit) break
             }
-            return Pair(newFeatures, blocks)
+            Pair(newFeatures, blocks)
         } else {
-            return null
+            null
         }
     }
 

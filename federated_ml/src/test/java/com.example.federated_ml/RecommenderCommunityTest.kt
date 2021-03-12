@@ -49,26 +49,26 @@ class RecommenderCommunityTest {
     @Test
     fun deserializedModelStoresCorrectly() {
         val community = spyk(getCommunity())
-//
-//        // 1 peer: send to 1 person, because we have 1 block
-//        val newKey2 = JavaCryptoProvider.generateKey()
-//        val neighborPeer = Peer(newKey2)
-//        every {
-//            community.getPeers()
-//        } returns listOf(neighborPeer)
-//
-//        val model = Pegasos(0.01, 20, 10)
-//        val data = community.serializePacket(
-//            RecommenderCommunity.MessageId.MODEL_EXCHANGE_MESSAGE,
-//            ModelExchangeMessage(community.myPeer.publicKey.keyToBin(), 1u,
-//                model::class::simpleName.toString(), model)
-//        )
-//        val packet = Packet(neighborPeer.address, data)
-//
-//        val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
-//        val peerModel = payload.model
-//        community.recommendStore.storeModelLocally(peerModel)
-//        val localModel = community.recommendStore.getLocalModel()
-//        Assert.assertEquals(peerModel.weights, localModel.weights)
+
+        // 1 peer: send to 1 person, because we have 1 block
+        val newKey2 = JavaCryptoProvider.generateKey()
+        val neighborPeer = Peer(newKey2)
+        every {
+            community.getPeers()
+        } returns listOf(neighborPeer)
+
+        val model = Pegasos(0.01, 20, 10)
+        val data = community.serializePacket(
+            RecommenderCommunity.MessageId.MODEL_EXCHANGE_MESSAGE,
+            ModelExchangeMessage(community.myPeer.publicKey.keyToBin(), 1u,
+                model::class::simpleName.toString(), model)
+        )
+        val packet = Packet(neighborPeer.address, data)
+
+        val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
+        val peerModel = payload.model
+        community.recommendStore.storeModelLocally(peerModel)
+        val localModel = community.recommendStore.getLocalModel()
+        Assert.assertEquals(peerModel.weights, localModel.weights)
     }
 }

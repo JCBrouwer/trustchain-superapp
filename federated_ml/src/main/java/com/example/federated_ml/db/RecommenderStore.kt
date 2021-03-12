@@ -1,7 +1,9 @@
 package com.example.federated_ml.db
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
@@ -19,6 +21,8 @@ open class RecommenderStore(
 ) {
     lateinit var key: ByteArray
     private val musicDir = File("")
+    private val totalAmountFeatures = 3
+    private var artistsMap: HashMap<String, Double> = hashMapOf()
 
     fun storeModelLocally(model: OnlineModel) {
         database.dbModelQueries.addModel(
@@ -28,7 +32,7 @@ open class RecommenderStore(
     }
 
     fun getLocalModel(amountFeatures: Int = 20): OnlineModel {
-        val dbModel = database.dbModelQueries.getModel(name ="Pegasos").executeAsOneOrNull()
+        val dbModel = database.dbModelQueries.getModel(name = "Pegasos").executeAsOneOrNull()
         return if (dbModel != null) {
             Json.decodeFromString(dbModel.parameters) as Pegasos
         } else {
@@ -51,6 +55,28 @@ open class RecommenderStore(
                     features[j][i] = 1.0
                 }
             }
+        }
+        return Pair(features, localSongs)
+    }
+
+    private fun extractMusicFeatures(block: TrustChainBlock): Array<Double> {
+        // unix timestamp
+        val lastListened = block.timestamp.time / 1000.0
+        val year = block.transaction["year"] as Double
+        var artist = this.artistsMap[block.transaction["artist"] as String]
+        if (artist == null) {
+            artist = block.transaction["artist"].hashCode().toDouble()
+            this.artistsMap[block.transaction["artist"] as String] = artist
+        }
+        return arrayOf(lastListened, year, artist)
+    }
+
+    private fun processSongsProperly(data: Pair<Array<Triple<String?, String?, String?>>,
+        Array<TrustChainBlock?>>): Pair<Array<Array<Double>>, IntArray> {
+        val features = Array(data.first.size) { _ -> Array(this.totalAmountFeatures) { _ -> 0.0 } }
+        val localSongs = this.getPlayCounts(data.first)
+        for (i in data.second.indices) {
+            features[i] = extractMusicFeatures(data.second[i]!!)
         }
         return Pair(features, localSongs)
     }
@@ -82,6 +108,7 @@ open class RecommenderStore(
         Log.w("Recommend", "Songs in music store: " + songsHistory.size.toString())
         val data = Array<Triple<String?, String?, String?>>(songsHistory.size) { _ ->
             Triple(null, null, null) }
+        val properData = Array<TrustChainBlock?>(songsHistory.size) { _ -> null}
 
         for ((i, block) in songsHistory.withIndex()) {
             var artist: String? = null
@@ -101,9 +128,11 @@ open class RecommenderStore(
             }
 
             data[i] = Triple(artist, title, year)
+            properData[i] = block
             if (data.size == limit) break
         }
         val processed = processSongs(data)
+        // val processedProperly = processSongsProperly(Pair(data, properData))
         val features = processed.first
         val playcounts = processed.second
         return Triple(features, playcounts, songsHistory)

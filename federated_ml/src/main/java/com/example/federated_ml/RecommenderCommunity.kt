@@ -1,6 +1,5 @@
 package com.example.federated_ml
 
-import android.content.Context
 import android.util.Log
 import com.example.federated_ml.db.RecommenderStore
 import com.example.federated_ml.ipv8.ModelExchangeMessage

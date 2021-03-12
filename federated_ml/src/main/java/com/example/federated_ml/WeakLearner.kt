@@ -2,7 +2,6 @@ package com.example.federated_ml
 import com.example.federated_ml.models.Adaline
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
-import java.util.*
 import kotlin.random.Random
 
 class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boolean) {

@@ -8,6 +8,7 @@ import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
 import com.example.musicdao.ipv8.MusicCommunity
 import com.example.federated_ml.RecommenderCommunity
+import com.example.federated_ml.db.RecommenderStore
 import com.squareup.sqldelight.android.AndroidSqliteDriver
 import nl.tudelft.ipv8.IPv8Configuration
 import nl.tudelft.ipv8.Overlay
@@ -232,14 +233,12 @@ class TrustChainApplication : Application() {
     }
 
     private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
-        val settings = TrustChainSettings()
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
         val musicStore = TrustChainSQLiteStore(Database(musicDriver))
-        val driver = AndroidSqliteDriver(Database.Schema, this, "recommend.db")
-        val recommendStore = TrustChainSQLiteStore(Database(driver))
+        val recommendStore = RecommenderStore.getInstance(musicStore, this)
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(
-            RecommenderCommunity.Factory(settings, recommendStore, musicStore),
+            RecommenderCommunity.Factory(recommendStore, this),
             listOf(randomWalk)
         )
     }

@@ -38,6 +38,8 @@ open class RecommenderStore(
             Json.decodeFromString(dbModel.parameters) as Pegasos
         } else {
             val model = Pegasos(0.01, 20, 10)
+            val trainingData = getSongData()
+            model.update(trainingData.first, trainingData.second)
             storeModelLocally(model)
             Log.i("Recommend", "Initialized local model")
             model

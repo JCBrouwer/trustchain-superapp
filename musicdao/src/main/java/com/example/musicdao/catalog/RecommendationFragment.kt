@@ -3,41 +3,42 @@ package com.example.musicdao.catalog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.lifecycle.lifecycleScope
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao.MusicBaseFragment
+import kotlinx.coroutines.delay
 import com.example.musicdao.R
 import com.example.musicdao.util.Util
 import kotlinx.android.synthetic.main.fragment_recommendation.*
+import kotlinx.android.synthetic.main.fragment_release.*
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import java.io.File
 
 class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendation) {
+    private var isActive = true
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Log.w("Recommend", "RecommendationFragment view created")
-        loadingRecommendations.setVisibility(View.VISIBLE)
-        loadingRecommendations.text = "Refreshing recommendations..."
 
-        refreshRecommendations()
+        lifecycleScope.launchWhenCreated {
+            while (isActive) {
+                if (loadingRecommendations != null){
+                    loadingRecommendations.setVisibility(View.VISIBLE)
+                    loadingRecommendations.text = "Refreshing recommendations..."
 
-        val transaction = activity?.supportFragmentManager?.beginTransaction()
-        loadingRecommendations.setVisibility(View.GONE)
-        activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
+                    refreshRecommendations()
 
-        refreshRecommend.isRefreshing = false
-//        refreshRecommend.setOnRefreshListener {
-//            Log.w("Recommend", "????")
-//            loadingRecommendations.setVisibility(View.VISIBLE)
-//            loadingRecommendations.text = "Refreshing recommendations..."
-//
-//            refreshRecommendations()
-//
-//            val transaction = activity?.supportFragmentManager?.beginTransaction()
-//            loadingRecommendations.setVisibility(View.GONE)
-//            activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
-//
-//            refreshRecommend.isRefreshing = false
-//        }
+                    val transaction = activity?.supportFragmentManager?.beginTransaction()
+                    loadingRecommendations.setVisibility(View.GONE)
+                    activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
+
+                    refreshRecommend.isRefreshing = false
+                }
+                delay(10000)
+                Log.w("Recommend", "Refreshing...")
+            }
+        }
     }
 
     private fun updateRecommendFragment(block: TrustChainBlock, recNum: Int) {

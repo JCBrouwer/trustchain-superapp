@@ -50,7 +50,6 @@ open class RecommenderCommunity(
 
     @ExperimentalUnsignedTypes
     fun onModelExchange(packet: Packet) {
-        System.out.println("HERE>>>>>>>")
         System.out.println(packet.toString())
         val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
 

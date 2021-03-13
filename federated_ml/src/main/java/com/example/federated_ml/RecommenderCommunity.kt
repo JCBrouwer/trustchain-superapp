@@ -30,7 +30,6 @@ open class RecommenderCommunity(
     @ExperimentalUnsignedTypes
     fun performRemoteModelExchange(
         model: OnlineModel,
-        modelType: String,
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
@@ -40,7 +39,7 @@ open class RecommenderCommunity(
             if (index >= maxPeersToAsk) break
             val packet = serializePacket(
                 MessageId.MODEL_EXCHANGE_MESSAGE,
-                ModelExchangeMessage(originPublicKey, ttl, modelType, model)
+                ModelExchangeMessage(originPublicKey, ttl, model.name, model)
             )
             send(peer, packet)
             count += 1
@@ -66,7 +65,7 @@ open class RecommenderCommunity(
 
         recommendStore.storeModelLocally(models.first)
 
-        performRemoteModelExchange(models.second, "Pegasos")
+        performRemoteModelExchange(models.second)
 
         Log.i("ModelExchange from", peer.mid)
     }

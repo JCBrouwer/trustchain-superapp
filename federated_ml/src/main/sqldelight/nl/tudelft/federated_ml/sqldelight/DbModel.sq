@@ -17,3 +17,6 @@ SELECT * FROM models;
 
 deleteModel:
 DELETE FROM models WHERE name = ?;
+
+deleteAll:
+DELETE FROM models;

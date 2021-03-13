@@ -4,16 +4,20 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import com.example.federated_ml.ipv8.SerializableSparseArray
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.parse
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 import nl.tudelft.federated_ml.sqldelight.Database
+import org.json.JSONObject
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -26,15 +30,17 @@ open class RecommenderStore(
 
     fun storeModelLocally(model: OnlineModel) {
         database.dbModelQueries.addModel(
-            name = model::class::simpleName.toString(),
-            type = model::class::simpleName.toString(),
+            name = model.name,
+            type = model.name,
             parameters = model.serialize())
     }
 
     fun getLocalModel(): OnlineModel {
         val dbModel = database.dbModelQueries.getModel(name = "Pegasos").executeAsOneOrNull()
         return if (dbModel != null) {
-            Json.decodeFromString(dbModel.parameters) as Pegasos
+            Log.i("Recommend", "Load existing local model")
+            val model = Json.decodeFromString(dbModel.parameters) as Pegasos
+            model
         } else {
             val model = Pegasos(0.01, totalAmountFeatures, 10)
             val trainingData = getLocalSongData()
@@ -43,6 +49,7 @@ open class RecommenderStore(
             }
             storeModelLocally(model)
             Log.i("Recommend", "Initialized local model")
+            Log.w("Model type", model.name)
             model
         }
     }

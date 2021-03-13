@@ -81,6 +81,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
                 best = i
             }
         }
+        Log.w("Recommend: Best score", predictions[best].toString())
         updateRecommendFragment(blocks[best], 0)
         updateRecommendFragment(blocks[runnerup], 1)
     }

@@ -50,6 +50,7 @@ open class RecommenderCommunity(
 
     @ExperimentalUnsignedTypes
     fun onModelExchange(packet: Packet) {
+        Log.w("HERE", packet.toString())
         val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
         // packet contains model type and weights from peer
@@ -58,7 +59,7 @@ open class RecommenderCommunity(
 
         val localModel = recommendStore.getLocalModel().cast(modelType)
 
-        val data = recommendStore.getSongData()
+        val data = recommendStore.getLocalSongData()
         val songFeatures = data.first
         val playcounts = data.second
         val models = this.createModelMU(localModel, peerModel, songFeatures, playcounts)

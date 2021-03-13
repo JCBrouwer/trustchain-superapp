@@ -1,13 +1,12 @@
 package com.example.federated_ml.ipv8
 
+import android.util.Log
 import kotlin.UInt
 import kotlinx.serialization.json.*
 import com.example.federated_ml.models.OnlineModel
 import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.messaging.*
 
-const val SERIALIZED_UINT_SIZE = 4
-const val SERIALIZED_PUBLIC_KEY_SIZE = 74
 /**
  * This is a message from a peer sending and asking for a model from other peers
  */
@@ -19,10 +18,11 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
 ) : Serializable {
 
     override fun serialize(): ByteArray {
+        Log.w("INIT KEY", originPublicKey.toString())
         return originPublicKey +
             serializeUInt(ttl) +
-            serializeVarLen(modelType.toByteArray(Charsets.US_ASCII)) +
-            serializeVarLen(model.serialize().toByteArray(Charsets.US_ASCII))
+            serializeVarLen(modelType.toByteArray(Charsets.UTF_8)) +
+            serializeVarLen(model.serialize().toByteArray(Charsets.UTF_8))
     }
 
     @kotlin.ExperimentalUnsignedTypes
@@ -41,6 +41,7 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
                 offset + localOffset,
                 offset + localOffset + SERIALIZED_PUBLIC_KEY_SIZE
             )
+            Log.w("!!!!!!!!!!!", originPublicKey.toString())
             localOffset += SERIALIZED_PUBLIC_KEY_SIZE
             val ttl = deserializeUInt(buffer, offset + localOffset)
 
@@ -49,12 +50,13 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
             localOffset += modelTypeSize
             val (model, modelSize) = deserializeVarLen(buffer, offset + localOffset)
             localOffset += modelSize
+
             return Pair(
                 first = ModelExchangeMessage(
                     originPublicKey = originPublicKey,
                     ttl = ttl,
-                    modelType = modelType.toString(Charsets.US_ASCII),
-                    model = Json.decodeFromString(model.toString(Charsets.US_ASCII))
+                    modelType = modelType.toString(Charsets.UTF_8),
+                    model = Json.decodeFromString(model.toString(Charsets.UTF_8))
                 ), second = localOffset
             )
         }

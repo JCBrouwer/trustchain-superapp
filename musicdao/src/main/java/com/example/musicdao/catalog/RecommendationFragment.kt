@@ -62,7 +62,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         if (data != null) {
             val songFeatures = data.first
             val blocks = data.second
-            val model =  getRecommenderCommunity().recommendStore.getLocalModel(songFeatures.size) as Pegasos
+            val model =  getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
             val predictions = model.predict(songFeatures)
             var best = 0
             var runnerup = 1

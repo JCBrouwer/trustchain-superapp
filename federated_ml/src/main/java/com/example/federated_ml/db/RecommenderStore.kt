@@ -38,7 +38,9 @@ open class RecommenderStore(
         } else {
             val model = Pegasos(0.01, totalAmountFeatures, 10)
             val trainingData = getLocalSongData()
-            model.update(trainingData.first, trainingData.second)
+            if (trainingData.first.isNotEmpty()){
+                model.update(trainingData.first, trainingData.second)
+            }
             storeModelLocally(model)
             Log.i("Recommend", "Initialized local model")
             model
@@ -107,7 +109,7 @@ open class RecommenderStore(
         return Pair(features, playcounts)
     }
 
-    fun getNewSongs(limit: Int): Pair<Array<Array<Double>>, List<TrustChainBlock>>? {
+    fun getNewSongs(limit: Int): Pair<Array<Array<Double>>, List<TrustChainBlock>> {
         var songsHistory = musicStore.getBlocksWithType("publish_release")
         try {
             songsHistory = songsHistory.subList(0, limit)

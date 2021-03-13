@@ -15,20 +15,29 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Log.w("Recommend", "RecommendationFragment view created")
+        loadingRecommendations.setVisibility(View.VISIBLE)
+        loadingRecommendations.text = "Refreshing recommendations..."
 
-        refreshRecommend.setOnRefreshListener {
-            loadingRecommendations.setVisibility(View.VISIBLE)
-            loadingRecommendations.text = "Refreshing recommendations..."
+        refreshRecommendations()
 
-//            val blocks = getMusicCommunity().database.getBlocksWithType("publish_release")
-            refreshRecommendations()
+        val transaction = activity?.supportFragmentManager?.beginTransaction()
+        loadingRecommendations.setVisibility(View.GONE)
+        activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
 
-            val transaction = activity?.supportFragmentManager?.beginTransaction()
-            loadingRecommendations.setVisibility(View.GONE)
-            activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
-
-            refreshRecommend.isRefreshing = false
-        }
+        refreshRecommend.isRefreshing = false
+//        refreshRecommend.setOnRefreshListener {
+//            Log.w("Recommend", "????")
+//            loadingRecommendations.setVisibility(View.VISIBLE)
+//            loadingRecommendations.text = "Refreshing recommendations..."
+//
+//            refreshRecommendations()
+//
+//            val transaction = activity?.supportFragmentManager?.beginTransaction()
+//            loadingRecommendations.setVisibility(View.GONE)
+//            activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
+//
+//            refreshRecommend.isRefreshing = false
+//        }
     }
 
     private fun updateRecommendFragment(block: TrustChainBlock, recNum: Int) {
@@ -59,21 +68,19 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
     private fun refreshRecommendations() {
         Log.w("Recommend", "Retrieving local recommendation model")
         val data = getRecommenderCommunity().recommendStore.getNewSongs(100)
-        if (data != null) {
-            val songFeatures = data.first
-            val blocks = data.second
-            val model =  getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
-            val predictions = model.predict(songFeatures)
-            var best = 0
-            var runnerup = 1
-            for ((i, pred) in predictions.withIndex()) {
-                if (pred > predictions[best]) {
-                    runnerup = best
-                    best = i
-                }
+        val songFeatures = data.first
+        val blocks = data.second
+        val model =  getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
+        val predictions = model.predict(songFeatures)
+        var best = 0
+        var runnerup = 1
+        for ((i, pred) in predictions.withIndex()) {
+            if (pred > predictions[best]) {
+                runnerup = best
+                best = i
             }
-            updateRecommendFragment(blocks[best], 0)
-            updateRecommendFragment(blocks[runnerup], 1)
         }
+        updateRecommendFragment(blocks[best], 0)
+        updateRecommendFragment(blocks[runnerup], 1)
     }
 }

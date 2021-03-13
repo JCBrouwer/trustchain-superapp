@@ -50,7 +50,8 @@ open class RecommenderCommunity(
 
     @ExperimentalUnsignedTypes
     fun onModelExchange(packet: Packet) {
-        Log.w("HERE", packet.toString())
+        System.out.println("HERE>>>>>>>")
+        System.out.println(packet.toString())
         val (peer, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
         // packet contains model type and weights from peer

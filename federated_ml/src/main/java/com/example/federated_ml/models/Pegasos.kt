@@ -1,4 +1,5 @@
 package com.example.federated_ml.models
+import android.util.Log
 import java.util.*
 
 class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :

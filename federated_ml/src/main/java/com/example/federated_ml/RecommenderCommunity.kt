@@ -7,25 +7,36 @@ import com.example.federated_ml.models.OnlineModel
 import com.example.musicdao_datafeeder.MusicCommunity
 import nl.tudelft.ipv8.Community
 import nl.tudelft.ipv8.Overlay
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainSettings
+import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
 import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 
 @ExperimentalUnsignedTypes
-open class RecommenderCommunity: Community {
+open class RecommenderCommunity: TrustChainCommunity {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
     val recommendStore: RecommenderStore
 
     class Factory(
-        private val recommendStore: RecommenderStore
+        private val recommendStore: RecommenderStore,
+        private val settings: TrustChainSettings,
+        private val database: TrustChainStore,
+        private val crawler: TrustChainCrawler = TrustChainCrawler()
     ) : Overlay.Factory<RecommenderCommunity>(RecommenderCommunity::class.java) {
         override fun create(): RecommenderCommunity {
-            return RecommenderCommunity(recommendStore)
+            return RecommenderCommunity(recommendStore, settings, database, crawler)
         }
     }
 
-    constructor(recommendStore: RecommenderStore): super() {
+    constructor(recommendStore: RecommenderStore,
+                settings: TrustChainSettings,
+                database: TrustChainStore,
+                crawler: TrustChainCrawler = TrustChainCrawler()): super(settings, database, crawler) {
         this.recommendStore = recommendStore
+
     }
 
     init {
@@ -57,6 +68,7 @@ open class RecommenderCommunity: Community {
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
+        Log.i("Recommender", "My key is $originPublicKey")
         val maxPeersToAsk = 1
         var count = 0
         // TODO: delete myself from list

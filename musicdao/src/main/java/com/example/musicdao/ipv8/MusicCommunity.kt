@@ -63,6 +63,7 @@ class MusicCommunity(
      * to the original asker. If I don't, I will ask my peers to find it
      */
     private fun onKeywordSearch(packet: Packet) {
+        Log.i("KeywordSearch", "KW ")
         val (peer, payload) = packet.getAuthPayload(KeywordSearchMessage)
         val keyword = payload.keyword.toLowerCase(Locale.ROOT)
         val block = localKeywordSearch(keyword)
@@ -127,6 +128,7 @@ class MusicCommunity(
      * @return the amount of blocks that were sent
      */
     fun communicateReleaseBlocks(): Int {
+        Log.i("Music Community", "Communicating blocks")
         val peer = pickRandomPeer() ?: return 0
         val releaseBlocks = database.getBlocksWithType("publish_release")
         val maxBlocks = 3

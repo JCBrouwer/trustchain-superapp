@@ -9,9 +9,9 @@ open class OnlineModel {
     private val amountFeatures: Int
     internal var weights: Array<Double>
 
-    constructor(amountFeatures: Int){
+    constructor(amountFeatures: Int) {
         this.amountFeatures = amountFeatures
-        this.weights = Array(amountFeatures) { _ -> Random().nextDouble() * 3}
+        this.weights = Array(amountFeatures) { _ -> Random().nextDouble() * 3 }
     }
 
     fun merge(otherOnlineModel: OnlineModel): OnlineModel {

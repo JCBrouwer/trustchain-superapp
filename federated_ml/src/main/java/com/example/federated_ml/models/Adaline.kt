@@ -2,11 +2,10 @@ package com.example.federated_ml.models
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.json.JSONObject
 import java.util.*
 
 @Serializable
-class Adaline: OnlineModel {
+class Adaline : OnlineModel {
     private val learningRate: Double
     var bias = Random().nextDouble()
     override var name = "Adaline"

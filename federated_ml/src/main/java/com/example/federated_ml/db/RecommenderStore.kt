@@ -1,23 +1,17 @@
 package com.example.federated_ml.db
 
 import android.annotation.SuppressLint
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
-import com.example.federated_ml.ipv8.SerializableSparseArray
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.parse
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 import nl.tudelft.federated_ml.sqldelight.Database
-import org.json.JSONObject
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -44,7 +38,7 @@ open class RecommenderStore(
         } else {
             val model = Pegasos(0.01, totalAmountFeatures, 10)
             val trainingData = getLocalSongData()
-            if (trainingData.first.isNotEmpty()){
+            if (trainingData.first.isNotEmpty()) {
                 model.update(trainingData.first, trainingData.second)
             }
             storeModelLocally(model)
@@ -120,13 +114,12 @@ open class RecommenderStore(
         var songsHistory = musicStore.getBlocksWithType("publish_release")
         try {
             songsHistory = songsHistory.subList(0, limit)
-        } catch (e: java.lang.Exception){
+        } catch (e: java.lang.Exception) {
             Log.w("Exception getNewSongs", e.toString())
         }
         val data = processGlobalSongs(songsHistory)
         return Pair(data, songsHistory)
     }
-
 
     private fun extractMP3Features(mp3File: Mp3File): Array<Double> {
         var dataLen = -1.0
@@ -155,7 +148,7 @@ open class RecommenderStore(
             if (artist == -1.0 && mp3File.id3v1Tag.artist != null) {
                 artist = this.artistsMap[mp3File.id3v1Tag.artist as String]!!
             }
-            if (genre == -1.0){
+            if (genre == -1.0) {
                 genre = mp3File.id3v1Tag.genre.toDouble()
             }
         }
@@ -174,7 +167,7 @@ open class RecommenderStore(
         for (albumFile in allFiles) {
             if (albumFile.isDirectory) {
                 val audioFiles = albumFile.listFiles(AudioFileFilter()) ?: continue
-                for (f in audioFiles){
+                for (f in audioFiles) {
                     try {
                         val mp3File = Mp3File(audioFiles[0])
 
@@ -186,7 +179,7 @@ open class RecommenderStore(
                     }
                     idx += 1
 
-                    if (idx == limit){
+                    if (idx == limit) {
                         return Pair(labels, allMP3)
                     }
                 }

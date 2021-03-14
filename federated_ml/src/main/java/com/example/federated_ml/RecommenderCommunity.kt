@@ -4,8 +4,6 @@ import android.util.Log
 import com.example.federated_ml.db.RecommenderStore
 import com.example.federated_ml.ipv8.ModelExchangeMessage
 import com.example.federated_ml.models.OnlineModel
-import com.example.musicdao_datafeeder.MusicCommunity
-import nl.tudelft.ipv8.Community
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
@@ -16,7 +14,7 @@ import java.util.*
 import kotlin.random.Random
 
 @ExperimentalUnsignedTypes
-open class RecommenderCommunity: TrustChainCommunity {
+open class RecommenderCommunity : TrustChainCommunity {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
     val recommendStore: RecommenderStore
 
@@ -31,12 +29,9 @@ open class RecommenderCommunity: TrustChainCommunity {
         }
     }
 
-    constructor(recommendStore: RecommenderStore,
-                settings: TrustChainSettings,
-                database: TrustChainStore,
+    constructor(recommendStore: RecommenderStore, settings: TrustChainSettings, database: TrustChainStore,
                 crawler: TrustChainCrawler = TrustChainCrawler()): super(settings, database, crawler) {
         this.recommendStore = recommendStore
-
     }
 
     init {
@@ -51,8 +46,7 @@ open class RecommenderCommunity: TrustChainCommunity {
         }
     }
 
-
-    private fun initiateWalkingModel(){
+    private fun initiateWalkingModel() {
         try {
             Log.i("Recommender", "Initiate random walk")
             performRemoteModelExchange(model = recommendStore.getLocalModel())

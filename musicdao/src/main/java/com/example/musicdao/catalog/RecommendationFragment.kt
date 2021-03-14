@@ -23,7 +23,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
 
         lifecycleScope.launchWhenCreated {
             while (isActive) {
-                if (loadingRecommendations != null){
+                if (loadingRecommendations != null) {
                     loadingRecommendations.setVisibility(View.VISIBLE)
                     loadingRecommendations.text = "Refreshing recommendations..."
 
@@ -51,8 +51,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         val torrentName = block.transaction["torrentInfoName"]
         val path = if (torrentName != null) {
             context?.cacheDir?.path + "/" + Util.sanitizeString(torrentName as String)
-        }
-        else {
+        } else {
             context?.cacheDir?.path + "/" + "notfound.jpg"
         }
         val coverArt = Util.findCoverArt(File(path))
@@ -71,7 +70,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         val data = getRecommenderCommunity().recommendStore.getNewSongs(100)
         val songFeatures = data.first
         val blocks = data.second
-        val model =  getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
+        val model = getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
         val predictions = model.predict(songFeatures)
         var best = 0
         var runnerup = 1

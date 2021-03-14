@@ -1,16 +1,24 @@
 package com.example.federated_ml.models
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.*
 
-class Adaline(learningRate: Double, amountFeatures: Int) :
-    OnlineModel(amountFeatures) {
-    private val learningRate = learningRate
+@Serializable
+class Adaline : OnlineModel {
+    private val learningRate: Double
     var bias = Random().nextDouble()
+    override var name = "Adaline"
+
+    constructor(learningRate: Double, amountFeatures: Int) : super(amountFeatures) {
+        this.learningRate = learningRate
+    }
 
     override fun update(x: Array<Double>, y: Int) {
         val error = y - activation(forward(x))
         this.bias += this.learningRate * error
         for ((idx, item) in x.withIndex()) {
-            weights.put(idx, weights.valueAt(idx) + learningRate * error * item)
+            weights[idx] = weights[idx] + learningRate * error * item
         }
     }
 
@@ -43,8 +51,14 @@ class Adaline(learningRate: Double, amountFeatures: Int) :
     private fun forward(x: Array<Double>): Double {
         var weightedSum = this.bias
         for (idx in 1..x.size) {
-            weightedSum += this.weights.valueAt(idx) * x[idx]
+            weightedSum += this.weights[idx] * x[idx]
         }
         return weightedSum
+    }
+
+    override fun serialize(): String {
+//        val jsn = JSONObject("""{"weights":$weights, "bias":$bias,
+//            |"learningRate:$learningRate"}""".trimMargin())
+        return Json.encodeToString(this)
     }
 }

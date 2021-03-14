@@ -1,24 +1,22 @@
 package com.example.federated_ml.models
-import com.example.federated_ml.ipv8.SerializableSparseArray as SparseArray
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import java.util.*
 
 @Serializable
 open class OnlineModel {
-    @Contextual
-    internal var weights: SparseArray<Double>
+    @Transient open lateinit var name: String
+    private val amountFeatures: Int
+    internal var weights: Array<Double>
 
     constructor(amountFeatures: Int) {
-        weights = SparseArray(amountFeatures)
-        for (idx in 1..amountFeatures) {
-            weights.append(idx, Random().nextDouble() * 3)
-        }
+        this.amountFeatures = amountFeatures
+        this.weights = Array(amountFeatures) { _ -> Random().nextDouble() * 3 }
     }
 
     fun merge(otherOnlineModel: OnlineModel): OnlineModel {
-        for (idx in 1..weights.size()) {
-            weights.put(idx, (weights.valueAt(idx) + otherOnlineModel.weights.valueAt(idx)) / 2)
+        for (idx in weights.indices) {
+            weights[idx] = (weights[idx] + otherOnlineModel.weights[idx]) / 2
         }
         return this
     }

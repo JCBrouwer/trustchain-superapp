@@ -3,31 +3,41 @@ package com.example.musicdao.catalog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.lifecycle.lifecycleScope
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao.MusicBaseFragment
+import kotlinx.coroutines.delay
 import com.example.musicdao.R
 import com.example.musicdao.util.Util
 import kotlinx.android.synthetic.main.fragment_recommendation.*
+import kotlinx.android.synthetic.main.fragment_release.*
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import java.io.File
 
 class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendation) {
+    private var isActive = true
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Log.w("Recommend", "RecommendationFragment view created")
 
-        refreshRecommend.setOnRefreshListener {
-            loadingRecommendations.setVisibility(View.VISIBLE)
-            loadingRecommendations.text = "Refreshing recommendations..."
+        lifecycleScope.launchWhenCreated {
+            while (isActive) {
+                if (loadingRecommendations != null) {
+                    loadingRecommendations.setVisibility(View.VISIBLE)
+                    loadingRecommendations.text = "Refreshing recommendations..."
 
-//            val blocks = getMusicCommunity().database.getBlocksWithType("publish_release")
-            refreshRecommendations()
+                    refreshRecommendations()
 
-            val transaction = activity?.supportFragmentManager?.beginTransaction()
-            loadingRecommendations.setVisibility(View.GONE)
-            activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
+                    val transaction = activity?.supportFragmentManager?.beginTransaction()
+                    loadingRecommendations.setVisibility(View.GONE)
+                    activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
 
-            refreshRecommend.isRefreshing = false
+                    refreshRecommend.isRefreshing = false
+                }
+                delay(10000)
+                Log.w("Recommend", "Refreshing...")
+            }
         }
     }
 
@@ -41,8 +51,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         val torrentName = block.transaction["torrentInfoName"]
         val path = if (torrentName != null) {
             context?.cacheDir?.path + "/" + Util.sanitizeString(torrentName as String)
-        }
-        else {
+        } else {
             context?.cacheDir?.path + "/" + "notfound.jpg"
         }
         val coverArt = Util.findCoverArt(File(path))
@@ -59,21 +68,21 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
     private fun refreshRecommendations() {
         Log.w("Recommend", "Retrieving local recommendation model")
         val data = getRecommenderCommunity().recommendStore.getNewSongs(100)
-        if (data != null) {
-            val songFeatures = data.first
-            val blocks = data.second
-            val model =  getRecommenderCommunity().recommendStore.getLocalModel(songFeatures.size) as Pegasos
-            val predictions = model.predict(songFeatures)
-            var best = 0
-            var runnerup = 1
-            for ((i, pred) in predictions.withIndex()) {
-                if (pred > predictions[best]) {
-                    runnerup = best
-                    best = i
-                }
+        val songFeatures = data.first
+        val blocks = data.second
+        val model = getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
+        val predictions = model.predict(songFeatures)
+        var best = 0
+        var runnerup = 1
+        for ((i, pred) in predictions.withIndex()) {
+            if (pred > predictions[best]) {
+                runnerup = best
+                best = i
             }
-            updateRecommendFragment(blocks[best], 0)
-            updateRecommendFragment(blocks[runnerup], 1)
         }
+        val debugScore = predictions[best].toString()
+        Log.w("Recommender", "After refreshing, best local score is $debugScore")
+        updateRecommendFragment(blocks[best], 0)
+        updateRecommendFragment(blocks[runnerup], 1)
     }
 }

@@ -234,14 +234,18 @@ class TrustChainApplication : Application() {
     }
 
     private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
+        val settings = TrustChainSettings()
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
         val musicStore = TrustChainSQLiteStore(Database(musicDriver))
         val driver = AndroidSqliteDriver(MLDatabase.Schema, this, "federated_ml.db")
         val database = MLDatabase(driver)
+
+//        // TODO: for debugging, remove later
+//        database.dbModelQueries.deleteAll()
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(
-            RecommenderCommunity.Factory(recommendStore),
+            RecommenderCommunity.Factory(recommendStore, settings, musicStore),
             listOf(randomWalk)
         )
     }

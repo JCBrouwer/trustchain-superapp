@@ -29,8 +29,11 @@ open class RecommenderCommunity : TrustChainCommunity {
         }
     }
 
-    constructor(recommendStore: RecommenderStore, settings: TrustChainSettings, database: TrustChainStore,
-                crawler: TrustChainCrawler = TrustChainCrawler()): super(settings, database, crawler) {
+    constructor(recommendStore: RecommenderStore,
+                settings: TrustChainSettings,
+                database: TrustChainStore,
+                crawler: TrustChainCrawler = TrustChainCrawler()
+    ) : super(settings, database, crawler) {
         this.recommendStore = recommendStore
     }
 
@@ -61,7 +64,7 @@ open class RecommenderCommunity : TrustChainCommunity {
         model: OnlineModel,
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
-    ): Int {
+    ) : Int {
         Log.i("Recommender", "My key is $originPublicKey")
         val maxPeersToAsk = 1
         var count = 0

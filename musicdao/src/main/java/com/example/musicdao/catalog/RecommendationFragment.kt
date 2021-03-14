@@ -81,7 +81,8 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
                 best = i
             }
         }
-        Log.w("Recommend: Best score", predictions[best].toString())
+        val debugScore = predictions[best].toString()
+        Log.w("Recommender", "After refreshing, best local score is $debugScore")
         updateRecommendFragment(blocks[best], 0)
         updateRecommendFragment(blocks[runnerup], 1)
     }

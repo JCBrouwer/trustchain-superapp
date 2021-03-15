@@ -63,6 +63,7 @@ android {
 }
 
 dependencies {
+    implementation project(':federated_ml')
     implementation project(':common')
     api(project(':ipv8-android')){
         exclude group: 'net.java.dev.jna'

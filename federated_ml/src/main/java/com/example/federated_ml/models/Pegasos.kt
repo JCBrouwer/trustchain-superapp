@@ -1,10 +1,19 @@
 package com.example.federated_ml.models
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.*
 
-class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
-    OnlineModel(amountFeatures) {
-    private val regularization = regularization
-    private val iterations = iterations
+@Serializable
+class Pegasos : OnlineModel {
+    private val regularization: Double
+    private val iterations: Int
+    override var name = "Pegasos"
+
+    constructor(regularization: Double, amountFeatures: Int, iterations: Int) : super(amountFeatures) {
+        this.regularization = regularization
+        this.iterations = iterations
+    }
 
     override fun update(x: Array<Double>, y: Int) {
         val eta = 1.0 / regularization
@@ -30,13 +39,18 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
 
     fun weightedSum(x: Array<Double>): Double {
         var totalSum = 0.0
-        for (idx in 1..x.size) {
-            totalSum += this.weights.valueAt(idx) * x[idx]
+        for (idx in x.indices) {
+            totalSum += this.weights[idx] * x[idx]
         }
         return totalSum
     }
 
-    override fun predict(x: Array<Double>): Int {
+    override fun predict(x: Array<Double>): Double {
+        val weightedSum = weightedSum(x)
+        return activation(weightedSum)
+    }
+
+    fun classify(x: Array<Double>): Int {
         val weightedSum = weightedSum(x)
         return if (activation(weightedSum) >= 0.0) {
             1
@@ -48,13 +62,19 @@ class Pegasos(regularization: Double, amountFeatures: Int, iterations: Int) :
     private fun gradientSVM(x: Array<Double>, y: Int, eta: Double) {
         val score = weightedSum(x)
         if (y * score < 1) {
-            for (idx in 1..weights.size()) {
-                this.weights.put(idx, (1 - eta * regularization) * this.weights.valueAt(idx) + eta * y)
+            for (idx in 0 until weights.size) {
+                weights[idx] = (1 - eta * regularization) * weights[idx] + eta * y
             }
         } else {
-            for (idx in 1..weights.size()) {
-                this.weights.put(idx, (1 - eta * regularization) * this.weights.valueAt(idx))
+            for (idx in 0 until weights.size) {
+                weights[idx] *= (1 - eta * regularization)
             }
         }
+    }
+
+    override fun serialize(): String {
+//        val jsn = JSONObject("""{"weights":$weights, "iterations":$iterations,
+//            |"regularization:$regularization"}""".trimMargin())
+        return Json.encodeToString(this)
     }
 }

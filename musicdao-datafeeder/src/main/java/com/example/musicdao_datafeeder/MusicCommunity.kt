@@ -61,6 +61,7 @@ class MusicCommunity(
      * to the original asker. If I don't, I will ask my peers to find it
      */
     private fun onKeywordSearch(packet: Packet) {
+        System.out.println("Music: Keyword search working working")
         val (peer, payload) = packet.getAuthPayload(KeywordSearchMessage)
         val keyword = payload.keyword.toLowerCase(Locale.ROOT)
         val block = localKeywordSearch(keyword)
@@ -76,6 +77,7 @@ class MusicCommunity(
      * they are currently tracking
      */
     private fun onSwarmHealth(packet: Packet) {
+        System.out.println("Music: Swarm health exchange working")
         val (_, swarmHealth) = packet.getAuthPayload(SwarmHealth)
         swarmHealthMap[Sha1Hash(swarmHealth.infoHash)] = swarmHealth
     }

@@ -2,7 +2,6 @@ package com.example.federated_ml
 import com.example.federated_ml.models.Adaline
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
-import java.util.*
 import kotlin.random.Random
 
 class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boolean) {
@@ -61,7 +60,7 @@ class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boole
     }
 
     fun makePrediction(testFeatures: Array<Array<Double>>) {
-        val prediction: IntArray = if (this.ensemmbleModel != null) {
+        val prediction: DoubleArray = if (this.ensemmbleModel != null) {
             this.ensemmbleModel!!.predict(testFeatures)
         } else {
             this.modelCache.last().predict(testFeatures)

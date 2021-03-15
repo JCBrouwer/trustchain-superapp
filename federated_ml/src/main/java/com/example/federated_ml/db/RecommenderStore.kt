@@ -18,7 +18,9 @@ open class RecommenderStore(
     private val database: Database
 ) {
     lateinit var key: ByteArray
-    private val musicDir = File("")
+    // TODO: fix this to proper path
+    @SuppressLint("SdCardPath")
+    private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
     private val totalAmountFeatures = 6
     private var artistsMap: HashMap<String, Double> = hashMapOf()
 
@@ -31,21 +33,21 @@ open class RecommenderStore(
 
     fun getLocalModel(): OnlineModel {
         val dbModel = database.dbModelQueries.getModel(name = "Pegasos").executeAsOneOrNull()
-        return if (dbModel != null) {
+        val model: OnlineModel
+        if (dbModel != null) {
             Log.i("Recommend", "Load existing local model")
-            val model = Json.decodeFromString(dbModel.parameters) as Pegasos
-            model
+            model = Json.decodeFromString(dbModel.parameters) as Pegasos
         } else {
-            val model = Pegasos(0.01, totalAmountFeatures, 10)
-            val trainingData = getLocalSongData()
-            if (trainingData.first.isNotEmpty()) {
-                model.update(trainingData.first, trainingData.second)
-            }
-            storeModelLocally(model)
+            model = Pegasos(0.01, totalAmountFeatures, 10)
             Log.i("Recommend", "Initialized local model")
             Log.w("Model type", model.name)
-            model
         }
+        val trainingData = getLocalSongData()
+        if (trainingData.first.isNotEmpty()) {
+            model.update(trainingData.first, trainingData.second)
+        }
+        storeModelLocally(model)
+        return model
     }
 
     private fun processSongs(limit: Int = 50): Pair<Array<Array<Double>>, IntArray> {
@@ -130,43 +132,96 @@ open class RecommenderStore(
         var genre = -1.0
 
         if (mp3File.hasId3v2Tag()) {
-            bpm = mp3File.id3v2Tag.bpm.toDouble()
-            dataLen = mp3File.id3v2Tag.dataLength.toDouble()
-            if (mp3File.id3v2Tag.year != null) {
+            try {
+                bpm = mp3File.id3v2Tag.bpm.toDouble()
+            } catch (e: Exception){
+                Log.w("Feature extraction", e.toString())
+                Log.w("Feature extraction", e.toString())
+            }
+
+            try {
+                dataLen = mp3File.id3v2Tag.dataLength.toDouble()
+            } catch (e: Exception){
+                Log.w("Feature extraction", dataLen.toString())
+                Log.w("Feature extraction", e.toString())
+            }
+
+            try {
                 year = mp3File.id3v2Tag.year.toDouble()
+            } catch (e: Exception){
+                Log.w("Feature extraction", year.toString())
+                Log.w("Feature extraction", e.toString())
             }
-            wmp = mp3File.id3v2Tag.wmpRating.toDouble()
+
+            try {
+                wmp = mp3File.id3v2Tag.wmpRating.toDouble()
+            } catch (e: Exception){
+                Log.w("Feature extraction", wmp.toString())
+                Log.w("Feature extraction", e.toString())
+            }
+
             if (mp3File.id3v2Tag.artist != null) {
-                artist = this.artistsMap[mp3File.id3v2Tag.artist as String]!!
+                try {
+                    artist = this.artistsMap[mp3File.id3v2Tag.artist as String]!!
+                } catch (e: java.lang.Exception){
+                    artist = this.artistsMap.size.toDouble()
+                    artistsMap[mp3File.id3v2Tag.artist as String] = artist
+                }
+
             }
-            genre = mp3File.id3v2Tag.genre.toDouble()
+
+            try {
+                genre = mp3File.id3v2Tag.genre.toDouble()
+            } catch (e: Exception){
+                Log.w("Feature extraction", genre.toString())
+                Log.w("Feature extraction", e.toString())
+            }
         }
         if (mp3File.hasId3v1Tag()) {
             if (year == -1.0 && mp3File.id3v1Tag.year != null) {
-                year = mp3File.id3v1Tag.year.toDouble()
+                try {
+                    year = mp3File.id3v1Tag.year.toDouble()
+                } catch (e: Exception){
+                    Log.w("Feature extraction", e.toString())
+                }
             }
             if (artist == -1.0 && mp3File.id3v1Tag.artist != null) {
-                artist = this.artistsMap[mp3File.id3v1Tag.artist as String]!!
+                try {
+                    artist = this.artistsMap[mp3File.id3v1Tag.artist as String]!!
+                } catch (e: java.lang.Exception){
+                    artist = this.artistsMap.size.toDouble()
+                    artistsMap[mp3File.id3v1Tag.artist as String] = artist
+                }
             }
             if (genre == -1.0) {
-                genre = mp3File.id3v1Tag.genre.toDouble()
+                try {
+                    genre = mp3File.id3v1Tag.genre.toDouble()
+                } catch (e: Exception){
+                    Log.w("Feature extraction", e.toString())
+                }
             }
         }
+
+        Log.w("Feature extraction", "$artist $year $wmp $bpm $dataLen $genre")
 
         return arrayOf(artist, year, wmp, bpm, dataLen, genre)
     }
 
     fun getPlayCounts(limit: Int = 50): Pair<IntArray, Array<Mp3File>> {
+        Log.w("Recommender Store", "Getting playcounts...")
         if (!musicDir.isDirectory) return Pair(IntArray(0), arrayOf())
 
         val allFiles = musicDir.listFiles() ?: return Pair(IntArray(0), arrayOf())
+        Log.w("Recommender Store", "Amount of files is ${allFiles.size}")
 
         var labels = intArrayOf()
         var allMP3: Array<Mp3File> = arrayOf()
         var idx = 0
         for (albumFile in allFiles) {
+            Log.w("Recommender Store", "SLocal album is ${albumFile.name}")
             if (albumFile.isDirectory) {
                 val audioFiles = albumFile.listFiles(AudioFileFilter()) ?: continue
+                Log.w("Recommender Store", "SLocal songs amount in alum: ${audioFiles.size}")
                 for (f in audioFiles) {
                     try {
                         val mp3File = Mp3File(audioFiles[0])

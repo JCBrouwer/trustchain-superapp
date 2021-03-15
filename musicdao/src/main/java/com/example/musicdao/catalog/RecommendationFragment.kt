@@ -67,7 +67,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
      */
     private fun refreshRecommendations() {
         Log.w("Recommend", "Retrieving local recommendation model")
-        val data = getRecommenderCommunity().recommendStore.getNewSongs(100)
+        val data = getRecommenderCommunity().recommendStore.getNewSongs(50)
         val songFeatures = data.first
         val blocks = data.second
         val model = getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos

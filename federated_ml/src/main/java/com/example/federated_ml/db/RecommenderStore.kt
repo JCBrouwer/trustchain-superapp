@@ -218,13 +218,14 @@ open class RecommenderStore(
         var allMP3: Array<Mp3File> = arrayOf()
         var idx = 0
         for (albumFile in allFiles) {
-            Log.w("Recommender Store", "SLocal album is ${albumFile.name}")
+            Log.w("Recommender Store", "Local album is ${albumFile.name}")
             if (albumFile.isDirectory) {
                 val audioFiles = albumFile.listFiles(AudioFileFilter()) ?: continue
-                Log.w("Recommender Store", "SLocal songs amount in alum: ${audioFiles.size}")
+                Log.w("Recommender Store", "Local songs amount in alum: ${audioFiles.size}")
                 for (f in audioFiles) {
                     try {
-                        val mp3File = Mp3File(audioFiles[0])
+                        val mp3File = Mp3File(f)
+                        Log.w("Recommender Store", "Add training song $mp3File")
 
                         // TODO: either get proper playcounts or
                         //  distinguish based on full/partial download...

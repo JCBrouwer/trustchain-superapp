@@ -244,7 +244,32 @@ class TransactionRepository(
         )
     }
 
-    fun sendDestroyProposal(
+    fun sendDestroyProposalWithIBAN(
+        iban: String,
+        amount: Long
+    ): TrustChainBlock? {
+        Log.w("EuroTokenBlockDestroy", "Creating destroy...")
+        val peer = getGatewayPeer() ?: return null
+
+        if (getMyVerifiedBalance() - amount < 0) {
+            return null
+        }
+
+        val transaction = mapOf(
+            KEY_IBAN to iban,
+            KEY_AMOUNT to BigInteger.valueOf(amount),
+            KEY_BALANCE to (BigInteger.valueOf(getMyBalance() - amount).toLong())
+        )
+        val block = trustChainCommunity.createProposalBlock(
+            BLOCK_TYPE_DESTROY, transaction,
+            peer.publicKey.keyToBin()
+        )
+
+        trustChainCommunity.sendBlock(block, peer)
+        return block
+    }
+
+    fun sendDestroyProposalWithPaymentID(
         recipient: ByteArray,
         ip: String,
         port: Int,
@@ -269,10 +294,8 @@ class TransactionRepository(
             BLOCK_TYPE_DESTROY, transaction,
             recipient
         )
-        Log.w("EuroTokenBlockDestroy", "Block made")
 
         trustChainCommunity.sendBlock(block, peer)
-        Log.w("EuroTokenBlockDestroy", "Sent to peer")
         return block
     }
 
@@ -303,6 +326,18 @@ class TransactionRepository(
         }
     }
 
+    fun lastCheckpointIsEmpty(
+        block: TrustChainBlock,
+        database: TrustChainStore
+    ): Boolean {
+        if (BLOCK_TYPE_CHECKPOINT == block.type && block.isProposal) {
+            return database.getLinked(block) == null // Checkpoint acceptance is missing and should be crawled to prove validity
+        } else {
+            val blockBefore = database.getBlockWithHash(block.previousHash) ?: return true // null will not actually happen, but true will result in PartialPrevious
+            return lastCheckpointIsEmpty(blockBefore, database)
+        }
+    }
+
     fun verifyBalanceAvailable(
         block: TrustChainBlock,
         database: TrustChainStore
@@ -310,6 +345,11 @@ class TransactionRepository(
         val balance =
             getVerifiedBalanceForBlock(block, database) ?: return ValidationResult.PartialPrevious
         if (balance < 0) {
+            val blockBefore = database.getBlockWithHash(block.previousHash) ?: return ValidationResult.PartialPrevious
+            if (lastCheckpointIsEmpty(blockBefore, database)) {
+                // IF INVALID IS RETURNED WE WONT CRAWL FOR LINKED BLOCKS
+                return ValidationResult.PartialPrevious
+            }
             return ValidationResult.Invalid(
                 listOf(
                     "Insufficient balance ($balance) for amount (${
@@ -481,7 +521,7 @@ class TransactionRepository(
                     if (!block.transaction.containsKey(KEY_AMOUNT)) return ValidationResult.Invalid(
                         listOf("Missing amount")
                     )
-                    if (!block.transaction.containsKey(KEY_PAYMENT_ID)) return ValidationResult.Invalid(
+                    if (!block.transaction.containsKey(KEY_PAYMENT_ID) && !block.transaction.containsKey(KEY_IBAN)) return ValidationResult.Invalid(
                         listOf("Missing Payment id")
                     )
                     if (block.isProposal) {
@@ -632,5 +672,6 @@ class TransactionRepository(
         const val KEY_BALANCE = "balance"
         const val KEY_TRANSACTION = "transaction_hash"
         const val KEY_PAYMENT_ID = "payment_id"
+        const val KEY_IBAN = "iban"
     }
 }

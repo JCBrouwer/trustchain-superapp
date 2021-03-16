@@ -1,0 +1,26 @@
+CREATE TABLE features (
+    key TEXT NOT NULL,
+    song_year REAL,
+    wmp REAL,
+    bpm REAL,
+    dataLen REAL,
+    genre REAL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (key)
+);
+
+addFeature:
+REPLACE INTO features (key, song_year, wmp, bpm, dataLen, genre, count)
+VALUES(?, ?, ?, ?, ?, ?, ?);
+
+getFeatureCount:
+SELECT count FROM features WHERE key = ? LIMIT 1;
+
+getFeature:
+SELECT * FROM features WHERE key = ? LIMIT 1;
+
+getAllFeatures:
+SELECT * FROM features;
+
+deleteAllFeatures:
+DELETE FROM features;

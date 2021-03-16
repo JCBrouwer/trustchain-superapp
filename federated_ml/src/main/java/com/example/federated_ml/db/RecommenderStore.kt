@@ -54,13 +54,14 @@ open class RecommenderStore(
 
     fun updateLocalFeatures(file: File) {
         val mp3File = Mp3File(file)
-        val existingFeature = database.dbFeaturesQueries.getFeature(key = mp3File.id3v2Tag.key).executeAsOneOrNull()
+        val k = "local-${mp3File.id3v2Tag.title}-${mp3File.id3v2Tag.artist}"
+        val existingFeature = database.dbFeaturesQueries.getFeature(key = k).executeAsOneOrNull()
         var count = 1
         if (existingFeature != null) {
             count = existingFeature.count.toInt() + 1
+            Log.i("Recommend", "Song exists! Increment counter")
         }
         val mp3Features = extractMP3Features(mp3File)
-        val k = "local-${mp3File.id3v2Tag.title}-${mp3File.id3v2Tag.artist}"
         database.dbFeaturesQueries.addFeature(key = k,
             song_year = mp3Features[0],
             wmp = mp3Features[1], bpm = mp3Features[2],
@@ -152,25 +153,23 @@ open class RecommenderStore(
     }
 
     fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
-        var batch : List<Features>
-        try {
-            batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
-        } catch (e: Exception) {
+        var batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
+        if (batch.size == 0) {
             addAllLocalFeatures()
             batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
         }
 
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
-        val playcounts = intArrayOf(batch.size)
-        for (i in batch.indices) {
+        val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
+        for (i in (0 until batch.size)) {
             // artist, year, wmp, bpm, dataLen, genre
             features[i][0] = batch[i].song_year!!
             features[i][1] = batch[i].wmp!!
             features[i][2] = batch[i].bpm!!
             features[i][3] = batch[i].dataLen!!
-            features[i][4] = batch[i].count.toDouble()
+            features[i][4] = batch[i].genre!!
             playcounts[i] = batch[i].count.toInt()
-            Log.w("Recommender Store", "${playcounts[i]}")
+            Log.w("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i]}")
         }
         return Pair(features, playcounts)
     }

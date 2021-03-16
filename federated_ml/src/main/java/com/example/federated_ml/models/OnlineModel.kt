@@ -48,8 +48,8 @@ open class OnlineModel {
 
     open fun update(x: Array<Double>, y: Int) {}
 
-    open fun cast(type: String): OnlineModel {
-        return if (type == "Pegasos") {
+    open fun cast(): OnlineModel {
+        return if (name == "Pegasos") {
             this as Pegasos
         } else {
             this as Adaline

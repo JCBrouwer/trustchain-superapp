@@ -240,8 +240,6 @@ class TrustChainApplication : Application() {
         val driver = AndroidSqliteDriver(MLDatabase.Schema, this, "federated_ml.db")
         val database = MLDatabase(driver)
 
-//        // TODO: for debugging, remove later
-//        database.dbModelQueries.deleteAll()
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(

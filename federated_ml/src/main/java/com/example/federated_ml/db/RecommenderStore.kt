@@ -12,6 +12,9 @@ import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 import nl.tudelft.federated_ml.sqldelight.Database
+import nl.tudelft.federated_ml.sqldelight.Features
+import kotlin.collections.HashMap
+import kotlin.random.Random
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -21,8 +24,7 @@ open class RecommenderStore(
     // TODO: fix this to proper path
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
-    private val totalAmountFeatures = 6
-    private var artistsMap: HashMap<String, Double> = hashMapOf()
+    private val totalAmountFeatures = 5
 
     fun storeModelLocally(model: OnlineModel) {
         database.dbModelQueries.addModel(
@@ -50,14 +52,19 @@ open class RecommenderStore(
         return model
     }
 
-    private fun processSongs(limit: Int = 50): Pair<Array<Array<Double>>, IntArray> {
-        val processedPair = this.getPlayCounts(limit)
-        val localSongs = processedPair.first
-        val features = Array(localSongs.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
-        for (i in processedPair.second.indices) {
-            features[i] = extractMP3Features(processedPair.second[i])
+    fun updateLocalFeatures(file: File) {
+        val mp3File = Mp3File(file)
+        val existingFeature = database.dbFeaturesQueries.getFeature(key = mp3File.id3v2Tag.key).executeAsOneOrNull()
+        var count = 1
+        if (existingFeature != null) {
+            count = existingFeature.count.toInt() + 1
         }
-        return Pair(features, localSongs)
+        val mp3Features = extractMP3Features(mp3File)
+        val k = "local-${mp3File.id3v2Tag.title}-${mp3File.id3v2Tag.artist}"
+        database.dbFeaturesQueries.addFeature(key = k,
+            song_year = mp3Features[0],
+            wmp = mp3Features[1], bpm = mp3Features[2],
+            dataLen = mp3Features[3], genre = mp3Features[4], count = count.toLong())
     }
 
     private fun extractBlockFeatures(block: TrustChainBlock): Array<Double> {
@@ -65,19 +72,24 @@ open class RecommenderStore(
         var bpm = -1.0
         var year = -1.0
         var wmp = -1.0
-        var artist = -1.0
         var genre = -1.0
 
-        if (block.transaction["artist"] != null) {
-            artist = artistsMap[block.transaction["artist"].toString()]!!
+        if (block.transaction["date"] != null) {
+            try {
+                year = Integer.parseInt(block.transaction["date"] as String).toDouble()
+            } catch (e:Exception) {
+                System.out.println(block.transaction["date"])
+            }
+
+            try {
+                // 01/02/2020 case
+                year = Integer.parseInt((block.transaction["date"] as
+                    String).split("/").toTypedArray()[-1]).toDouble()
+            } catch (e:Exception) {
+                System.out.println(block.transaction["date"])
+            }
         }
 
-        if (block.transaction["year"] != null) {
-            year = block.transaction["year"] as Double
-        }
-
-        // TODO: fix this, below features are not
-        //  present in transaction but rather in mp3fil
         if (block.transaction["genre"] != null) {
             genre = block.transaction["genre"] as Double
         }
@@ -94,7 +106,7 @@ open class RecommenderStore(
             dataLen = block.transaction["dataLen"] as Double
         }
 
-        return arrayOf(artist, year, wmp, bpm, dataLen, genre)
+        return arrayOf(year, wmp, bpm, dataLen, genre)
     }
 
     private fun processGlobalSongs(songsHistory: List<TrustChainBlock>): Array<Array<Double>> {
@@ -105,10 +117,61 @@ open class RecommenderStore(
         return features
     }
 
-    fun getLocalSongData(limit: Int = 50): Pair<Array<Array<Double>>, IntArray> {
-        val processed = processSongs(limit)
-        val features = processed.first
-        val playcounts = processed.second
+    fun addAllLocalFeatures() {
+        Log.w("Recommender Store", "Getting playcounts...")
+        if (!musicDir.isDirectory) return
+
+        val allFiles = musicDir.listFiles() ?: return
+        Log.w("Recommender Store", "Amount of files is ${allFiles.size}")
+
+        var idx = 0
+        for (albumFile in allFiles) {
+            Log.w("Recommender Store", "Local album is ${albumFile.name}")
+            if (albumFile.isDirectory) {
+                val audioFiles = albumFile.listFiles(AudioFileFilter()) ?: continue
+                Log.w("Recommender Store", "Local songs amount in alum: ${audioFiles.size}")
+                for (f in audioFiles) {
+                    if (Mp3File(f).id3v2Tag != null) {
+                        val updatedFile = Mp3File(f)
+                        try {
+                            val mp3Features = extractMP3Features(Mp3File(f))
+                            val count = 1
+                            val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
+                            database.dbFeaturesQueries.addFeature(key = k,
+                                song_year = mp3Features[0],
+                                wmp = mp3Features[1], bpm = mp3Features[2],
+                                dataLen = mp3Features[3], genre = mp3Features[4], count = count.toLong())
+                        } catch (e: Exception) {
+                            Log.w("Init local features", e)
+                        }
+                        idx += 1
+                    }
+                }
+            }
+        }
+    }
+
+    fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
+        var batch : List<Features>
+        try {
+            batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
+        } catch (e: Exception) {
+            addAllLocalFeatures()
+            batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
+        }
+
+        val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
+        val playcounts = intArrayOf(batch.size)
+        for (i in batch.indices) {
+            // artist, year, wmp, bpm, dataLen, genre
+            features[i][0] = batch[i].song_year!!
+            features[i][1] = batch[i].wmp!!
+            features[i][2] = batch[i].bpm!!
+            features[i][3] = batch[i].dataLen!!
+            features[i][4] = batch[i].count.toDouble()
+            playcounts[i] = batch[i].count.toInt()
+            Log.w("Recommender Store", "${playcounts[i]}")
+        }
         return Pair(features, playcounts)
     }
 
@@ -128,7 +191,6 @@ open class RecommenderStore(
         var bpm = -1.0
         var year = -1.0
         var wmp = -1.0
-        var artist = -1.0
         var genre = -1.0
 
         if (mp3File.hasId3v2Tag()) {
@@ -160,16 +222,6 @@ open class RecommenderStore(
                 Log.w("Feature extraction", e.toString())
             }
 
-            if (mp3File.id3v2Tag.artist != null) {
-                try {
-                    artist = this.artistsMap[mp3File.id3v2Tag.artist as String]!!
-                } catch (e: java.lang.Exception){
-                    artist = this.artistsMap.size.toDouble()
-                    artistsMap[mp3File.id3v2Tag.artist as String] = artist
-                }
-
-            }
-
             try {
                 genre = mp3File.id3v2Tag.genre.toDouble()
             } catch (e: Exception){
@@ -185,14 +237,7 @@ open class RecommenderStore(
                     Log.w("Feature extraction", e.toString())
                 }
             }
-            if (artist == -1.0 && mp3File.id3v1Tag.artist != null) {
-                try {
-                    artist = this.artistsMap[mp3File.id3v1Tag.artist as String]!!
-                } catch (e: java.lang.Exception){
-                    artist = this.artistsMap.size.toDouble()
-                    artistsMap[mp3File.id3v1Tag.artist as String] = artist
-                }
-            }
+
             if (genre == -1.0) {
                 try {
                     genre = mp3File.id3v1Tag.genre.toDouble()
@@ -202,46 +247,9 @@ open class RecommenderStore(
             }
         }
 
-        Log.w("Feature extraction", "$artist $year $wmp $bpm $dataLen $genre")
+        Log.w("Feature extraction", "$year $wmp $bpm $dataLen $genre")
 
-        return arrayOf(artist, year, wmp, bpm, dataLen, genre)
-    }
-
-    fun getPlayCounts(limit: Int = 50): Pair<IntArray, Array<Mp3File>> {
-        Log.w("Recommender Store", "Getting playcounts...")
-        if (!musicDir.isDirectory) return Pair(IntArray(0), arrayOf())
-
-        val allFiles = musicDir.listFiles() ?: return Pair(IntArray(0), arrayOf())
-        Log.w("Recommender Store", "Amount of files is ${allFiles.size}")
-
-        var labels = intArrayOf()
-        var allMP3: Array<Mp3File> = arrayOf()
-        var idx = 0
-        for (albumFile in allFiles) {
-            Log.w("Recommender Store", "Local album is ${albumFile.name}")
-            if (albumFile.isDirectory) {
-                val audioFiles = albumFile.listFiles(AudioFileFilter()) ?: continue
-                Log.w("Recommender Store", "Local songs amount in alum: ${audioFiles.size}")
-                for (f in audioFiles) {
-                    try {
-                        val mp3File = Mp3File(f)
-                        Log.w("Recommender Store", "Add training song $mp3File")
-
-                        // TODO: either get proper playcounts or
-                        //  distinguish based on full/partial download...
-                        labels += 1
-                        allMP3 += mp3File
-                    } catch (e: Exception) {
-                    }
-                    idx += 1
-
-                    if (idx == limit) {
-                        return Pair(labels, allMP3)
-                    }
-                }
-            }
-        }
-        return Pair(labels, allMP3)
+        return arrayOf(year, wmp, bpm, dataLen, genre)
     }
 
     companion object {

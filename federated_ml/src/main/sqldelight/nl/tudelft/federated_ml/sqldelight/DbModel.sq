@@ -12,9 +12,6 @@ VALUES(?, ?, ?);
 getModel:
 SELECT * FROM models WHERE name = ? LIMIT 1;
 
-getAll:
-SELECT * FROM models;
-
 deleteModel:
 DELETE FROM models WHERE name = ?;
 

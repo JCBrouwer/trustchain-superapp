@@ -90,11 +90,11 @@ open class RecommenderCommunity : TrustChainCommunity {
         val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
         // packet contains model type and weights from peer
-        val modelType = payload.modelType.toLowerCase(Locale.ROOT)
+//        val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         val peerModel = payload.model
         Log.i("Recommender", "Walking model is de-packaged")
 
-        val localModel = recommendStore.getLocalModel().cast(modelType)
+        val localModel = recommendStore.getLocalModel().cast()
 
         val data = recommendStore.getLocalSongData()
         val songFeatures = data.first

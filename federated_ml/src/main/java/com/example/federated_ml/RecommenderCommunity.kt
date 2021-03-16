@@ -4,6 +4,8 @@ import android.util.Log
 import com.example.federated_ml.db.RecommenderStore
 import com.example.federated_ml.ipv8.ModelExchangeMessage
 import com.example.federated_ml.models.OnlineModel
+import com.example.federated_ml.models.div
+import com.example.federated_ml.models.plus
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
@@ -14,9 +16,13 @@ import java.util.*
 import kotlin.random.Random
 
 @ExperimentalUnsignedTypes
-open class RecommenderCommunity : TrustChainCommunity {
+open class RecommenderCommunity(
+    val recommendStore: RecommenderStore,
+    settings: TrustChainSettings,
+    database: TrustChainStore,
+    crawler: TrustChainCrawler = TrustChainCrawler()
+) : TrustChainCommunity(settings, database, crawler) {
     override val serviceId = "29384902d2938f34872398758cf7ca9238ccc333"
-    val recommendStore: RecommenderStore
 
     class Factory(
         private val recommendStore: RecommenderStore,
@@ -29,17 +35,10 @@ open class RecommenderCommunity : TrustChainCommunity {
         }
     }
 
-    constructor(
-        recommendStore: RecommenderStore,
-        settings: TrustChainSettings,
-        database: TrustChainStore,
-        crawler: TrustChainCrawler = TrustChainCrawler()
-    ) : super(settings, database, crawler) {
-        this.recommendStore = recommendStore
-    }
-
     init {
         messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::onModelExchange
+        messageHandlers[MessageId.REQUEST_COLAB_FILTER] = ::onColabFilterRequest
+        messageHandlers[MessageId.RESPOND_COLAB_FILTER] = ::onColabFilterResponse
     }
 
     override fun load() {
@@ -69,8 +68,7 @@ open class RecommenderCommunity : TrustChainCommunity {
         Log.i("Recommender", "My key is $originPublicKey")
         val maxPeersToAsk = 5
         var count = 0
-        // TODO: delete myself from list
-        for ((index, peer) in (getPeers() + myPeer).withIndex()) {
+        for ((index, peer) in getPeers().withIndex()) {
             if (index >= maxPeersToAsk) break
             val packet = serializePacket(
                 MessageId.MODEL_EXCHANGE_MESSAGE,
@@ -99,12 +97,49 @@ open class RecommenderCommunity : TrustChainCommunity {
         val data = recommendStore.getLocalSongData()
         val songFeatures = data.first
         val playcounts = data.second
-        val models = this.createModelMU(localModel, peerModel, songFeatures, playcounts)
+        val models = createModelMU(localModel, peerModel, songFeatures, playcounts)
         Log.i("Recommender", "Walking an random models are merged")
 
-        this.recommendStore.storeModelLocally(models.first)
+        recommendStore.storeModelLocally(models.first)
 
         performRemoteModelExchange(models.second)
+    }
+
+    fun trainColabFilter(   ) {
+        val model = recommendStore.getColabFilter()
+
+        if (model == null) {
+            val maxPeersToAsk = 5
+            var count = 0
+            for ((index, peer) in getPeers().withIndex()) {
+                if (index >= maxPeersToAsk) break
+                val packet = serializePacket(
+                    MessageId.REQUEST_COLAB_FILTER,
+                    RequestColabFilterMessage(myPeer.publicKey.keyToBin(), 1u)
+                )
+                send(peer, packet)
+                count += 1
+            }
+            Log.i("Recommender", "Model exchanged with $count peer(s)")
+        }
+
+        var ageGather = Array(numSongs) { _ -> 0.0 }
+        var songFeaturesGather = Array(numSongs) { _ -> Array(k) { _ -> 0.0 } }
+        var songBiasGather = Array(numSongs) { _ -> 0.0 }
+        for (node in community.getPeers()) {
+            send(node, (age, songFeatures, songBias))
+            val (peerAge, peerSongs, peerSongBias) = receive(node)
+            ageGather += peerAge
+            songFeaturesGather += peerSongs
+            songBiasGather += peerSongBias
+        }
+        for (j in 1..numSongs) {
+            if (ageGather[j] != 0.0) {
+                songFeatures[j] = songFeatures[j] + songFeaturesGather[j] / ageGather[j]
+                songBias[j] = songBias[j] + songBiasGather[j] / ageGather[j]
+                age[j] += 1.0
+            }
+        }
     }
 
     fun createModelRW(
@@ -144,8 +179,10 @@ open class RecommenderCommunity : TrustChainCommunity {
 
     object MessageId {
         val MODEL_EXCHANGE_MESSAGE: Int
-            get() {
-                return 27
-            }
+            get() { return 27 }
+        val REQUEST_COLAB_FILTER: Int
+            get() { return 40 }
+        val RESPOND_COLAB_FILTER: Int
+            get() { return 42 }
     }
 }

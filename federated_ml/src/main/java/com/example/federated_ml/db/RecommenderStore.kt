@@ -2,6 +2,7 @@ package com.example.federated_ml.db
 
 import android.annotation.SuppressLint
 import android.util.Log
+import com.example.federated_ml.models.MatrixFactorization
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
@@ -12,6 +13,7 @@ import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 import nl.tudelft.federated_ml.sqldelight.Database
+import nl.tudelft.federated_ml.sqldelight.Models
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -25,6 +27,13 @@ open class RecommenderStore(
     private var artistsMap: HashMap<String, Double> = hashMapOf()
 
     fun storeModelLocally(model: OnlineModel) {
+        database.dbModelQueries.addModel(
+            name = model.name,
+            type = model.name,
+            parameters = model.serialize())
+    }
+
+    fun storeModelLocally(model: MatrixFactorization) {
         database.dbModelQueries.addModel(
             name = model.name,
             type = model.name,
@@ -48,6 +57,10 @@ open class RecommenderStore(
         }
         storeModelLocally(model)
         return model
+    }
+
+    fun getColabFilter(): Models? {
+        return database.dbModelQueries.getModel(name = "MatrixFactorization").executeAsOneOrNull()
     }
 
     private fun processSongs(limit: Int = 50): Pair<Array<Array<Double>>, IntArray> {

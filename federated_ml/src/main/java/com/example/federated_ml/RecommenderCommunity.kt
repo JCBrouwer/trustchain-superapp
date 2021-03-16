@@ -67,7 +67,7 @@ open class RecommenderCommunity : TrustChainCommunity {
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
         Log.i("Recommender", "My key is $originPublicKey")
-        val maxPeersToAsk = 1
+        val maxPeersToAsk = 5
         var count = 0
         // TODO: delete myself from list
         for ((index, peer) in (getPeers() + myPeer).withIndex()) {

@@ -39,6 +39,15 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
                 Log.w("Recommend", "Refreshing...")
             }
         }
+
+        lifecycleScope.launchWhenCreated {
+            while (isActive) {
+                val community = getRecommenderCommunity()
+                val localModel = community.recommendStore.getLocalModel() as Pegasos
+                community.performRemoteModelExchange(localModel)
+                delay(30000)
+            }
+        }
     }
 
     private fun updateRecommendFragment(block: TrustChainBlock, recNum: Int) {

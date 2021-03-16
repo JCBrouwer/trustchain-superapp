@@ -4,6 +4,7 @@ import android.util.Log
 import kotlin.UInt
 import kotlinx.serialization.json.*
 import com.example.federated_ml.models.OnlineModel
+import com.example.federated_ml.models.Pegasos
 import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.messaging.*
 
@@ -51,12 +52,13 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
             val (model, modelSize) = deserializeVarLen(buffer, offset + localOffset)
             localOffset += modelSize
 
+//            val modelClass = Class.forName(modelType.toString(Charsets.UTF_8))
             return Pair(
                 first = ModelExchangeMessage(
                     originPublicKey = originPublicKey,
                     ttl = ttl,
                     modelType = modelType.toString(Charsets.UTF_8),
-                    model = Json.decodeFromString(model.toString(Charsets.UTF_8))
+                    model = Json.decodeFromString<Pegasos>(model.toString(Charsets.UTF_8))
                 ), second = localOffset
             )
         }

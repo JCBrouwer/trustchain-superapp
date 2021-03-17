@@ -4,12 +4,11 @@ import kotlinx.serialization.json.Json
 import java.util.*
 
 @Serializable
-open class OnlineModel {
-    @Transient open lateinit var name: String
+open class OnlineModel: Model {
     private val amountFeatures: Int
     internal var weights: Array<Double>
 
-    constructor(amountFeatures: Int) {
+    constructor(amountFeatures: Int, name: String) : super(name) {
         this.amountFeatures = amountFeatures
         this.weights = Array(amountFeatures) { _ -> Random().nextDouble() * 3 }
     }
@@ -47,16 +46,4 @@ open class OnlineModel {
     }
 
     open fun update(x: Array<Double>, y: Int) {}
-
-    open fun cast(): OnlineModel {
-        return if (name == "Pegasos") {
-            this as Pegasos
-        } else {
-            this as Adaline
-        }
-    }
-
-    open fun serialize(): String {
-        return Json.encodeToString(this)
-    }
 }

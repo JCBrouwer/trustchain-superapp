@@ -1,7 +1,6 @@
 package com.example.federated_ml.ipv8
 
 import android.util.Log
-import com.example.federated_ml.models.MatrixFactorization
 import kotlin.UInt
 import kotlinx.serialization.json.*
 import com.example.federated_ml.models.OnlineModel
@@ -12,10 +11,10 @@ import nl.tudelft.ipv8.messaging.*
 /**
  * This is a message from a peer sending and asking for a model from other peers
  */
-open class RespondColabFilterMessage @ExperimentalUnsignedTypes constructor(
+open class RequestModelMessage @ExperimentalUnsignedTypes constructor(
     val originPublicKey: ByteArray,
     var ttl: UInt,
-    val model: MatrixFactorization
+    val modelType: String
 ) : Serializable {
 
     override fun serialize(): ByteArray {
@@ -29,26 +28,30 @@ open class RespondColabFilterMessage @ExperimentalUnsignedTypes constructor(
         return true
     }
 
-    companion object Deserializer : Deserializable<RespondColabFilterMessage> {
+    companion object Deserializer : Deserializable<RequestModelMessage> {
         @ExperimentalUnsignedTypes
         @JvmStatic
-        override fun deserialize(buffer: ByteArray, offset: Int): Pair<RespondColabFilterMessage, Int> {
+        override fun deserialize(buffer: ByteArray, offset: Int): Pair<RequestModelMessage, Int> {
             var localOffset = 0
+
             val originPublicKey = buffer.copyOfRange(
                 offset + localOffset,
                 offset + localOffset + SERIALIZED_PUBLIC_KEY_SIZE
             )
             localOffset += SERIALIZED_PUBLIC_KEY_SIZE
-            val ttl = deserializeUInt(buffer, offset + localOffset)
 
-            val (model, modelSize) = deserializeVarLen(buffer, offset + localOffset)
-            localOffset += modelSize
+            val ttl = deserializeUInt(buffer, offset + localOffset)
+            localOffset += SERIALIZED_UINT_SIZE
+
+            val (modelTypeBytes, modelTypeSize) = deserializeVarLen(buffer, offset + localOffset)
+            val modelType = modelTypeBytes.toString(Charsets.UTF_8)
+            localOffset += modelTypeSize
 
             return Pair(
-                first = RespondColabFilterMessage(
+                first = RequestModelMessage(
                     originPublicKey = originPublicKey,
                     ttl = ttl,
-                    model = Json.decodeFromString(model.toString(Charsets.UTF_8))
+                    modelType = modelType
                 ), second = localOffset
             )
         }

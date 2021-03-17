@@ -8,9 +8,8 @@ import java.util.*
 class Adaline : OnlineModel {
     private val learningRate: Double
     var bias = Random().nextDouble()
-    override var name = "Adaline"
 
-    constructor(learningRate: Double, amountFeatures: Int) : super(amountFeatures) {
+    constructor(learningRate: Double, amountFeatures: Int) : super(amountFeatures, "Adaline") {
         this.learningRate = learningRate
     }
 
@@ -54,11 +53,5 @@ class Adaline : OnlineModel {
             weightedSum += this.weights[idx] * x[idx]
         }
         return weightedSum
-    }
-
-    override fun serialize(): String {
-//        val jsn = JSONObject("""{"weights":$weights, "bias":$bias,
-//            |"learningRate:$learningRate"}""".trimMargin())
-        return Json.encodeToString(this)
     }
 }

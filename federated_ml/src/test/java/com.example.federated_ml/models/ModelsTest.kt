@@ -1,6 +1,5 @@
 package com.example.federated_ml.models
 
-import com.example.federated_ml.WeakLearner
 import org.junit.Assert
 import org.junit.Test
 import kotlin.random.Random

@@ -3,9 +3,8 @@ package com.example.federated_ml
 import android.util.Log
 import com.example.federated_ml.db.RecommenderStore
 import com.example.federated_ml.ipv8.ModelExchangeMessage
-import com.example.federated_ml.models.OnlineModel
-import com.example.federated_ml.models.div
-import com.example.federated_ml.models.plus
+import com.example.federated_ml.ipv8.RequestModelMessage
+import com.example.federated_ml.models.*
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
@@ -37,35 +36,34 @@ open class RecommenderCommunity(
 
     init {
         messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::onModelExchange
-        messageHandlers[MessageId.REQUEST_COLAB_FILTER] = ::onColabFilterRequest
-        messageHandlers[MessageId.RESPOND_COLAB_FILTER] = ::onColabFilterResponse
+        messageHandlers[MessageId.REQUEST_MODEL] = ::onModelRequest
     }
 
     override fun load() {
         super.load()
+
         // TODO: adjust how many models we want to be initiated
-        if (Random.nextInt(0, 1) == 0) {
-            initiateWalkingModel()
-        }
+        if (Random.nextInt(0, 1) == 0) initiateWalkingModel()
     }
 
-    private fun initiateWalkingModel() {
+    fun initiateWalkingModel() {
         try {
-            Log.i("Recommender", "Initiate random walk")
-            performRemoteModelExchange(model = recommendStore.getLocalModel())
+            Log.w("Recommender", "Initiate random walk")
+            performRemoteModelExchange(recommendStore.getLocalModel("Pegasos") ?: Pegasos(0.01, recommendStore.totalAmountFeatures, 10))
+            performRemoteModelExchange(recommendStore.getLocalModel("MatrixFactorization") ?: MatrixFactorization(recommendStore.globalSongCount()))
         } catch (e: Exception) {
-            Log.i("Recommender", "Random walk failed")
+            Log.w("Recommender", "Random walk failed")
             e.printStackTrace()
         }
     }
 
     @ExperimentalUnsignedTypes
     fun performRemoteModelExchange(
-        model: OnlineModel,
+        model: Model,
         ttl: UInt = 1u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
-        Log.i("Recommender", "My key is $originPublicKey")
+        Log.w("Recommender", "My key is $originPublicKey")
         val maxPeersToAsk = 5
         var count = 0
         for ((index, peer) in getPeers().withIndex()) {
@@ -77,69 +75,104 @@ open class RecommenderCommunity(
             send(peer, packet)
             count += 1
         }
-        Log.i("Recommender", "Model exchanged with $count peer(s)")
+        Log.w("Recommender", "Model exchanged with $count peer(s)")
         return count
     }
 
     @ExperimentalUnsignedTypes
     fun onModelExchange(packet: Packet) {
-        Log.i("Recommender", "Some packet with model received")
-        System.out.println(packet.toString())
+        Log.w("Recommender", "Some packet with model received")
         val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
         // packet contains model type and weights from peer
-//        val modelType = payload.modelType.toLowerCase(Locale.ROOT)
-        val peerModel = payload.model
-        Log.i("Recommender", "Walking model is de-packaged")
+        val modelType = payload.modelType.toLowerCase(Locale.ROOT)
+        var peerModel = payload.model
+        Log.w("Recommender", "Walking model is de-packaged")
 
-        val localModel = recommendStore.getLocalModel().cast()
+        val localModel = recommendStore.getLocalModel(modelType)
 
-        val data = recommendStore.getLocalSongData()
-        val songFeatures = data.first
-        val playcounts = data.second
-        val models = createModelMU(localModel, peerModel, songFeatures, playcounts)
-        Log.i("Recommender", "Walking an random models are merged")
-
-        recommendStore.storeModelLocally(models.first)
-
-        performRemoteModelExchange(models.second)
+        if (modelType == "Adaline" || modelType == "Pegasos") {
+            val data = recommendStore.getLocalSongData()
+            val songFeatures = data.first
+            val playcounts = data.second
+            val models = createModelMU(localModel as OnlineModel, peerModel as OnlineModel, songFeatures, playcounts)
+            Log.w("Recommender", "Walking an random models are merged")
+            recommendStore.storeModelLocally(models.first)
+            if (payload.checkTTL()) performRemoteModelExchange(models.second)
+        }
+        else {
+            peerModel = peerModel as PublicMatrixFactorization
+            if (localModel == null) {
+                recommendStore.storeModelLocally(MatrixFactorization(peerModel))
+                val maxPeersToAsk = 10
+                var count = 0
+                for ((index, peer) in getPeers().withIndex()) {
+                    if (index >= maxPeersToAsk) break
+                    send(peer, serializePacket(
+                        MessageId.REQUEST_MODEL,
+                        RequestModelMessage(myPeer.publicKey.keyToBin(), 1u, "MatrixFactorization")
+                    ))
+                    count += 1
+                }
+                Log.w("Recommender", "Model request sent to $count peer(s)")
+            }
+            else {
+                Log.w("Recommender", "Merging MatrixFactorization")
+                (localModel as MatrixFactorization).onReceiveModel(peerModel.age, peerModel.songFeatures, peerModel.songBias)
+                recommendStore.storeModelLocally(localModel)
+                Log.w("Recommender", "Stored new MatrixFactorization")
+                if (payload.checkTTL()) performRemoteModelExchange(localModel)
+            }
+        }
     }
 
-    fun trainColabFilter(   ) {
-        val model = recommendStore.getColabFilter()
+    private fun trainMatrixFactorization(model: MatrixFactorization) {
+        val maxPeersToAsk = 10
 
-        if (model == null) {
-            val maxPeersToAsk = 5
-            var count = 0
-            for ((index, peer) in getPeers().withIndex()) {
-                if (index >= maxPeersToAsk) break
-                val packet = serializePacket(
-                    MessageId.REQUEST_COLAB_FILTER,
-                    RequestColabFilterMessage(myPeer.publicKey.keyToBin(), 1u)
-                )
-                send(peer, packet)
-                count += 1
-            }
-            Log.i("Recommender", "Model exchanged with $count peer(s)")
-        }
-
+        val numSongs = recommendStore.globalSongCount()
         var ageGather = Array(numSongs) { _ -> 0.0 }
-        var songFeaturesGather = Array(numSongs) { _ -> Array(k) { _ -> 0.0 } }
+        var songFeaturesGather = Array(numSongs) { _ -> Array(model.k) { _ -> 0.0 } }
         var songBiasGather = Array(numSongs) { _ -> 0.0 }
-        for (node in community.getPeers()) {
-            send(node, (age, songFeatures, songBias))
-            val (peerAge, peerSongs, peerSongBias) = receive(node)
-            ageGather += peerAge
-            songFeaturesGather += peerSongs
-            songBiasGather += peerSongBias
+
+        for ((index, peer) in getPeers().withIndex()) {
+            if (index >= maxPeersToAsk) break
+            send(peer, serializePacket(
+                MessageId.REQUEST_MODEL,
+                RequestModelMessage(myPeer.publicKey.keyToBin(), 3u, "MatrixFactorization")
+            ))
         }
-        for (j in 1..numSongs) {
-            if (ageGather[j] != 0.0) {
-                songFeatures[j] = songFeatures[j] + songFeaturesGather[j] / ageGather[j]
-                songBias[j] = songBias[j] + songBiasGather[j] / ageGather[j]
-                age[j] += 1.0
-            }
+
+        // TODO how to receive models from peers all at once rather than 1-by-1 updates from the omModelExchange callback?
+//        for ((index, peer) in getPeers().withIndex()) {
+//            if (index >= maxPeersToAsk) break
+//            val (peerAge: Array<Double>, peerSongs: Array<Array<Double>>, peerSongBias: Array<Double>) = receive(peer)
+//            ageGather += peerAge
+//            songFeaturesGather += peerSongs
+//            songBiasGather += peerSongBias
+//        }
+
+        model.onReceiveModel(ageGather, songFeaturesGather, songBiasGather)
+        recommendStore.storeModelLocally(model)
+    }
+
+    private fun onModelRequest(packet: Packet) {
+        Log.w("Recommender", "Some packet with model received")
+        val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
+        val modelType = payload.modelType.toLowerCase(Locale.ROOT)
+        var model = recommendStore.getLocalModel(modelType)
+        if (model == null) {
+            model = if (modelType == "Adaline")
+                Adaline(0.1, recommendStore.totalAmountFeatures)
+            else if (modelType == "Pegasos")
+                Pegasos(0.01, recommendStore.totalAmountFeatures, 10)
+            else
+                MatrixFactorization(recommendStore.globalSongCount())
         }
+        send(packet.source, serializePacket(
+                MessageId.MODEL_EXCHANGE_MESSAGE,
+                ModelExchangeMessage(myPeer.publicKey.keyToBin(), 1u, model.name, model)
+            )
+        )
     }
 
     fun createModelRW(
@@ -180,9 +213,7 @@ open class RecommenderCommunity(
     object MessageId {
         val MODEL_EXCHANGE_MESSAGE: Int
             get() { return 27 }
-        val REQUEST_COLAB_FILTER: Int
+        val REQUEST_MODEL: Int
             get() { return 40 }
-        val RESPOND_COLAB_FILTER: Int
-            get() { return 42 }
     }
 }

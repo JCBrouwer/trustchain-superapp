@@ -70,4 +70,8 @@ class Pegasos : OnlineModel {
             }
         }
     }
+
+    override fun serialize(): String {
+        return Json.encodeToString(this)
+    }
 }

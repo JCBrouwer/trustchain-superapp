@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.View
 import androidx.lifecycle.lifecycleScope
 import com.example.federated_ml.models.MatrixFactorization
+import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao.MusicBaseFragment
 import com.example.musicdao.R
@@ -16,6 +17,7 @@ import java.io.File
 
 class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendation) {
     private var isActive = true
+    private val test = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -24,19 +26,16 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         lifecycleScope.launchWhenCreated {
             while (isActive) {
                 getRecommenderCommunity().initiateWalkingModel()
+                if ( getRecommenderCommunity().recommendStore.globalSongCount() >  0 ) {
+                    loadingRecommendations.setVisibility(View.VISIBLE)
+                    loadingRecommendations.text = "Refreshing recommendations..."
+                    refreshRecommendations()
+                    val transaction = activity?.supportFragmentManager?.beginTransaction()
+                    loadingRecommendations.setVisibility(View.GONE)
+                    activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
+                    refreshRecommend.isRefreshing = false
+                }
                 delay(10 * 1000)
-            }
-        }
-
-        refreshRecommend.setOnRefreshListener {
-            if ( getRecommenderCommunity().recommendStore.globalSongCount() >  0 ) {
-                loadingRecommendations.setVisibility(View.VISIBLE)
-                loadingRecommendations.text = "Refreshing recommendations..."
-                refreshRecommendations()
-                val transaction = activity?.supportFragmentManager?.beginTransaction()
-                loadingRecommendations.setVisibility(View.GONE)
-                activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
-                refreshRecommend.isRefreshing = false
             }
         }
     }
@@ -61,6 +60,22 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
     }
 
+    private fun getBaggedPredictions(data : Pair<Array<Array<Double>>, List<TrustChainBlock>>) : Array<Double> {
+        var jointRelease = Array(data.second.size) { _ -> 0.0}
+        val modelNames = arrayOf("Pegasos")
+        for (name in modelNames) {
+            Log.w("Recommend", "Getting model $name")
+            var colab = getRecommenderCommunity().recommendStore
+                .getLocalModel(name)
+            var bestRelease = (colab as Pegasos).predict(data.first).toTypedArray()
+            val sum = bestRelease.sumByDouble { it }
+            bestRelease = (0 until bestRelease.size).map { bestRelease[it] / sum }.toTypedArray()
+            jointRelease = (0 until jointRelease.size).map { jointRelease[it] + bestRelease[it] }.toTypedArray()
+        }
+
+        return jointRelease
+    }
+
     /**
      * List all the releases that are currently loaded in the local trustchain database. If keyword
      * search is enabled (searchQuery variable is set) then it also filters the database
@@ -68,7 +83,6 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
     private fun refreshRecommendations() {
         val recStore = getRecommenderCommunity().recommendStore
         val data = recStore.getNewSongs()
-        val songFeatures = data.first
         val blocks = data.second
 
         var colab = recStore.getLocalModel("MatrixFactorization") as MatrixFactorization
@@ -86,8 +100,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         updateRecommendFragment(bestBlock, 0)
 
         Log.w("Recommend", "Retrieving local recommendation model")
-        val model = recStore.getLocalModel("Pegasos") as Pegasos
-        val predictions = model.predict(songFeatures)
+        val predictions = getBaggedPredictions(data)
         var best = 0
         for ((i, pred) in predictions.withIndex()) {
             if (pred > predictions[best]) {

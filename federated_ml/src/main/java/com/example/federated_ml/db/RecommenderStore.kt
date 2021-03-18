@@ -33,11 +33,17 @@ open class RecommenderStore(
                 type = model.name,
                 parameters = (model as MatrixFactorization).serialize(private=true)
             )
+        } else if (model.name == "Pegasos"){
+            database.dbModelQueries.addModel(
+                name = model.name,
+                type = model.name,
+                parameters = (model as Pegasos).serialize()
+            )
         } else {
             database.dbModelQueries.addModel(
                 name = model.name,
                 type = model.name,
-                parameters = model.serialize()
+                parameters = (model as Adaline).serialize()
             )
         }
     }
@@ -45,18 +51,44 @@ open class RecommenderStore(
     fun getLocalModel(name: String): Model {
         Log.w("Recommend", "Loading $name")
         val dbModel = database.dbModelQueries.getModel(name).executeAsOneOrNull()
-        return if (name == "Adaline") {
-            if (dbModel == null) Adaline(0.1, totalAmountFeatures)
-            else Json.decodeFromString<Adaline>(dbModel.parameters)
+        val model: Model
+        if (name == "Adaline") {
+            if (dbModel != null) {
+                Log.i("Recommend", "Load existing local model")
+                model = Json.decodeFromString<Adaline>(dbModel.parameters)
+            } else {
+                model = Adaline(0.1, totalAmountFeatures)
+                Log.i("Recommend", "Initialized local model")
+                Log.w("Model type", model.name)
+            }
+        } else if (name == "Pegasos") {
+            if (dbModel != null) {
+                Log.i("Recommend", "Load existing local model")
+                model = Json.decodeFromString<Pegasos>(dbModel.parameters)
+            } else {
+                model = Pegasos(0.01, totalAmountFeatures, 10)
+                Log.i("Recommend", "Initialized local model")
+                Log.w("Model type", model.name)
+            }
+        } else {
+            if (dbModel != null) {
+                Log.i("Recommend", "Load existing local model")
+                model = Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
+            } else {
+                model = MatrixFactorization(numSongs = 0,
+                    songNames = HashSet<String>(0),
+                    ratings = Array<Double>(0) { _ -> 0.0 })
+                Log.i("Recommend", "Initialized local model")
+                Log.w("Model type", model.name)
+            }
         }
-        else if (name == "Pegasos") {
-            if (dbModel == null) Pegasos(0.01, totalAmountFeatures, 10)
-            else Json.decodeFromString<Pegasos>(dbModel.parameters)
+        val trainingData = getLocalSongData()
+        if (trainingData.first.isNotEmpty() &&  (name == "Pegasos" || name == "Adaline")) {
+            (model as OnlineModel).update(trainingData.first, trainingData.second)
         }
-        else {
-            if (dbModel == null) MatrixFactorization(numSongs = 0, songNames = HashSet<String>(0), ratings = Array<Double>(0) {_ -> 0.0})
-            else Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
-        }
+        storeModelLocally(model)
+        Log.i("Recommend", "Model completely loaded")
+        return model
     }
 
     // TODO do getSongIds & getPlaycounts return the same size and order array in all cases?
@@ -147,7 +179,8 @@ open class RecommenderStore(
     }
 
     fun globalSongCount(): Int {
-        return processGlobalSongs(musicStore.getBlocksWithType("publish_release")).size
+        val s = processGlobalSongs(musicStore.getBlocksWithType("publish_release")).size
+        return s
     }
 
     private fun processGlobalSongs(songsHistory: List<TrustChainBlock>): Array<Array<Double>> {

@@ -46,4 +46,9 @@ open class OnlineModel: Model {
     }
 
     open fun update(x: Array<Double>, y: Int) {}
+
+    override fun serialize(): String {
+        return Json.encodeToString(this)
+    }
+
 }

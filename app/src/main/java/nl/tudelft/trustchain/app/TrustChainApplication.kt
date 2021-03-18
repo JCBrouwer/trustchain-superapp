@@ -243,8 +243,8 @@ class TrustChainApplication : Application() {
         val database = MLDatabase(driver)
 
         // TODO: for debugging, remove later
-        // database.dbFeaturesQueries.deleteAllFeatures()
-        // database.dbModelQueries.deleteAll()
+//        database.dbFeaturesQueries.deleteAllFeatures()
+//        database.dbModelQueries.deleteAll()
 
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
         val randomWalk = RandomWalk.Factory()

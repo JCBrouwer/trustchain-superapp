@@ -9,7 +9,5 @@ open class Model(open val name: String) {
         return Json.encodeToString(this)
     }
 
-    open fun deserialize(str: String): Model {
-        return Json.decodeFromString(str)
-    }
+    open fun update() {}
 }

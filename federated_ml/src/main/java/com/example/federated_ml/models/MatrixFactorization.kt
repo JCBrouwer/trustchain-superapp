@@ -2,6 +2,7 @@ package com.example.federated_ml.models
 
 import android.util.Log
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.lang.Math.*
@@ -50,6 +51,7 @@ data class PublicMatrixFactorization(
         result = 31 * result + songBias.contentHashCode()
         return result
     }
+
 }
 
 @Serializable
@@ -83,11 +85,14 @@ class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>,
         val songMap = featuresToMap(songFeatures)
         var bestSong = ""
         var mostRelevant = -100000.0
+        var scores = emptyArray<Double>()
         var j = 0
         for ((name, _) in songMap) {
             Log.w("Recomend", "$name $ratings[j]")
+            scores[j] = ratings[j]
             if (ratings[j] == 0.0) {
                 val relevance = rateFeatures * songFeatures[j] + rateBias + songBias[j]
+                scores[j] = relevance
                 if (relevance > mostRelevant) {
                     bestSong = name
                     mostRelevant = relevance
@@ -113,7 +118,7 @@ class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>,
         update()
     }
 
-    private fun update() {
+    override fun update() {
         for (j in ratings.indices) {
             if (ratings[j] != 0.0) {
                 val err = ratings[j] - rateFeatures * songFeatures[j] - rateBias - songBias[j]
@@ -206,4 +211,5 @@ class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>,
         return if (private) Json.encodeToString(this)
         else Json.encodeToString(PublicMatrixFactorization(age, featuresToMap(songFeatures), songBias))
     }
+
 }

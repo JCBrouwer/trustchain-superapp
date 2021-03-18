@@ -19,6 +19,9 @@ SELECT count FROM features WHERE key = ? LIMIT 1;
 getFeature:
 SELECT * FROM features WHERE key = ? LIMIT 1;
 
+getSongIds:
+SELECT key FROM features;
+
 getAllFeatures:
 SELECT * FROM features;
 

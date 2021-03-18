@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.lifecycle.lifecycleScope
+import com.example.federated_ml.models.MatrixFactorization
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao.MusicBaseFragment
 import com.example.musicdao.R
@@ -65,23 +66,36 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
      * search is enabled (searchQuery variable is set) then it also filters the database
      */
     private fun refreshRecommendations() {
-        Log.w("Recommend", "Retrieving local recommendation model")
-        val data = getRecommenderCommunity().recommendStore.getNewSongs(50)
+        val recStore = getRecommenderCommunity().recommendStore
+        val data = recStore.getNewSongs()
         val songFeatures = data.first
         val blocks = data.second
-        val model = getRecommenderCommunity().recommendStore.getLocalModel("Pegasos") as Pegasos
+
+        var colab = recStore.getLocalModel("MatrixFactorization") as MatrixFactorization
+        if (colab.numSongs == 0) {
+            colab = MatrixFactorization(recStore.globalSongCount(), recStore.getSongIds(), recStore.getPlaycounts())
+            recStore.storeModelLocally(colab)
+        }
+        val bestRelease = colab.predict()
+        var bestBlock = blocks[0]
+        for (block in blocks) {
+            bestBlock = block
+            if ("${block.transaction["title"]}-${block.transaction["artist"]}" == bestRelease)
+                break
+        }
+        updateRecommendFragment(bestBlock, 0)
+
+        Log.w("Recommend", "Retrieving local recommendation model")
+        val model = recStore.getLocalModel("Pegasos") as Pegasos
         val predictions = model.predict(songFeatures)
         var best = 0
-        var runnerup = 1
         for ((i, pred) in predictions.withIndex()) {
             if (pred > predictions[best]) {
-                runnerup = best
                 best = i
             }
         }
         val debugScore = predictions[best].toString()
         Log.w("Recommender", "After refreshing, best local score is $debugScore")
-        updateRecommendFragment(blocks[best], 0)
-        updateRecommendFragment(blocks[runnerup], 1)
+        updateRecommendFragment(blocks[best], 1)
     }
 }

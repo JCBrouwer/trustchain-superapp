@@ -54,14 +54,43 @@ open class RecommenderStore(
             else Json.decodeFromString<Pegasos>(dbModel.parameters)
         }
         else {
-            if (dbModel == null) MatrixFactorization(0)
+            if (dbModel == null) MatrixFactorization(numSongs = 0, songNames = HashSet<String>(0), ratings = Array<Double>(0) {_ -> 0.0})
             else Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
         }
     }
 
+    // TODO do getSongIds & getPlaycounts return the same size and order array in all cases?
+    fun getPlaycounts(): Array<Double> {
+        val songBlocks = musicStore.getBlocksWithType("publish_release")
+        val playcounts = Array(globalSongCount()) { _ -> 0.0 }
+        for ((i, block) in songBlocks.withIndex()) {
+            if (block.transaction["title"] != null && block.transaction["artist"] != null) {
+                playcounts[i] = database.dbFeaturesQueries.getFeature("local-${block.transaction["title"]}-${block.transaction["artist"]}").executeAsOneOrNull()?.count?.toDouble() ?: 0.0
+            }
+        }
+        return playcounts
+    }
+
+    fun getSongIds(): Set<String> {
+//        return database.dbFeaturesQueries.getSongIds().executeAsList().toSet()
+        val songBlocks = musicStore.getBlocksWithType("publish_release")
+        val songIds = HashSet<String>()
+        for (block in songBlocks) {
+            if (block.transaction["title"] != null && block.transaction["artist"] != null) {
+                songIds.add("${block.transaction["title"]}-${block.transaction["artist"]}")
+            }
+        }
+        return songIds
+    }
+
     fun updateLocalFeatures(file: File) {
         val mp3File = Mp3File(file)
-        val k = "local-${mp3File.id3v2Tag.title}-${mp3File.id3v2Tag.artist}"
+        val k = if (mp3File.id3v2Tag != null)
+            "local-${mp3File.id3v2Tag.title}-${mp3File.id3v2Tag.artist}"
+        else if (mp3File.id3v1Tag != null)
+            "local-${mp3File.id3v1Tag.title}-${mp3File.id3v1Tag.artist}"
+        else
+            return
         val existingFeature = database.dbFeaturesQueries.getFeature(key = k).executeAsOneOrNull()
         var count = 1
         if (existingFeature != null) {
@@ -185,13 +214,8 @@ open class RecommenderStore(
         return Pair(features, playcounts)
     }
 
-    fun getNewSongs(limit: Int): Pair<Array<Array<Double>>, List<TrustChainBlock>> {
-        var songsHistory = musicStore.getBlocksWithType("publish_release")
-        try {
-            songsHistory = songsHistory.subList(0, limit)
-        } catch (e: java.lang.Exception) {
-            Log.w("Exception getNewSongs", e.toString())
-        }
+    fun getNewSongs(): Pair<Array<Array<Double>>, List<TrustChainBlock>> {
+        val songsHistory = musicStore.getBlocksWithType("publish_release")
         val data = processGlobalSongs(songsHistory)
         return Pair(data, songsHistory)
     }

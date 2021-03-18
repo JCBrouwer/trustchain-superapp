@@ -104,7 +104,9 @@ open class RecommenderCommunity(
             peerModel = peerModel as PublicMatrixFactorization
             localModel = localModel as MatrixFactorization
             if (localModel.numSongs == 0) {
-                recommendStore.storeModelLocally(MatrixFactorization(peerModel))
+                localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
+                localModel = MatrixFactorization(peerModel)
+                recommendStore.storeModelLocally(localModel)
                 val maxPeersToAsk = 10
                 var count = 0
                 for ((index, peer) in getPeers().withIndex()) {
@@ -119,7 +121,8 @@ open class RecommenderCommunity(
             }
             else {
                 Log.w("Recommender", "Merging MatrixFactorization")
-                localModel.onReceiveModel(peerModel.age, peerModel.songFeatures, peerModel.songBias)
+                localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
+                localModel.onReceiveModel(peerModel.age, peerModel.songFeaturesMap, peerModel.songBias)
                 recommendStore.storeModelLocally(localModel)
                 Log.w("Recommender", "Stored new MatrixFactorization")
                 if (payload.checkTTL()) performRemoteModelExchange(localModel)
@@ -132,7 +135,7 @@ open class RecommenderCommunity(
 
         val numSongs = recommendStore.globalSongCount()
         var ageGather = Array(numSongs) { _ -> 0.0 }
-        var songFeaturesGather = Array(numSongs) { _ -> Array(model.k) { _ -> 0.0 } }
+        var songFeaturesGather = recommendStore.getSongIds().zip(Array(numSongs) { _ -> Array(model.k) { _ -> 0.0 } }).toMap().toSortedMap()
         var songBiasGather = Array(numSongs) { _ -> 0.0 }
 
         for ((index, peer) in getPeers().withIndex()) {

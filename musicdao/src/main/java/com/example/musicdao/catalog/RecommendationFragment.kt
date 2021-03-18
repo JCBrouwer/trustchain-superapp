@@ -6,11 +6,10 @@ import android.view.View
 import androidx.lifecycle.lifecycleScope
 import com.example.federated_ml.models.Pegasos
 import com.example.musicdao.MusicBaseFragment
-import kotlinx.coroutines.delay
 import com.example.musicdao.R
 import com.example.musicdao.util.Util
 import kotlinx.android.synthetic.main.fragment_recommendation.*
-import kotlinx.android.synthetic.main.fragment_release.*
+import kotlinx.coroutines.delay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import java.io.File
 
@@ -23,29 +22,20 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
 
         lifecycleScope.launchWhenCreated {
             while (isActive) {
-                if (loadingRecommendations != null) {
-                    loadingRecommendations.setVisibility(View.VISIBLE)
-                    loadingRecommendations.text = "Refreshing recommendations..."
-
-                    refreshRecommendations()
-
-                    val transaction = activity?.supportFragmentManager?.beginTransaction()
-                    loadingRecommendations.setVisibility(View.GONE)
-                    activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
-
-                    refreshRecommend.isRefreshing = false
-                }
-                delay(10000)
-                Log.w("Recommend", "Refreshing...")
+                getRecommenderCommunity().initiateWalkingModel()
+                delay(10 * 1000)
             }
         }
 
-        lifecycleScope.launchWhenCreated {
-            while (isActive) {
-                val community = getRecommenderCommunity()
-                val localModel = community.recommendStore.getLocalModel() as Pegasos
-                community.performRemoteModelExchange(localModel)
-                delay(30000)
+        refreshRecommend.setOnRefreshListener {
+            if ( getRecommenderCommunity().recommendStore.globalSongCount() >  0 ) {
+                loadingRecommendations.setVisibility(View.VISIBLE)
+                loadingRecommendations.text = "Refreshing recommendations..."
+                refreshRecommendations()
+                val transaction = activity?.supportFragmentManager?.beginTransaction()
+                loadingRecommendations.setVisibility(View.GONE)
+                activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
+                refreshRecommend.isRefreshing = false
             }
         }
     }
@@ -79,7 +69,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         val data = getRecommenderCommunity().recommendStore.getNewSongs(50)
         val songFeatures = data.first
         val blocks = data.second
-        val model = getRecommenderCommunity().recommendStore.getLocalModel() as Pegasos
+        val model = getRecommenderCommunity().recommendStore.getLocalModel("Pegasos") as Pegasos
         val predictions = model.predict(songFeatures)
         var best = 0
         var runnerup = 1

@@ -234,7 +234,7 @@ class TrustChainApplication : Application() {
     }
 
     private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
-        // this.applicationContext.deleteDatabase("federated_ml.db")
+        //this.applicationContext.deleteDatabase("federated_ml.db")
         val settings = TrustChainSettings()
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
         val musicStore = TrustChainSQLiteStore(Database(musicDriver))

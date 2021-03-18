@@ -8,9 +8,8 @@ import java.util.*
 class Pegasos : OnlineModel {
     private val regularization: Double
     private val iterations: Int
-    override var name = "Pegasos"
 
-    constructor(regularization: Double, amountFeatures: Int, iterations: Int) : super(amountFeatures) {
+    constructor(regularization: Double, amountFeatures: Int, iterations: Int) : super(amountFeatures, "Pegasos") {
         this.regularization = regularization
         this.iterations = iterations
     }
@@ -70,11 +69,5 @@ class Pegasos : OnlineModel {
                 weights[idx] *= (1 - eta * regularization)
             }
         }
-    }
-
-    override fun serialize(): String {
-//        val jsn = JSONObject("""{"weights":$weights, "iterations":$iterations,
-//            |"regularization:$regularization"}""".trimMargin())
-        return Json.encodeToString(this)
     }
 }

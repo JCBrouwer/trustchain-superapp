@@ -2,8 +2,7 @@ package com.example.federated_ml.db
 
 import android.annotation.SuppressLint
 import android.util.Log
-import com.example.federated_ml.models.OnlineModel
-import com.example.federated_ml.models.Pegasos
+import com.example.federated_ml.models.*
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.serialization.decodeFromString
@@ -15,6 +14,7 @@ import nl.tudelft.federated_ml.sqldelight.Database
 import nl.tudelft.federated_ml.sqldelight.Features
 import kotlin.collections.HashMap
 import kotlin.random.Random
+import nl.tudelft.federated_ml.sqldelight.Models
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -24,32 +24,39 @@ open class RecommenderStore(
     // TODO: fix this to proper path
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
-    private val totalAmountFeatures = 5
+    val totalAmountFeatures = 5
 
-    fun storeModelLocally(model: OnlineModel) {
-        database.dbModelQueries.addModel(
-            name = model.name,
-            type = model.name,
-            parameters = model.serialize())
+    fun storeModelLocally(model: Model) {
+        if (model.name == "MatrixFactorization") {
+            database.dbModelQueries.addModel(
+                name = model.name,
+                type = model.name,
+                parameters = (model as MatrixFactorization).serialize(private=true)
+            )
+        } else {
+            database.dbModelQueries.addModel(
+                name = model.name,
+                type = model.name,
+                parameters = model.serialize()
+            )
+        }
     }
 
-    fun getLocalModel(): OnlineModel {
-        val dbModel = database.dbModelQueries.getModel(name = "Pegasos").executeAsOneOrNull()
-        val model: OnlineModel
-        if (dbModel != null) {
-            Log.i("Recommend", "Load existing local model")
-            model = Json.decodeFromString(dbModel.parameters) as Pegasos
-        } else {
-            model = Pegasos(0.01, totalAmountFeatures, 10)
-            Log.i("Recommend", "Initialized local model")
-            Log.w("Model type", model.name)
+    fun getLocalModel(name: String): Model {
+        Log.w("Recommend", "Loading $name")
+        val dbModel = database.dbModelQueries.getModel(name).executeAsOneOrNull()
+        return if (name == "Adaline") {
+            if (dbModel == null) Adaline(0.1, totalAmountFeatures)
+            else Json.decodeFromString<Adaline>(dbModel.parameters)
         }
-        val trainingData = getLocalSongData()
-        if (trainingData.first.isNotEmpty()) {
-            model.update(trainingData.first, trainingData.second)
+        else if (name == "Pegasos") {
+            if (dbModel == null) Pegasos(0.01, totalAmountFeatures, 10)
+            else Json.decodeFromString<Pegasos>(dbModel.parameters)
         }
-        storeModelLocally(model)
-        return model
+        else {
+            if (dbModel == null) MatrixFactorization(0)
+            else Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
+        }
     }
 
     fun updateLocalFeatures(file: File) {
@@ -108,6 +115,10 @@ open class RecommenderStore(
         }
 
         return arrayOf(year, wmp, bpm, dataLen, genre)
+    }
+
+    fun globalSongCount(): Int {
+        return processGlobalSongs(musicStore.getBlocksWithType("publish_release")).size
     }
 
     private fun processGlobalSongs(songsHistory: List<TrustChainBlock>): Array<Array<Double>> {

@@ -14,6 +14,7 @@ import kotlinx.android.synthetic.main.fragment_recommendation.*
 import kotlinx.coroutines.delay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import java.io.File
+import java.lang.Double.NEGATIVE_INFINITY
 
 class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendation) {
     private var isActive = true
@@ -102,11 +103,14 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         Log.w("Recommend", "Retrieving local recommendation model")
         val predictions = getBaggedPredictions(data)
         var best = 0
+        var bestScore = NEGATIVE_INFINITY
         for ((i, pred) in predictions.withIndex()) {
-            if (pred > predictions[best]) {
+            if (bestScore < pred) {
                 best = i
+                bestScore = pred
             }
         }
+        Log.w("Recommend", "PICKED BLOCK $best with score $bestScore")
         val debugScore = predictions[best].toString()
         Log.w("Recommender", "After refreshing, best local score is $debugScore")
         updateRecommendFragment(blocks[best], 1)

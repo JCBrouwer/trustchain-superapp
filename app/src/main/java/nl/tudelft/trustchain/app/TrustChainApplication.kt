@@ -68,7 +68,8 @@ class TrustChainApplication : Application() {
                 createVotingCommunity(),
                 createMusicCommunity(),
                 createRecommenderCommunity()
-            ), walkerInterval = 5.0
+            ),
+            walkerInterval = 5.0
         )
 
         IPv8Android.Factory(this)
@@ -89,7 +90,9 @@ class TrustChainApplication : Application() {
         val euroTokenCommunity = ipv8.getOverlay<EuroTokenCommunity>()!!
         euroTokenCommunity.setTransactionRepository(tr)
 
-        trustchain.registerTransactionValidator(BLOCK_TYPE, object : TransactionValidator {
+        trustchain.registerTransactionValidator(
+            BLOCK_TYPE,
+            object : TransactionValidator {
             override fun validate(
                 block: TrustChainBlock,
                 database: TrustChainStore
@@ -102,29 +105,47 @@ class TrustChainApplication : Application() {
             }
         })
 
-        trustchain.registerBlockSigner(BLOCK_TYPE, object : BlockSigner {
+        trustchain.registerBlockSigner(
+            BLOCK_TYPE,
+            object : BlockSigner {
             override fun onSignatureRequest(block: TrustChainBlock) {
                 trustchain.createAgreementBlock(block, mapOf<Any?, Any?>())
             }
         })
 
-        trustchain.addListener(BLOCK_TYPE, object : BlockListener {
+        trustchain.addListener(
+            BLOCK_TYPE,
+            object : BlockListener {
             override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d("TrustChainDemo", "onBlockReceived: ${block.blockId} ${block.transaction}")
+                Log.d(
+                    "TrustChainDemo",
+                    "onBlockReceived: ${block.blockId} ${block.transaction}"
+                )
             }
         })
 
-        trustchain.addListener(CoinCommunity.JOIN_BLOCK, object : BlockListener {
+        trustchain.addListener(
+            CoinCommunity.JOIN_BLOCK,
+            object : BlockListener {
             override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d("Coin", "onBlockReceived: ${block.blockId} ${block.transaction}")
+                Log.d(
+                    "Coin",
+                    "onBlockReceived: ${block.blockId} ${block.transaction}"
+                )
             }
         })
 
-        trustchain.addListener(CoinCommunity.SIGNATURE_ASK_BLOCK, object : BlockListener {
+        trustchain.addListener(
+            CoinCommunity.SIGNATURE_ASK_BLOCK,
+            object : BlockListener {
             override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d("Coin", "onBlockReceived: ${block.blockId} ${block.transaction}")
+                Log.d(
+                    "Coin",
+                    "onBlockReceived: ${block.blockId} ${block.transaction}"
+                )
             }
-        })
+        }
+        )
     }
 
     private fun createDiscoveryCommunity(): OverlayConfiguration<DiscoveryCommunity> {
@@ -234,7 +255,7 @@ class TrustChainApplication : Application() {
     }
 
     private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
-        //this.applicationContext.deleteDatabase("federated_ml.db")
+        // this.applicationContext.deleteDatabase("federated_ml.db")
 
         val settings = TrustChainSettings()
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
@@ -243,8 +264,8 @@ class TrustChainApplication : Application() {
         val database = MLDatabase(driver)
 
         // TODO: for debugging, remove later
-//        database.dbFeaturesQueries.deleteAllFeatures()
-//        database.dbModelQueries.deleteAll()
+        // database.dbFeaturesQueries.deleteAllFeatures()
+        // database.dbModelQueries.deleteAll()
 
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
         val randomWalk = RandomWalk.Factory()

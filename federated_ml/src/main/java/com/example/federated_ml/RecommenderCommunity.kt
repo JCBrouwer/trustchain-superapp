@@ -5,6 +5,8 @@ import com.example.federated_ml.db.RecommenderStore
 import com.example.federated_ml.ipv8.ModelExchangeMessage
 import com.example.federated_ml.ipv8.RequestModelMessage
 import com.example.federated_ml.models.*
+import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
+import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
@@ -99,8 +101,7 @@ open class RecommenderCommunity(
             Log.w("Recommender", "Walking an random models are merged")
             recommendStore.storeModelLocally(models.first)
             if (payload.checkTTL()) performRemoteModelExchange(models.second)
-        }
-        else {
+        } else {
             peerModel = peerModel as PublicMatrixFactorization
             localModel = localModel as MatrixFactorization
             if (localModel.numSongs == 0) {
@@ -118,11 +119,11 @@ open class RecommenderCommunity(
                     count += 1
                 }
                 Log.w("Recommender", "Model request sent to $count peer(s)")
-            }
-            else {
+            } else {
                 Log.w("Recommender", "Merging MatrixFactorization")
                 localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
-                localModel.onReceiveModel(peerModel.age, peerModel.songFeaturesMap, peerModel.songBias)
+                localModel.merge(peerModel.age, peerModel.songFeaturesMap, peerModel.songBias)
+                localModel.update()
                 recommendStore.storeModelLocally(localModel)
                 Log.w("Recommender", "Stored new MatrixFactorization")
                 if (payload.checkTTL()) performRemoteModelExchange(localModel)
@@ -155,7 +156,8 @@ open class RecommenderCommunity(
 //            songBiasGather += peerSongBias
 //        }
 
-        model.onReceiveModel(ageGather, songFeaturesGather, songBiasGather)
+        model.merge(ageGather, songFeaturesGather, songBiasGather)
+        model.update()
         recommendStore.storeModelLocally(model)
     }
 

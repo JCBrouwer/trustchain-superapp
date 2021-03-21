@@ -4,7 +4,7 @@ import kotlinx.serialization.json.Json
 import java.util.*
 
 @Serializable
-open class OnlineModel: Model {
+open class OnlineModel : Model {
     private val amountFeatures: Int
     internal var weights: Array<Double>
 
@@ -50,5 +50,4 @@ open class OnlineModel: Model {
     override fun serialize(): String {
         return Json.encodeToString(this)
     }
-
 }

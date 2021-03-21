@@ -1,7 +1,6 @@
-package com.example.federated_ml.models
+package com.example.federated_ml.models.feature_based
+import com.example.federated_ml.models.OnlineModel
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.util.*
 
 @Serializable

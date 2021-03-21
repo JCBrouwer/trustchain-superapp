@@ -1,11 +1,6 @@
 package com.example.federated_ml.ipv8
 
-import android.util.Log
 import kotlin.UInt
-import kotlinx.serialization.json.*
-import com.example.federated_ml.models.OnlineModel
-import com.example.federated_ml.models.Pegasos
-import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.messaging.*
 
 /**

@@ -1,61 +1,20 @@
-package com.example.federated_ml.models
+package com.example.federated_ml.models.collaborative_filtering
 
 import android.util.Log
+import com.example.federated_ml.models.Model
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.lang.Math.*
 import java.util.*
 import kotlin.random.Random.Default.nextDouble
 
-operator fun Array<Double>.plus(other: Double): Array<Double> { for (i in 0 until size) this[i] += other; return this }
-operator fun Double.plus(doubles: Array<Double>): Array<Double> { return doubles + this }
-operator fun Array<Double>.times(other: Double): Array<Double> { for (i in 0 until size) this[i] *= other; return this }
-operator fun Double.times(doubles: Array<Double>): Array<Double> { return doubles * this }
-operator fun Array<Double>.div(other: Double): Array<Double> { for (i in 0 until size) this[i] /= other; return this }
-operator fun Double.div(doubles: Array<Double>): Array<Double> { return doubles / this }
-operator fun Array<Double>.minus(other: Double): Array<Double> { for (i in 0 until size) this[i] -= other; return this }
-operator fun Double.minus(doubles: Array<Double>): Array<Double> { return doubles - this }
-
-operator fun Array<Double>.plus(other: Array<Double>): Array<Double> { for (i in 0 until size) this[i] += other[i]; return this }
-operator fun Array<Double>.minus(other: Array<Double>): Array<Double> { for (i in 0 until size) this[i] -= other[i]; return this }
-operator fun Array<Double>.times(other: Array<Double>): Double {
-    var out = 0.0
-    for (i in 0 until size) out += this[i] * other[i]
-    return out
-}
-
 @Serializable
-data class PublicMatrixFactorization(
-    var age: Array<Double>,
-    var songFeaturesMap: SortedMap<String, Array<Double>>,
-    var songBias: Array<Double>): Model("PublicMatrixFactorization") {
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as PublicMatrixFactorization
-
-        if (!age.contentEquals(other.age)) return false
-        if (songFeaturesMap != other.songFeaturesMap) return false
-        if (!songBias.contentEquals(other.songBias)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = age.contentHashCode()
-        result = 31 * result + songFeaturesMap.hashCode()
-        result = 31 * result + songBias.contentHashCode()
-        return result
-    }
-
-}
-
-@Serializable
-class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>, private var ratings: Array<Double>): Model("MatrixFactorization") {
+open class MatrixFactorization(
+    val numSongs: Int,
+    private var songNames: Set<String>,
+    private var ratings: Array<Double>
+) : Model("MatrixFactorization") {
     val k = 5
     private val lr = 0.01
     private val lambda = 0.1
@@ -72,11 +31,11 @@ class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>,
 
     constructor(peerModel: PublicMatrixFactorization) : this(
         numSongs = peerModel.songBias.size,
-        songNames = peerModel.songFeaturesMap.map { it.key } .toSet(),
+        songNames = peerModel.songFeaturesMap.map { it.key }.toSet(),
         ratings = Array(peerModel.songBias.size) { _ -> 0.0 }
     ) {
         this.age = peerModel.age
-        this.songFeatures = peerModel.songFeaturesMap.map { it.value } .toTypedArray()
+        this.songFeatures = peerModel.songFeaturesMap.map { it.value }.toTypedArray()
         this.songBias = peerModel.songBias
         update()
     }
@@ -113,11 +72,6 @@ class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>,
         return songNames.zip(arr).toMap().toSortedMap()
     }
 
-    fun onReceiveModel(ageNew: Array<Double>, songFeaturesMap: SortedMap<String, Array<Double>>, songBiasNew: Array<Double>) {
-        merge(ageNew, songFeaturesMap, songBiasNew)
-        update()
-    }
-
     override fun update() {
         for (j in ratings.indices) {
             if (ratings[j] != 0.0) {
@@ -137,21 +91,27 @@ class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>,
         }
     }
 
-    private fun merge(ageNew: Array<Double>, songFeaturesMap: SortedMap<String, Array<Double>>, songBiasNew: Array<Double>) {
+    open fun merge(
+        ageNew: Array<Double>,
+        songFeaturesMap: SortedMap<String, Array<Double>>,
+        songBiasNew: Array<Double>
+    ) {
         if (songFeaturesMap.keys.toSet() != songNames) {
             val songMap = songNames.zip(songFeatures).toMap().toSortedMap()
             songNames = songFeaturesMap.keys.toSet() + songNames
             for (name in songNames) {
                 if (songMap[name] == null) {
-                    songMap.put( name, Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) } ) // initialize rows not yet present in this map
+                    songMap.put(name, Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) })
+                // initialize rows not yet present in this map
                 }
                 if (songFeaturesMap[name] == null) {
-                    songFeaturesMap.put( name, Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) } ) // initialize rows not yet present in this map
+                    songFeaturesMap.put(name, Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) })
+                // initialize rows not yet present in this map
                 }
             }
-            this.songFeatures = songMap.map { it.value } .toTypedArray()
+            this.songFeatures = songMap.map { it.value }.toTypedArray()
         }
-        val songFeaturesNew = songFeaturesMap.map { it.value } .toTypedArray()
+        val songFeaturesNew = songFeaturesMap.map { it.value }.toTypedArray()
 
         // age weighted average, more weight to rows which have been updated many times
         for (j in 1..numSongs) {
@@ -183,7 +143,12 @@ class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>,
         }
         return sqrt(sumSq)
     }
-    private fun loss(X: Array<Array<Double>>, Y: Array<Array<Double>>, b: Array<Double>, c: Array<Double>): Double {
+    private fun loss(
+        X: Array<Array<Double>>,
+        Y: Array<Array<Double>>,
+        b: Array<Double>,
+        c: Array<Double>
+    ): Double {
         var out = 0.0
         for (i in X.indices) {
             for (j in X[0].indices) {
@@ -207,9 +172,10 @@ class MatrixFactorization(val numSongs: Int, private var songNames: Set<String>,
 
     // the function used during serialization for local database storage
     fun serialize(private: Boolean): String {
-        Log.i("Recommend", "Serializing MatrixFactorization, including private data: $private")
+        Log.i("Recommend",
+            "Serializing MatrixFactorization, including private data: $private")
         return if (private) Json.encodeToString(this)
-        else Json.encodeToString(PublicMatrixFactorization(age, featuresToMap(songFeatures), songBias))
+        else Json.encodeToString(PublicMatrixFactorization(age,
+            featuresToMap(songFeatures), songBias))
     }
-
 }

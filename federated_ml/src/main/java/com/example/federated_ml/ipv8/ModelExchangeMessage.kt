@@ -2,6 +2,9 @@ package com.example.federated_ml.ipv8
 
 import android.util.Log
 import com.example.federated_ml.models.*
+import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
+import com.example.federated_ml.models.feature_based.Adaline
+import com.example.federated_ml.models.feature_based.Pegasos
 import kotlin.UInt
 import kotlinx.serialization.json.*
 import kotlinx.serialization.decodeFromString

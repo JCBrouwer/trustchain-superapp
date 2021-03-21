@@ -3,6 +3,9 @@ package com.example.federated_ml.db
 import android.annotation.SuppressLint
 import android.util.Log
 import com.example.federated_ml.models.*
+import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
+import com.example.federated_ml.models.feature_based.Adaline
+import com.example.federated_ml.models.feature_based.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.serialization.decodeFromString
@@ -11,10 +14,6 @@ import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 import nl.tudelft.federated_ml.sqldelight.Database
-import nl.tudelft.federated_ml.sqldelight.Features
-import kotlin.collections.HashMap
-import kotlin.random.Random
-import nl.tudelft.federated_ml.sqldelight.Models
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -31,9 +30,9 @@ open class RecommenderStore(
             database.dbModelQueries.addModel(
                 name = model.name,
                 type = model.name,
-                parameters = (model as MatrixFactorization).serialize(private=true)
+                parameters = (model as MatrixFactorization).serialize(private = true)
             )
-        } else if (model.name == "Pegasos"){
+        } else if (model.name == "Pegasos") {
             database.dbModelQueries.addModel(
                 name = model.name,
                 type = model.name,
@@ -83,7 +82,7 @@ open class RecommenderStore(
             }
         }
         val trainingData = getLocalSongData()
-        if (trainingData.first.isNotEmpty() &&  (name == "Pegasos" || name == "Adaline")) {
+        if (trainingData.first.isNotEmpty() && (name == "Pegasos" || name == "Adaline")) {
             (model as OnlineModel).update(trainingData.first, trainingData.second)
         }
         storeModelLocally(model)
@@ -146,7 +145,7 @@ open class RecommenderStore(
         if (block.transaction["date"] != null) {
             try {
                 year = Integer.parseInt(block.transaction["date"] as String).toDouble()
-            } catch (e:Exception) {
+            } catch (e: Exception) {
                 System.out.println(block.transaction["date"])
             }
 
@@ -154,7 +153,7 @@ open class RecommenderStore(
                 // 01/02/2020 case
                 year = Integer.parseInt((block.transaction["date"] as
                     String).split("/").toTypedArray()[-1]).toDouble()
-            } catch (e:Exception) {
+            } catch (e: Exception) {
                 System.out.println(block.transaction["date"])
             }
         }
@@ -263,35 +262,35 @@ open class RecommenderStore(
         if (mp3File.hasId3v2Tag()) {
             try {
                 bpm = mp3File.id3v2Tag.bpm.toDouble()
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 Log.w("Feature extraction", e.toString())
                 Log.w("Feature extraction", e.toString())
             }
 
             try {
                 dataLen = mp3File.id3v2Tag.dataLength.toDouble()
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 Log.w("Feature extraction", dataLen.toString())
                 Log.w("Feature extraction", e.toString())
             }
 
             try {
                 year = mp3File.id3v2Tag.year.toDouble()
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 Log.w("Feature extraction", year.toString())
                 Log.w("Feature extraction", e.toString())
             }
 
             try {
                 wmp = mp3File.id3v2Tag.wmpRating.toDouble()
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 Log.w("Feature extraction", wmp.toString())
                 Log.w("Feature extraction", e.toString())
             }
 
             try {
                 genre = mp3File.id3v2Tag.genre.toDouble()
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 Log.w("Feature extraction", genre.toString())
                 Log.w("Feature extraction", e.toString())
             }
@@ -300,7 +299,7 @@ open class RecommenderStore(
             if (year == -1.0 && mp3File.id3v1Tag.year != null) {
                 try {
                     year = mp3File.id3v1Tag.year.toDouble()
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     Log.w("Feature extraction", e.toString())
                 }
             }
@@ -308,7 +307,7 @@ open class RecommenderStore(
             if (genre == -1.0) {
                 try {
                     genre = mp3File.id3v1Tag.genre.toDouble()
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     Log.w("Feature extraction", e.toString())
                 }
             }

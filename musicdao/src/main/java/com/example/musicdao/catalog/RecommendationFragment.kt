@@ -27,16 +27,18 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         lifecycleScope.launchWhenCreated {
             while (isActive) {
                 getRecommenderCommunity().initiateWalkingModel()
-                if ( getRecommenderCommunity().recommendStore.globalSongCount() >  0 ) {
-                    loadingRecommendations.setVisibility(View.VISIBLE)
-                    loadingRecommendations.text = "Refreshing recommendations..."
-                    refreshRecommendations()
-                    val transaction = activity?.supportFragmentManager?.beginTransaction()
-                    loadingRecommendations.setVisibility(View.GONE)
-                    activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
-                    refreshRecommend.isRefreshing = false
-                }
                 delay(10 * 1000)
+            }
+        }
+        refreshRecommend.setOnRefreshListener {
+            if ( getRecommenderCommunity().recommendStore.globalSongCount() >  0 ) {
+                loadingRecommendations.setVisibility(View.VISIBLE)
+                loadingRecommendations.text = "Refreshing recommendations..."
+                refreshRecommendations()
+                val transaction = activity?.supportFragmentManager?.beginTransaction()
+                loadingRecommendations.setVisibility(View.GONE)
+                activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
+                refreshRecommend.isRefreshing = false
             }
         }
     }

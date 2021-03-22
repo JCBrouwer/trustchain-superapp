@@ -8,12 +8,18 @@ import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 import nl.tudelft.federated_ml.sqldelight.Database
+import org.json.JSONArray
+import org.json.JSONObject
+import org.metabrainz.acousticbrainz.AcousticBrainzClient
+import java.io.IOException
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -224,16 +230,34 @@ open class RecommenderStore(
         }
     }
 
-    fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
-        var batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
-        if (batch.size == 0) {
-            addAllLocalFeatures()
-            batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
-        }
+    fun readJsonFile(filepath: String): Map<String, *> {
+        val jsonString: String = File(filepath).bufferedReader().use { it.readText() }
+        return JSONObject(jsonString).toMap()
+    }
 
+    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
+        when (val value = this[it])
+        {
+            is JSONArray ->
+            {
+                val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
+                JSONObject(map).toMap().values.toList()
+            }
+            is JSONObject -> value.toMap()
+            JSONObject.NULL -> null
+            else            -> value
+        }
+    }
+
+    fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
+        val batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
+        if (batch.isEmpty()) {
+            Log.e("Recommend", "Local feature database is empty! Analyzing files in background thread now, current recommendation will be empty.")
+            GlobalScope.launch { addAllLocalFeatures() } // analyze local music files
+        }
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
         val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
-        for (i in (0 until batch.size)) {
+        for (i in batch.indices) {
             // artist, year, wmp, bpm, dataLen, genre
             features[i][0] = batch[i].song_year!!
             features[i][1] = batch[i].wmp!!
@@ -311,6 +335,25 @@ open class RecommenderStore(
                     Log.w("Feature extraction", e.toString())
                 }
             }
+        }
+
+        try {
+            AcousticBrainzClient.extractData(mp3File.filename, mp3File.filename.replace(".mp3", ".json"));
+            val abzFeatures = readJsonFile(mp3File.filename.replace(".mp3", ".json"))
+            for ((k, v) in abzFeatures) {
+                Log.w("Recommend", "$k : $v")
+            }
+        }
+        catch (e: Exception) {
+            Log.e("Recommend","Error extracting AcousticBrainz features")
+            Log.e("Recommend","$e")
+        }
+        try {
+            File(mp3File.filename.replace(".mp3",".json")).delete()
+        }
+        catch (exception: IOException) {
+            Log.e("Recommend","Error deleting AcousticBrainz feature json output file")
+            Log.e("Recommend","$exception")
         }
 
         Log.w("Feature extraction", "$year $wmp $bpm $dataLen $genre")

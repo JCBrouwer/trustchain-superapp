@@ -66,6 +66,7 @@ dependencies {
         exclude group: 'org.bouncycastle'
     }
     implementation project(':musicdao-datafeeder')
+    implementation project(':acousticbrainz-android')
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 

@@ -230,25 +230,6 @@ open class RecommenderStore(
         }
     }
 
-    fun readJsonFile(filepath: String): Map<String, *> {
-        val jsonString: String = File(filepath).bufferedReader().use { it.readText() }
-        return JSONObject(jsonString).toMap()
-    }
-
-    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
-        when (val value = this[it])
-        {
-            is JSONArray ->
-            {
-                val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
-                JSONObject(map).toMap().values.toList()
-            }
-            is JSONObject -> value.toMap()
-            JSONObject.NULL -> null
-            else            -> value
-        }
-    }
-
     fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
         val batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
         if (batch.isEmpty()) {
@@ -338,10 +319,12 @@ open class RecommenderStore(
         }
 
         try {
-            AcousticBrainzClient.extractData(mp3File.filename, mp3File.filename.replace(".mp3", ".json"));
-            val abzFeatures = readJsonFile(mp3File.filename.replace(".mp3", ".json"))
+            val filename = mp3File.filename
+            val jsonname = mp3File.filename.replace(".mp3", ".json")
+            AcousticBrainzClient.extractData(filename, jsonname);
+            val abzFeatures = readJsonFile(jsonname)
             for ((k, v) in abzFeatures) {
-                Log.w("Recommend", "$k : $v")
+                Log.w("Recommend", "$filename : $k : $v")
             }
         }
         catch (e: Exception) {
@@ -359,6 +342,25 @@ open class RecommenderStore(
         Log.w("Feature extraction", "$year $wmp $bpm $dataLen $genre")
 
         return arrayOf(year, wmp, bpm, dataLen, genre)
+    }
+
+    fun readJsonFile(filepath: String): Map<String, *> {
+        val jsonString: String = File(filepath).bufferedReader().use { it.readText() }
+        return JSONObject(jsonString).toMap()
+    }
+
+    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
+        when (val value = this[it])
+        {
+            is JSONArray ->
+            {
+                val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
+                JSONObject(map).toMap().values.toList()
+            }
+            is JSONObject -> value.toMap()
+            JSONObject.NULL -> null
+            else            -> value
+        }
     }
 
     companion object {

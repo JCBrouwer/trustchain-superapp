@@ -10,8 +10,8 @@ project(':ipv8-android').projectDir = new File(settingsDir, 'kotlin-ipv8/ipv8-an
 include 'ipv8-jvm'
 project(':ipv8-jvm').projectDir = new File(settingsDir, 'kotlin-ipv8/ipv8-jvm')
 
-include ':acousticbrainz-android'
-project(':acousticbrainz-android').projectDir = new File(settingsDir, 'acousticbrainz-android/acousticbrainz')
+include ':acousticbrainz'
+project(':acousticbrainz').projectDir = new File(settingsDir, 'acousticbrainz-android/acousticbrainz')
 
 include ':app'
 include ':common'

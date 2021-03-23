@@ -321,23 +321,27 @@ open class RecommenderStore(
         try {
             val filename = mp3File.filename
             val jsonname = mp3File.filename.replace(".mp3", ".json")
-            AcousticBrainzClient.extractData(filename, jsonname);
+            val newJsonCreated = File(jsonname).createNewFile()
+            Log.w("Recommend2", "$jsonname has been created: $newJsonCreated")
+            val success = AcousticBrainzClient.extractData(filename, jsonname);
+            Log.w("Recommend2", "Successfully extracted data with acoustic-brainz: $success")
             val abzFeatures = readJsonFile(jsonname)
+            Log.w("Recommend2", "Acoustic-brainz features: $abzFeatures")
             for ((k, v) in abzFeatures) {
-                Log.w("Recommend", "$filename : $k : $v")
+                Log.w("Recommend2", "$filename : $k : $v")
             }
         }
         catch (e: Exception) {
             Log.e("Recommend","Error extracting AcousticBrainz features")
             Log.e("Recommend","$e")
         }
-        try {
-            File(mp3File.filename.replace(".mp3",".json")).delete()
-        }
-        catch (exception: IOException) {
-            Log.e("Recommend","Error deleting AcousticBrainz feature json output file")
-            Log.e("Recommend","$exception")
-        }
+//        try {
+//            File(mp3File.filename.replace(".mp3",".json")).delete()
+//        }
+//        catch (exception: IOException) {
+//            Log.e("Recommend","Error deleting AcousticBrainz feature json output file")
+//            Log.e("Recommend","$exception")
+//        }
 
         Log.w("Feature extraction", "$year $wmp $bpm $dataLen $genre")
 

@@ -2,6 +2,14 @@ package com.example.federated_ml.models.collaborative_filtering
 
 import kotlinx.serialization.Serializable
 import com.example.federated_ml.models.Model
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ArraySerializer
+import kotlinx.serialization.builtins.DoubleArraySerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.util.*
 
 operator fun Array<Double>.plus(other: Double): Array<Double> {
@@ -56,9 +64,26 @@ operator fun Array<Double>.times(other: Array<Double>): Double {
     return out
 }
 
+
+object SortedMapSerializer: KSerializer<Map<String, Array<Double>>> {
+    private val mapSerializer = MapSerializer(String.serializer(), ArraySerializer(Double.serializer()))
+
+    override val descriptor: SerialDescriptor = mapSerializer.descriptor
+
+    override fun serialize(encoder: Encoder, value: Map<String, Array<Double>>) {
+        mapSerializer.serialize(encoder, value.toSortedMap())
+    }
+
+    override fun deserialize(decoder: Decoder): Map<String, Array<Double>> {
+        return mapSerializer.deserialize(decoder)
+    }
+}
+
+@Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable
 data class PublicMatrixFactorization(
     var age: Array<Double>,
+    @Serializable(with = SortedMapSerializer::class)
     var songFeaturesMap: SortedMap<String, Array<Double>>,
     var songBias: Array<Double>
 ) : Model("PublicMatrixFactorization") {

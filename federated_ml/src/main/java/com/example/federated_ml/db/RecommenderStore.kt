@@ -9,14 +9,16 @@ import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import nl.tudelft.federated_ml.sqldelight.Database
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
-import java.io.File
-import nl.tudelft.federated_ml.sqldelight.Database
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.io.IOException
 
 open class RecommenderStore(
@@ -133,10 +135,12 @@ open class RecommenderStore(
             Log.i("Recommend", "Song exists! Increment counter")
         }
         val mp3Features = extractMP3Features(mp3File)
-        database.dbFeaturesQueries.addFeature(key = k,
+        database.dbFeaturesQueries.addFeature(
+            key = k,
             song_year = mp3Features[0],
             wmp = mp3Features[1], bpm = mp3Features[2],
-            dataLen = mp3Features[3], genre = mp3Features[4], count = count.toLong())
+            dataLen = mp3Features[3], genre = mp3Features[4], count = count.toLong()
+        )
     }
 
     private fun extractBlockFeatures(block: TrustChainBlock): Array<Double> {
@@ -155,8 +159,10 @@ open class RecommenderStore(
 
             try {
                 // 01/02/2020 case
-                year = Integer.parseInt((block.transaction["date"] as
-                    String).split("/").toTypedArray()[-1]).toDouble()
+                year = Integer.parseInt(
+                    (block.transaction["date"] as
+                        String).split("/").toTypedArray()[-1]
+                ).toDouble()
             } catch (e: Exception) {
                 System.out.println(block.transaction["date"])
             }
@@ -214,10 +220,15 @@ open class RecommenderStore(
                             val mp3Features = extractMP3Features(Mp3File(f))
                             val count = 1
                             val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
-                            database.dbFeaturesQueries.addFeature(key = k,
+                            database.dbFeaturesQueries.addFeature(
+                                key = k,
                                 song_year = mp3Features[0],
-                                wmp = mp3Features[1], bpm = mp3Features[2],
-                                dataLen = mp3Features[3], genre = mp3Features[4], count = count.toLong())
+                                wmp = mp3Features[1],
+                                bpm = mp3Features[2],
+                                dataLen = mp3Features[3],
+                                genre = mp3Features[4],
+                                count = count.toLong()
+                            )
                         } catch (e: Exception) {
                             Log.w("Init local features", e)
                         }
@@ -229,10 +240,12 @@ open class RecommenderStore(
     }
 
     fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
-        var batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
-        if (batch.size == 0) {
-            addAllLocalFeatures()
-            batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
+        val batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
+        if (batch.isEmpty()) {
+            Log.w(
+                "Recommend",
+                "No features in database, feature extraction still running in background?"
+            )
         }
 
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
@@ -317,23 +330,22 @@ open class RecommenderStore(
             }
         }
 
-        val filename = mp3File.filename;
-        val jsonfile = filename.replace(".mp3",".json")
-        if (Essentia.extractData(filename, jsonfile) == 0) {
-            val essentiaFeatures = readJsonFile(jsonfile)
-            for ((k, v) in essentiaFeatures) {
-                Log.w("Recommend", "$filename : $k : $v")
+        try {
+            val filename = mp3File.filename;
+            val jsonfile = filename.replace(".mp3", ".json")
+            if (!File(jsonfile).exists()) {
+                if (Essentia.extractData(filename, jsonfile) == 1) {
+                    Log.e("Feature extraction", "Error extracting data with Essentia")
+                } else {
+                    Log.e(
+                        "Feature extraction",
+                        "\n\n\nGOT ESSENTIA FEATURES FOR $filename !!!\n\n\n"
+                    )
+                }
             }
-            try {
-                File(jsonfile).delete()
-            }
-            catch (exception: IOException) {
-                Log.e("Recommend","Error deleting Essentia feature json output file")
-                Log.e("Recommend","$exception")
-            }
-        }
-        else {
-            Log.e("Feature extraction", "Error extracting data with Essentia")
+            readJsonFile(jsonfile) // throws error if doesn't exist
+        } catch (e: Exception) {
+            Log.e("Feature extraction", "Essentia extraction failed")
         }
 
         Log.w("Feature extraction", "$year $wmp $bpm $dataLen $genre")
@@ -346,12 +358,11 @@ open class RecommenderStore(
         return JSONObject(jsonString).toMap()
     }
 
-    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
-        when (val value = this[it])
+    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith { key ->
+        when (val value = this[key])
         {
-            is JSONArray ->
-            {
-                val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
+            is JSONArray -> {
+                val map = (0 until value.length()).associate { inkey -> Pair(inkey.toString(), value[inkey]) }
                 JSONObject(map).toMap().values.toList()
             }
             is JSONObject -> value.toMap()

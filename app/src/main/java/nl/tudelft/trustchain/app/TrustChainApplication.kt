@@ -10,6 +10,8 @@ import com.example.musicdao.ipv8.MusicCommunity
 import com.example.federated_ml.RecommenderCommunity
 import com.example.federated_ml.db.RecommenderStore
 import com.squareup.sqldelight.android.AndroidSqliteDriver
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import nl.tudelft.ipv8.IPv8Configuration
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.OverlayConfiguration
@@ -264,10 +266,15 @@ class TrustChainApplication : Application() {
         val database = MLDatabase(driver)
 
         // TODO: for debugging, remove later
-        // database.dbFeaturesQueries.deleteAllFeatures()
-        // database.dbModelQueries.deleteAll()
+        database.dbFeaturesQueries.deleteAllFeatures()
+        database.dbModelQueries.deleteAll()
 
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
+        if (database.dbFeaturesQueries.getAllFeatures().executeAsList().isEmpty()) {
+            GlobalScope.launch {
+                recommendStore.addAllLocalFeatures()
+            }
+        }
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(
             RecommenderCommunity.Factory(recommendStore, settings, musicStore),

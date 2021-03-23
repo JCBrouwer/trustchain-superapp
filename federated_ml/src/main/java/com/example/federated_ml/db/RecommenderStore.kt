@@ -2,6 +2,7 @@ package com.example.federated_ml.db
 
 import android.annotation.SuppressLint
 import android.util.Log
+import com.example.federated_ml.Essentia
 import com.example.federated_ml.models.*
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.feature_based.Adaline
@@ -14,6 +15,9 @@ import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import java.io.File
 import nl.tudelft.federated_ml.sqldelight.Database
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.IOException
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -313,9 +317,47 @@ open class RecommenderStore(
             }
         }
 
+        val filename = mp3File.filename;
+        val jsonfile = filename.replace(".mp3",".json")
+        if (Essentia.extractData(filename, jsonfile) == 0) {
+            val essentiaFeatures = readJsonFile(jsonfile)
+            for ((k, v) in essentiaFeatures) {
+                Log.w("Recommend", "$filename : $k : $v")
+            }
+            try {
+                File(jsonfile).delete()
+            }
+            catch (exception: IOException) {
+                Log.e("Recommend","Error deleting Essentia feature json output file")
+                Log.e("Recommend","$exception")
+            }
+        }
+        else {
+            Log.e("Feature extraction", "Error extracting data with Essentia")
+        }
+
         Log.w("Feature extraction", "$year $wmp $bpm $dataLen $genre")
 
         return arrayOf(year, wmp, bpm, dataLen, genre)
+    }
+
+    private fun readJsonFile(filepath: String): Map<String, *> {
+        val jsonString: String = File(filepath).bufferedReader().use { it.readText() }
+        return JSONObject(jsonString).toMap()
+    }
+
+    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
+        when (val value = this[it])
+        {
+            is JSONArray ->
+            {
+                val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
+                JSONObject(map).toMap().values.toList()
+            }
+            is JSONObject -> value.toMap()
+            JSONObject.NULL -> null
+            else            -> value
+        }
     }
 
     companion object {

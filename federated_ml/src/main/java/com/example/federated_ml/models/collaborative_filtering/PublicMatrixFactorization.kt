@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 import com.example.federated_ml.models.Model
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ArraySerializer
-import kotlinx.serialization.builtins.DoubleArraySerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -64,8 +63,7 @@ operator fun Array<Double>.times(other: Array<Double>): Double {
     return out
 }
 
-
-object SortedMapSerializer: KSerializer<Map<String, Array<Double>>> {
+object SortedMapSerializer : KSerializer<Map<String, Array<Double>>> {
     private val mapSerializer = MapSerializer(String.serializer(), ArraySerializer(Double.serializer()))
 
     override val descriptor: SerialDescriptor = mapSerializer.descriptor

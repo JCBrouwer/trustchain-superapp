@@ -48,7 +48,7 @@ class Adaline : OnlineModel {
 
     private fun forward(x: Array<Double>): Double {
         var weightedSum = this.bias
-        for (idx in 1..x.size) {
+        for (idx in 1 until x.size) {
             weightedSum += this.weights[idx] * x[idx]
         }
         return weightedSum

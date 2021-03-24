@@ -19,7 +19,6 @@ import nl.tudelft.federated_ml.sqldelight.Database
 import org.json.JSONArray
 import org.json.JSONObject
 import org.metabrainz.acousticbrainz.AcousticBrainzClient
-import java.io.IOException
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -323,17 +322,16 @@ open class RecommenderStore(
             val jsonname = mp3File.filename.replace(".mp3", ".json")
             val newJsonCreated = File(jsonname).createNewFile()
             Log.w("Recommend2", "$jsonname has been created: $newJsonCreated")
-            val success = AcousticBrainzClient.extractData(filename, jsonname);
+            val success = AcousticBrainzClient.extractData(filename, jsonname)
             Log.w("Recommend2", "Successfully extracted data with acoustic-brainz: $success")
             val abzFeatures = readJsonFile(jsonname)
             Log.w("Recommend2", "Acoustic-brainz features: $abzFeatures")
             for ((k, v) in abzFeatures) {
                 Log.w("Recommend2", "$filename : $k : $v")
             }
-        }
-        catch (e: Exception) {
-            Log.e("Recommend","Error extracting AcousticBrainz features")
-            Log.e("Recommend","$e")
+        } catch (e: Exception) {
+            Log.e("Recommend", "Error extracting AcousticBrainz features")
+            Log.e("Recommend", "$e")
         }
 //        try {
 //            File(mp3File.filename.replace(".mp3",".json")).delete()
@@ -354,8 +352,7 @@ open class RecommenderStore(
     }
 
     private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
-        when (val value = this[it])
-        {
+        when (val value = this[it]) {
             is JSONArray ->
             {
                 val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
@@ -363,7 +360,7 @@ open class RecommenderStore(
             }
             is JSONObject -> value.toMap()
             JSONObject.NULL -> null
-            else            -> value
+            else -> value
         }
     }
 

@@ -94,58 +94,62 @@ class TrustChainApplication : Application() {
         trustchain.registerTransactionValidator(
             BLOCK_TYPE,
             object : TransactionValidator {
-            override fun validate(
-                block: TrustChainBlock,
-                database: TrustChainStore
-            ): ValidationResult {
-                if (block.transaction["message"] != null || block.isAgreement) {
-                    return ValidationResult.Valid
-                } else {
-                    return ValidationResult.Invalid(listOf("Proposal must have a message"))
+                override fun validate(
+                    block: TrustChainBlock,
+                    database: TrustChainStore
+                ): ValidationResult {
+                    if (block.transaction["message"] != null || block.isAgreement) {
+                        return ValidationResult.Valid
+                    } else {
+                        return ValidationResult.Invalid(listOf("Proposal must have a message"))
+                    }
                 }
             }
-        })
+        )
 
         trustchain.registerBlockSigner(
             BLOCK_TYPE,
             object : BlockSigner {
-            override fun onSignatureRequest(block: TrustChainBlock) {
-                trustchain.createAgreementBlock(block, mapOf<Any?, Any?>())
+                override fun onSignatureRequest(block: TrustChainBlock) {
+                    trustchain.createAgreementBlock(block, mapOf<Any?, Any?>())
+                }
             }
-        })
+        )
 
         trustchain.addListener(
             BLOCK_TYPE,
             object : BlockListener {
-            override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d(
-                    "TrustChainDemo",
-                    "onBlockReceived: ${block.blockId} ${block.transaction}"
-                )
+                override fun onBlockReceived(block: TrustChainBlock) {
+                    Log.d(
+                        "TrustChainDemo",
+                        "onBlockReceived: ${block.blockId} ${block.transaction}"
+                    )
+                }
             }
-        })
+        )
 
         trustchain.addListener(
             CoinCommunity.JOIN_BLOCK,
             object : BlockListener {
-            override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d(
-                    "Coin",
-                    "onBlockReceived: ${block.blockId} ${block.transaction}"
-                )
+                override fun onBlockReceived(block: TrustChainBlock) {
+                    Log.d(
+                        "Coin",
+                        "onBlockReceived: ${block.blockId} ${block.transaction}"
+                    )
+                }
             }
-        })
+        )
 
         trustchain.addListener(
             CoinCommunity.SIGNATURE_ASK_BLOCK,
             object : BlockListener {
-            override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d(
-                    "Coin",
-                    "onBlockReceived: ${block.blockId} ${block.transaction}"
-                )
+                override fun onBlockReceived(block: TrustChainBlock) {
+                    Log.d(
+                        "Coin",
+                        "onBlockReceived: ${block.blockId} ${block.transaction}"
+                    )
+                }
             }
-        }
         )
     }
 

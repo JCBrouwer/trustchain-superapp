@@ -88,8 +88,8 @@ class ModelsTest {
             arrayOf(0.0, 0.0)
         )
         model.update()
-//        val pred = model.predict()
-//        Assert.assertEquals(pred, "Suggestion")
+        val pred = model.predict()
+        Assert.assertEquals(pred, "Suggestion")
     }
 
     @Test
@@ -105,7 +105,7 @@ class ModelsTest {
         val biasedTestSamples = arrayOf(arrayOf(-1.0, 99.0), arrayOf(99.0, -1.0))
 
         val res = model.predict(biasedTestSamples)
-         Assert.assertTrue(res[0] == res[1])
+         Assert.assertTrue(res[0] < res[1])
     }
 
     @Test
@@ -121,6 +121,6 @@ class ModelsTest {
         val biasedTestSamples = arrayOf(arrayOf(-1.0, 99.0), arrayOf(99.0, -1.0))
 
         val res = model.predict(biasedTestSamples)
-         Assert.assertTrue(res[0] == res[1])
+         Assert.assertTrue(res[0] < res[1])
     }
 }

@@ -5,13 +5,14 @@ CREATE TABLE features (
     bpm REAL,
     dataLen REAL,
     genre REAL,
+    essentiaFeatures TEXT,
     count INTEGER NOT NULL,
     PRIMARY KEY (key)
 );
 
 addFeature:
-REPLACE INTO features (key, song_year, wmp, bpm, dataLen, genre, count)
-VALUES(?, ?, ?, ?, ?, ?, ?);
+REPLACE INTO features (key, song_year, wmp, bpm, dataLen, genre, essentiaFeatures, count)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?);
 
 getFeatureCount:
 SELECT count FROM features WHERE key = ? LIMIT 1;

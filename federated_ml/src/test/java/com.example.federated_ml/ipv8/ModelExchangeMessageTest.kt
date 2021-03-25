@@ -11,8 +11,6 @@ import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.feature_based.Pegasos
 import java.util.*
-import kotlin.random.Random
-
 
 @ExperimentalUnsignedTypes
 class ModelExchangeMessageTest {
@@ -24,9 +22,11 @@ class ModelExchangeMessageTest {
     private val originPublicKey = key.pub().keyToBin()
     private val ttl = 2u
     private val model1 = Pegasos(0.4, 10, 5)
-    private val model2 = MatrixFactorization(numSongs = 0,
+    private val model2 = MatrixFactorization(
+        numSongs = 0,
         songNames = HashSet<String>(0),
-        ratings = Array<Double>(0) { _ -> 0.0 })
+        ratings = Array<Double>(0) { _ -> 0.0 }
+    )
 
     @ExperimentalUnsignedTypes
     @Test
@@ -47,11 +47,16 @@ class ModelExchangeMessageTest {
         val (deserialized, size) = ModelExchangeMessage.deserialize(serialized, 0)
         Assert.assertEquals(serialized.size, size)
         Assert.assertEquals(payload.modelType, deserialized.modelType)
-        Assert.assertArrayEquals((payload.model as OnlineModel).weights,
-            (deserialized.model as OnlineModel).weights)
-        if (payload.model is Adaline && deserialized.model is Adaline){
-            Assert.assertEquals((payload.model as Adaline).bias,
-                (deserialized.model as Adaline).bias, delta)
+        Assert.assertArrayEquals(
+            (payload.model as OnlineModel).weights,
+            (deserialized.model as OnlineModel).weights
+        )
+        if (payload.model is Adaline && deserialized.model is Adaline) {
+            Assert.assertEquals(
+                (payload.model as Adaline).bias,
+                (deserialized.model as Adaline).bias,
+                delta
+            )
         }
 
         Assert.assertEquals(payload.ttl, deserialized.ttl)

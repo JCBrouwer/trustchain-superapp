@@ -47,7 +47,8 @@ open class RequestModelMessage @ExperimentalUnsignedTypes constructor(
                     originPublicKey = originPublicKey,
                     ttl = ttl,
                     modelType = modelType
-                ), second = localOffset
+                ),
+                second = localOffset
             )
         }
     }

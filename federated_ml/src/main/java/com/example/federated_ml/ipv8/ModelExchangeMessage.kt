@@ -2,7 +2,6 @@ package com.example.federated_ml.ipv8
 
 import android.util.Log
 import com.example.federated_ml.models.*
-import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
 import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
@@ -70,7 +69,8 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
                     ttl = ttl,
                     modelType = modelType,
                     model = model,
-                ), second = localOffset
+                ),
+                second = localOffset
             )
         }
     }

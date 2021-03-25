@@ -15,15 +15,21 @@ class ModelsTest {
 
     @Test
     fun testMF() {
-        val model = MatrixFactorization(numSongs = 0,
+        val model = MatrixFactorization(
+            numSongs = 0,
             songNames = HashSet<String>(0),
-            ratings = Array<Double>(0) { _ -> 0.0 })
+            ratings = Array<Double>(0) { _ -> 0.0 }
+        )
 
-        model.merge( Array(5) { Random.nextDouble(0.0, 5.0)},
-            sortedMapOf(Pair("c", Array(5) { Random.nextDouble(0.0, 5.0)}),
-                Pair("b", Array(5) { Random.nextDouble(0.0, 5.0)}),
-                Pair("d", Array(5) { Random.nextDouble(0.0, 5.0)})),
-            Array(5) { Random.nextDouble(0.0, 5.0)})
+        model.merge(
+            Array(5) { Random.nextDouble(0.0, 5.0) },
+            sortedMapOf(
+                Pair("c", Array(5) { Random.nextDouble(0.0, 5.0) }),
+                Pair("b", Array(5) { Random.nextDouble(0.0, 5.0) }),
+                Pair("d", Array(5) { Random.nextDouble(0.0, 5.0) })
+            ),
+            Array(5) { Random.nextDouble(0.0, 5.0) }
+        )
         model.update()
         Assert.assertThat(model, instanceOf(MatrixFactorization::class.java))
     }
@@ -34,7 +40,7 @@ class ModelsTest {
 
         model.update(features, labels)
 
-        model.predict(Array(amountFeatures) { Random.nextDouble(0.0, 5.0)})
+        model.predict(Array(amountFeatures) { Random.nextDouble(0.0, 5.0) })
 
         val mergeModelEq = Pegasos(0.4, amountFeatures, 5)
         model.merge(mergeModelEq)
@@ -51,7 +57,7 @@ class ModelsTest {
 
         model.update(features, labels)
 
-        model.predict(Array(amountFeatures) { Random.nextDouble(0.0, 5.0)})
+        model.predict(Array(amountFeatures) { Random.nextDouble(0.0, 5.0) })
 
         val mergeModelEq = Adaline(0.1, amountFeatures)
         model.merge(mergeModelEq)

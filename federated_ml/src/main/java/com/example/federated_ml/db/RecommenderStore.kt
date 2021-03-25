@@ -79,9 +79,11 @@ open class RecommenderStore(
                 Log.i("Recommend", "Load existing local model")
                 model = Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
             } else {
-                model = MatrixFactorization(numSongs = 0,
+                model = MatrixFactorization(
+                    numSongs = 0,
                     songNames = HashSet<String>(0),
-                    ratings = Array<Double>(0) { _ -> 0.0 })
+                    ratings = Array<Double>(0) { _ -> 0.0 }
+                )
                 Log.i("Recommend", "Initialized local model")
                 Log.w("Model type", model.name)
             }
@@ -134,10 +136,15 @@ open class RecommenderStore(
             Log.i("Recommend", "Song exists! Increment counter")
         }
         val mp3Features = extractMP3Features(mp3File)
-        database.dbFeaturesQueries.addFeature(key = k,
+        database.dbFeaturesQueries.addFeature(
+            key = k,
             song_year = mp3Features[0],
-            wmp = mp3Features[1], bpm = mp3Features[2],
-            dataLen = mp3Features[3], genre = mp3Features[4], count = count.toLong())
+            wmp = mp3Features[1],
+            bpm = mp3Features[2],
+            dataLen = mp3Features[3],
+            genre = mp3Features[4],
+            count = count.toLong()
+        )
     }
 
     private fun extractBlockFeatures(block: TrustChainBlock): Array<Double> {
@@ -156,8 +163,12 @@ open class RecommenderStore(
 
             try {
                 // 01/02/2020 case
-                year = Integer.parseInt((block.transaction["date"] as
-                    String).split("/").toTypedArray()[-1]).toDouble()
+                year = Integer.parseInt(
+                    (
+                        block.transaction["date"] as
+                            String
+                        ).split("/").toTypedArray()[-1]
+                ).toDouble()
             } catch (e: Exception) {
                 System.out.println(block.transaction["date"])
             }
@@ -215,10 +226,15 @@ open class RecommenderStore(
                             val mp3Features = extractMP3Features(Mp3File(f))
                             val count = 1
                             val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
-                            database.dbFeaturesQueries.addFeature(key = k,
+                            database.dbFeaturesQueries.addFeature(
+                                key = k,
                                 song_year = mp3Features[0],
-                                wmp = mp3Features[1], bpm = mp3Features[2],
-                                dataLen = mp3Features[3], genre = mp3Features[4], count = count.toLong())
+                                wmp = mp3Features[1],
+                                bpm = mp3Features[2],
+                                dataLen = mp3Features[3],
+                                genre = mp3Features[4],
+                                count = count.toLong()
+                            )
                         } catch (e: Exception) {
                             Log.w("Init local features", e)
                         }
@@ -354,10 +370,10 @@ open class RecommenderStore(
     private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
         when (val value = this[it]) {
             is JSONArray ->
-            {
-                val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
-                JSONObject(map).toMap().values.toList()
-            }
+                {
+                    val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
+                    JSONObject(map).toMap().values.toList()
+                }
             is JSONObject -> value.toMap()
             JSONObject.NULL -> null
             else -> value

@@ -1,6 +1,7 @@
 package com.example.federated_ml.models
 
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
+import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
 import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
 import org.hamcrest.CoreMatchers.instanceOf
@@ -66,5 +67,60 @@ class ModelsTest {
         val mergeModelDiff = Pegasos(0.4, amountFeatures, 5)
         model.merge(mergeModelDiff)
         Assert.assertThat(model, instanceOf(Adaline::class.java))
+    }
+
+    @Test
+    fun testMFPredictions() {
+        val pubModel = PublicMatrixFactorization(arrayOf(0.0, 0.0),
+            sortedMapOf(
+                Pair("BiasedSong", arrayOf(1.0, 0.0)),
+                Pair("Random", arrayOf(0.0, 1.0))
+            ),
+            arrayOf(0.0, 0.0))
+        val model = MatrixFactorization(pubModel)
+
+        model.merge(
+            arrayOf(1.0, 1.0),
+            sortedMapOf(
+                Pair("BiasedSong", arrayOf(1.0, 1.0)),
+                Pair("Suggestion", arrayOf(1.0, 1.0))
+            ),
+            arrayOf(0.0, 0.0)
+        )
+        model.update()
+//        val pred = model.predict()
+//        Assert.assertEquals(pred, "Suggestion")
+    }
+
+    @Test
+    fun testPegasosPredictions() {
+        val model = Pegasos(0.1, 2, 10)
+        val biasedFeatures =  arrayOf(arrayOf(100.0, -1.0), arrayOf(-1.0, 100.0))
+        val biasedLabels = intArrayOf(50, 0)
+
+        for (i in 0..1000) {
+            model.update(biasedFeatures, biasedLabels)
+        }
+
+        val biasedTestSamples = arrayOf(arrayOf(-1.0, 99.0), arrayOf(99.0, -1.0))
+
+        val res = model.predict(biasedTestSamples)
+         Assert.assertTrue(res[0] == res[1])
+    }
+
+    @Test
+    fun testAdalinePredictions() {
+        val model = Adaline(0.1, 2)
+        val biasedFeatures =  arrayOf(arrayOf(100.0, -1.0), arrayOf(-1.0, 100.0))
+        val biasedLabels = intArrayOf(50, 0)
+
+        for (i in 0..1000) {
+            model.update(biasedFeatures, biasedLabels)
+        }
+
+        val biasedTestSamples = arrayOf(arrayOf(-1.0, 99.0), arrayOf(99.0, -1.0))
+
+        val res = model.predict(biasedTestSamples)
+         Assert.assertTrue(res[0] == res[1])
     }
 }

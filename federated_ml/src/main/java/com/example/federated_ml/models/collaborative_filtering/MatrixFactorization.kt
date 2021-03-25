@@ -114,7 +114,7 @@ open class MatrixFactorization(
         val songFeaturesNew = songFeaturesMap.map { it.value }.toTypedArray()
 
         // age weighted average, more weight to rows which have been updated many times
-        for (j in 1..numSongs) {
+        for (j in 0 until numSongs) {
             if (ageNew[j] != 0.0) {
                 val w = ageNew[j] / (age[j] + ageNew[j])
                 age[j] = max(age[j], ageNew[j])

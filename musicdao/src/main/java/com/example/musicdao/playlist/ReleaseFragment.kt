@@ -71,7 +71,8 @@ class ReleaseFragment(
         blockMetadata.text =
             HtmlCompat.fromHtml(
                 "<b>$artists - $title<br></b>" +
-                    releaseDate, 0
+                    releaseDate,
+                0
             )
 
         enableTipButton()
@@ -275,7 +276,6 @@ class ReleaseFragment(
             }
         }
     }
-
 
     /**
      * Select a track from the Release and start downloading and seeding it

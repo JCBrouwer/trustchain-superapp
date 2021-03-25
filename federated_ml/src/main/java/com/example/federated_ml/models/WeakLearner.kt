@@ -27,8 +27,11 @@ class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boole
 
     fun initFeatures(songsHistory: Array<Int>) {
         // map identical songs
-        val featureMatrix = Array(amountSongs) { row -> Array(amountSongs) { col ->
-            if (songsHistory.contains(row) and songsHistory.contains(col)) 1.0 else 0.0 } }
+        val featureMatrix = Array(amountSongs) { row ->
+            Array(amountSongs) { col ->
+                if (songsHistory.contains(row) and songsHistory.contains(col)) 1.0 else 0.0
+            }
+        }
         features = featureMatrix
         labels = Array(amountSongs) { song -> if (songsHistory.contains(song)) 1 else 0 }.toIntArray()
     }

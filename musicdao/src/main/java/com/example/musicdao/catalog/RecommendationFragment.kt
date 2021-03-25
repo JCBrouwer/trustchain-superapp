@@ -30,7 +30,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
             }
         }
         refreshRecommend.setOnRefreshListener {
-            if ( getRecommenderCommunity().recommendStore.globalSongCount() >  0 ) {
+            if (getRecommenderCommunity().recommendStore.globalSongCount() > 0) {
                 loadingRecommendations.setVisibility(View.VISIBLE)
                 loadingRecommendations.text = "Refreshing recommendations..."
                 refreshRecommendations()
@@ -62,8 +62,8 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
     }
 
-    private fun getBaggedPredictions(data : Pair<Array<Array<Double>>, List<TrustChainBlock>>) : Array<Double> {
-        var jointRelease = Array(data.second.size) { _ -> 0.0}
+    private fun getBaggedPredictions(data: Pair<Array<Array<Double>>, List<TrustChainBlock>>): Array<Double> {
+        var jointRelease = Array(data.second.size) { _ -> 0.0 }
         val modelNames = arrayOf("Pegasos")
         for (name in modelNames) {
             Log.w("Recommend", "Getting model $name")

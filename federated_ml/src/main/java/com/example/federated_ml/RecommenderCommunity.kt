@@ -106,16 +106,20 @@ open class RecommenderCommunity(
             localModel = localModel as MatrixFactorization
             if (localModel.numSongs == 0) {
                 localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
-                localModel = MatrixFactorization(peerModel)
+                localModel =
+                    MatrixFactorization(peerModel)
                 recommendStore.storeModelLocally(localModel)
                 val maxPeersToAsk = 10
                 var count = 0
                 for ((index, peer) in getPeers().withIndex()) {
                     if (index >= maxPeersToAsk) break
-                    send(peer, serializePacket(
-                        MessageId.REQUEST_MODEL,
-                        RequestModelMessage(myPeer.publicKey.keyToBin(), 1u, "MatrixFactorization")
-                    ))
+                    send(
+                        peer,
+                        serializePacket(
+                            MessageId.REQUEST_MODEL,
+                            RequestModelMessage(myPeer.publicKey.keyToBin(), 1u, "MatrixFactorization")
+                        )
+                    )
                     count += 1
                 }
                 Log.w("Recommender", "Model request sent to $count peer(s)")
@@ -141,10 +145,13 @@ open class RecommenderCommunity(
 
         for ((index, peer) in getPeers().withIndex()) {
             if (index >= maxPeersToAsk) break
-            send(peer, serializePacket(
-                MessageId.REQUEST_MODEL,
-                RequestModelMessage(myPeer.publicKey.keyToBin(), 3u, "MatrixFactorization")
-            ))
+            send(
+                peer,
+                serializePacket(
+                    MessageId.REQUEST_MODEL,
+                    RequestModelMessage(myPeer.publicKey.keyToBin(), 3u, "MatrixFactorization")
+                )
+            )
         }
 
         // TODO how to receive models from peers all at once rather than 1-by-1 updates from the omModelExchange callback?
@@ -166,7 +173,9 @@ open class RecommenderCommunity(
         val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         val model = recommendStore.getLocalModel(modelType)
-        send(packet.source, serializePacket(
+        send(
+            packet.source,
+            serializePacket(
                 MessageId.MODEL_EXCHANGE_MESSAGE,
                 ModelExchangeMessage(myPeer.publicKey.keyToBin(), 1u, model.name, model)
             )
@@ -180,9 +189,9 @@ open class RecommenderCommunity(
         labels: IntArray
     ):
         Pair<OnlineModel, OnlineModel> {
-        incomingModel.update(features, labels)
-        return Pair(localModel, incomingModel)
-    }
+            incomingModel.update(features, labels)
+            return Pair(localModel, incomingModel)
+        }
 
     fun createModelUM(
         incomingModel: OnlineModel,
@@ -191,10 +200,10 @@ open class RecommenderCommunity(
         labels: IntArray
     ):
         Pair<OnlineModel, OnlineModel> {
-        incomingModel.update(features, labels)
-        localModel.merge(incomingModel)
-        return Pair(localModel, incomingModel)
-    }
+            incomingModel.update(features, labels)
+            localModel.merge(incomingModel)
+            return Pair(localModel, incomingModel)
+        }
 
     fun createModelMU(
         incomingModel: OnlineModel,
@@ -203,10 +212,10 @@ open class RecommenderCommunity(
         labels: IntArray
     ):
         Pair<OnlineModel, OnlineModel> {
-        localModel.merge(incomingModel)
-        incomingModel.update(features, labels)
-        return Pair(localModel, incomingModel)
-    }
+            localModel.merge(incomingModel)
+            incomingModel.update(features, labels)
+            return Pair(localModel, incomingModel)
+        }
 
     object MessageId {
         val MODEL_EXCHANGE_MESSAGE: Int

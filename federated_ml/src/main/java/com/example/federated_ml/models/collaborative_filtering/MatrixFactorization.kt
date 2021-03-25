@@ -102,11 +102,11 @@ open class MatrixFactorization(
             for (name in songNames) {
                 if (songMap[name] == null) {
                     songMap.put(name, Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) })
-                // initialize rows not yet present in this map
+                    // initialize rows not yet present in this map
                 }
                 if (songFeaturesMap[name] == null) {
                     songFeaturesMap.put(name, Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) })
-                // initialize rows not yet present in this map
+                    // initialize rows not yet present in this map
                 }
             }
             this.songFeatures = songMap.map { it.value }.toTypedArray()
@@ -172,10 +172,17 @@ open class MatrixFactorization(
 
     // the function used during serialization for local database storage
     fun serialize(private: Boolean): String {
-        Log.i("Recommend",
-            "Serializing MatrixFactorization, including private data: $private")
+        Log.i(
+            "Recommend",
+            "Serializing MatrixFactorization, including private data: $private"
+        )
         return if (private) Json.encodeToString(this)
-        else Json.encodeToString(PublicMatrixFactorization(age,
-            featuresToMap(songFeatures), songBias))
+        else Json.encodeToString(
+            PublicMatrixFactorization(
+                age,
+                featuresToMap(songFeatures),
+                songBias
+            )
+        )
     }
 }

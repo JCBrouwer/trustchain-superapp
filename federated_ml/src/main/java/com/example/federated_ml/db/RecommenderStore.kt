@@ -19,7 +19,6 @@ import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.io.IOException
 import kotlin.math.log10
 
 open class RecommenderStore(
@@ -81,9 +80,11 @@ open class RecommenderStore(
                 Log.i("Recommend", "Load existing local model")
                 model = Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
             } else {
-                model = MatrixFactorization(numSongs = 0,
+                model = MatrixFactorization(
+                    numSongs = 0,
                     songNames = HashSet<String>(0),
-                    ratings = Array<Double>(0) { _ -> 0.0 })
+                    ratings = Array<Double>(0) { _ -> 0.0 }
+                )
                 Log.i("Recommend", "Initialized local model")
                 Log.w("Model type", model.name)
             }
@@ -139,8 +140,11 @@ open class RecommenderStore(
         database.dbFeaturesQueries.addFeature(
             key = k,
             song_year = mp3Features[0],
-            wmp = mp3Features[1], bpm = mp3Features[2],
-            dataLen = mp3Features[3], genre = mp3Features[4], count = count.toLong()
+            wmp = mp3Features[1],
+            bpm = mp3Features[2],
+            dataLen = mp3Features[3],
+            genre = mp3Features[4],
+            count = count.toLong()
         )
     }
 
@@ -161,8 +165,10 @@ open class RecommenderStore(
             try {
                 // 01/02/2020 case
                 year = Integer.parseInt(
-                    (block.transaction["date"] as
-                        String).split("/").toTypedArray()[-1]
+                    (
+                        block.transaction["date"] as
+                            String
+                        ).split("/").toTypedArray()[-1]
                 ).toDouble()
             } catch (e: Exception) {
                 System.out.println(block.transaction["date"])
@@ -243,15 +249,12 @@ open class RecommenderStore(
     fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
         val batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
         if (batch.isEmpty()) {
-            Log.w(
-                "Recommend",
-                "No features in database, feature extraction still running in background?"
-            )
+            Log.e("Recommend", "Local feature database is empty! Analyzing files in background thread now, current recommendation will be empty.")
+            GlobalScope.launch { addAllLocalFeatures() } // analyze local music files
         }
-
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
         val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
-        for (i in (0 until batch.size)) {
+        for (i in batch.indices) {
             // artist, year, wmp, bpm, dataLen, genre
             features[i][0] = batch[i].song_year!!
             features[i][1] = batch[i].wmp!!
@@ -259,7 +262,7 @@ open class RecommenderStore(
             features[i][3] = batch[i].dataLen!!
             features[i][4] = batch[i].genre!!
             playcounts[i] = batch[i].count.toInt()
-            Log.w("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i]}")
+            Log.i("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i].key}")
         }
         return Pair(features, playcounts)
     }
@@ -271,17 +274,17 @@ open class RecommenderStore(
     }
 
     private fun extractMP3Features(mp3File: Mp3File): Array<Double> {
-        var features = Array<Double>(225) {-1.0}
+        var features = Array<Double>(225) { -1.0 }
         val year = (mp3File.id3v2Tag ?: mp3File.id3v1Tag)?.year?.toDouble() ?: -1.0
         val genre = (mp3File.id3v2Tag ?: mp3File.id3v1Tag)?.genre?.toDouble() ?: -1.0
         try {
-            val filename = mp3File.filename;
+            val filename = mp3File.filename
             val jsonfile = filename.replace(".mp3", ".json")
             if (!File(jsonfile).exists()) {
                 if (Essentia.extractData(filename, jsonfile) == 1) {
                     Log.e("Feature extraction", "Error extracting data with Essentia")
                 } else {
-                    Log.i("Feature extraction","Got essentia features for $filename")
+                    Log.i("Feature extraction", "Got essentia features for $filename")
                 }
             }
             val essentiaFeatures = JSONObject(File(jsonfile).bufferedReader().use { it.readText() })
@@ -298,7 +301,7 @@ open class RecommenderStore(
             val average_loudness = lowlevel.getDouble("average_loudness")
             val integrated_loudness = lowlevel.getJSONObject("loudness_ebu128").getDouble("integrated")
             val loudness_range = lowlevel.getJSONObject("loudness_ebu128").getDouble("loudness_range")
-            val momentary =  stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("momentary"))
+            val momentary = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("momentary"))
             val short_term = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("short_term"))
             val keys = arrayOf(
                 "barkbands_crest", "barkbands_flatness_db", "barkbands_kurtosis", "barkbands_skewness", "barkbands_spread",
@@ -307,9 +310,10 @@ open class RecommenderStore(
                 "melbands_spread", "pitch_salience", "spectral_centroid", "spectral_complexity", "spectral_decrease",
                 "spectral_energy", "spectral_energyband_high", "spectral_energyband_low", "spectral_energyband_middle_high",
                 "spectral_energyband_middle_low", "spectral_entropy", "spectral_flux", "spectral_kurtosis", "spectral_rms",
-                "spectral_rolloff", "spectral_skewness", "spectral_spread", "spectral_strongpeak", "zerocrossingrate")
-            val lowlevelStats = Array(keys.size) {Array(5) {-1.0} }
-            for ((i,key) in keys.withIndex()) {
+                "spectral_rolloff", "spectral_skewness", "spectral_spread", "spectral_strongpeak", "zerocrossingrate"
+            )
+            val lowlevelStats = Array(keys.size) { Array(5) { -1.0 } }
+            for ((i, key) in keys.withIndex()) {
                 lowlevelStats[i] = stats(lowlevel.getJSONObject(key))
             }
 
@@ -336,14 +340,16 @@ open class RecommenderStore(
             val danceability = rhythm.getDouble("danceability")
             val beats_loudness = stats(rhythm.getJSONObject("beats_loudness"))
 
+            Log.i("Feature extraction", "Essentia: dynamic_complexity:$dynamic_complexity average_loudness:$average_loudness bpm:$bpm danceability:$danceability key:${tonal.getString("chords_key") + tonal.getString("chords_scale")}")
+
             features = arrayOf(
-                    arrayOf(
-                        year, genre, length, replay_gain, dynamic_complexity, average_loudness,
-                        integrated_loudness, loudness_range, bpm, danceability, tuning_nontempered_energy_ratio,
-                        tuning_diatonic_strength
-                    ),
-                    momentary, short_term, lowlevelStats.flatten().toTypedArray(), key, key_edma, key_krumhansl, key_temperley,
-                    chords_strength, hpcp_crest, hpcp_entropy, beats_loudness
+                arrayOf(
+                    year, genre, length, replay_gain, dynamic_complexity, average_loudness,
+                    integrated_loudness, loudness_range, bpm, danceability, tuning_nontempered_energy_ratio,
+                    tuning_diatonic_strength
+                ),
+                momentary, short_term, lowlevelStats.flatten().toTypedArray(), key, key_edma, key_krumhansl, key_temperley,
+                chords_strength, hpcp_crest, hpcp_entropy, beats_loudness
             ).flatten().toTypedArray()
         } catch (e: Exception) {
             Log.e("Feature extraction", "Essentia extraction failed:")
@@ -379,6 +385,24 @@ open class RecommenderStore(
             obj.getDouble("max"),
             obj.getDouble("var"),
         )
+    }
+
+    fun readJsonFile(filepath: String): Map<String, *> {
+        val jsonString: String = File(filepath).bufferedReader().use { it.readText() }
+        return JSONObject(jsonString).toMap()
+    }
+
+    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
+        when (val value = this[it]) {
+            is JSONArray ->
+                {
+                    val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
+                    JSONObject(map).toMap().values.toList()
+                }
+            is JSONObject -> value.toMap()
+            JSONObject.NULL -> null
+            else -> value
+        }
     }
 
     companion object {

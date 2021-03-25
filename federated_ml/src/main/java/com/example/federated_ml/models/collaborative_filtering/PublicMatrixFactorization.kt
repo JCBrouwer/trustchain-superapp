@@ -63,21 +63,20 @@ operator fun Array<Double>.times(other: Array<Double>): Double {
     return out
 }
 
-object SortedMapSerializer : KSerializer<Map<String, Array<Double>>> {
+object SortedMapSerializer : KSerializer<SortedMap<String, Array<Double>>> {
     private val mapSerializer = MapSerializer(String.serializer(), ArraySerializer(Double.serializer()))
 
     override val descriptor: SerialDescriptor = mapSerializer.descriptor
 
-    override fun serialize(encoder: Encoder, value: Map<String, Array<Double>>) {
+    override fun serialize(encoder: Encoder, value: SortedMap<String, Array<Double>>) {
         mapSerializer.serialize(encoder, value.toSortedMap())
     }
 
-    override fun deserialize(decoder: Decoder): Map<String, Array<Double>> {
-        return mapSerializer.deserialize(decoder)
+    override fun deserialize(decoder: Decoder): SortedMap<String, Array<Double>> {
+        return mapSerializer.deserialize(decoder).toSortedMap()
     }
 }
 
-@Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable
 data class PublicMatrixFactorization(
     var age: Array<Double>,

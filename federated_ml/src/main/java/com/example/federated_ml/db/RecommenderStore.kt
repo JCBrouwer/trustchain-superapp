@@ -20,6 +20,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import kotlin.math.log10
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -143,7 +144,7 @@ open class RecommenderStore(
         )
     }
 
-    private fun extractBlockFeatures(block: TrustChainBlock): Array<Double> {
+    private fun blockMetadata(block: TrustChainBlock): Array<Double> {
         var dataLen = -1.0
         var bpm = -1.0
         var year = -1.0
@@ -188,14 +189,14 @@ open class RecommenderStore(
     }
 
     fun globalSongCount(): Int {
-        val s = processGlobalSongs(musicStore.getBlocksWithType("publish_release")).size
+        val s = getSongBlockMetadata(musicStore.getBlocksWithType("publish_release")).size
         return s
     }
 
-    private fun processGlobalSongs(songsHistory: List<TrustChainBlock>): Array<Array<Double>> {
+    private fun getSongBlockMetadata(songsHistory: List<TrustChainBlock>): Array<Array<Double>> {
         val features = Array(songsHistory.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
         for (i in songsHistory.indices) {
-            features[i] = extractBlockFeatures(songsHistory[i])
+            features[i] = blockMetadata(songsHistory[i])
         }
         return features
     }
@@ -265,71 +266,14 @@ open class RecommenderStore(
 
     fun getNewSongs(): Pair<Array<Array<Double>>, List<TrustChainBlock>> {
         val songsHistory = musicStore.getBlocksWithType("publish_release")
-        val data = processGlobalSongs(songsHistory)
+        val data = getSongBlockMetadata(songsHistory)
         return Pair(data, songsHistory)
     }
 
     private fun extractMP3Features(mp3File: Mp3File): Array<Double> {
-        var dataLen = -1.0
-        var bpm = -1.0
-        var year = -1.0
-        var wmp = -1.0
-        var genre = -1.0
-
-        if (mp3File.hasId3v2Tag()) {
-            try {
-                bpm = mp3File.id3v2Tag.bpm.toDouble()
-            } catch (e: Exception) {
-                Log.w("Feature extraction", e.toString())
-                Log.w("Feature extraction", e.toString())
-            }
-
-            try {
-                dataLen = mp3File.id3v2Tag.dataLength.toDouble()
-            } catch (e: Exception) {
-                Log.w("Feature extraction", dataLen.toString())
-                Log.w("Feature extraction", e.toString())
-            }
-
-            try {
-                year = mp3File.id3v2Tag.year.toDouble()
-            } catch (e: Exception) {
-                Log.w("Feature extraction", year.toString())
-                Log.w("Feature extraction", e.toString())
-            }
-
-            try {
-                wmp = mp3File.id3v2Tag.wmpRating.toDouble()
-            } catch (e: Exception) {
-                Log.w("Feature extraction", wmp.toString())
-                Log.w("Feature extraction", e.toString())
-            }
-
-            try {
-                genre = mp3File.id3v2Tag.genre.toDouble()
-            } catch (e: Exception) {
-                Log.w("Feature extraction", genre.toString())
-                Log.w("Feature extraction", e.toString())
-            }
-        }
-        if (mp3File.hasId3v1Tag()) {
-            if (year == -1.0 && mp3File.id3v1Tag.year != null) {
-                try {
-                    year = mp3File.id3v1Tag.year.toDouble()
-                } catch (e: Exception) {
-                    Log.w("Feature extraction", e.toString())
-                }
-            }
-
-            if (genre == -1.0) {
-                try {
-                    genre = mp3File.id3v1Tag.genre.toDouble()
-                } catch (e: Exception) {
-                    Log.w("Feature extraction", e.toString())
-                }
-            }
-        }
-
+        var features = Array<Double>(225) {-1.0}
+        val year = (mp3File.id3v2Tag ?: mp3File.id3v1Tag)?.year?.toDouble() ?: -1.0
+        val genre = (mp3File.id3v2Tag ?: mp3File.id3v1Tag)?.genre?.toDouble() ?: -1.0
         try {
             val filename = mp3File.filename;
             val jsonfile = filename.replace(".mp3", ".json")
@@ -337,38 +281,104 @@ open class RecommenderStore(
                 if (Essentia.extractData(filename, jsonfile) == 1) {
                     Log.e("Feature extraction", "Error extracting data with Essentia")
                 } else {
-                    Log.e(
-                        "Feature extraction",
-                        "\n\n\nGOT ESSENTIA FEATURES FOR $filename !!!\n\n\n"
-                    )
+                    Log.i("Feature extraction","Got essentia features for $filename")
                 }
             }
-            readJsonFile(jsonfile) // throws error if doesn't exist
-        } catch (e: Exception) {
-            Log.e("Feature extraction", "Essentia extraction failed")
-        }
+            val essentiaFeatures = JSONObject(File(jsonfile).bufferedReader().use { it.readText() })
 
-        Log.w("Feature extraction", "$year $wmp $bpm $dataLen $genre")
+            val lowlevel = essentiaFeatures.getJSONObject("lowlevel")
+            val tonal = essentiaFeatures.getJSONObject("tonal")
+            val rhythm = essentiaFeatures.getJSONObject("rhythm")
+            val metadata = essentiaFeatures.getJSONObject("metadata")
 
-        return arrayOf(year, wmp, bpm, dataLen, genre)
-    }
+            val length = metadata.getJSONObject("audio_properties").getDouble("length")
+            val replay_gain = metadata.getJSONObject("audio_properties").getDouble("replay_gain")
 
-    private fun readJsonFile(filepath: String): Map<String, *> {
-        val jsonString: String = File(filepath).bufferedReader().use { it.readText() }
-        return JSONObject(jsonString).toMap()
-    }
-
-    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith { key ->
-        when (val value = this[key])
-        {
-            is JSONArray -> {
-                val map = (0 until value.length()).associate { inkey -> Pair(inkey.toString(), value[inkey]) }
-                JSONObject(map).toMap().values.toList()
+            val dynamic_complexity = lowlevel.getDouble("dynamic_complexity")
+            val average_loudness = lowlevel.getDouble("average_loudness")
+            val integrated_loudness = lowlevel.getJSONObject("loudness_ebu128").getDouble("integrated")
+            val loudness_range = lowlevel.getJSONObject("loudness_ebu128").getDouble("loudness_range")
+            val momentary =  stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("momentary"))
+            val short_term = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("short_term"))
+            val keys = arrayOf(
+                "barkbands_crest", "barkbands_flatness_db", "barkbands_kurtosis", "barkbands_skewness", "barkbands_spread",
+                "dissonance", "erbbands_crest", "erbbands_flatness_db", "erbbands_kurtosis", "erbbands_skewness",
+                "erbbands_spread", "hfc", "melbands_crest", "melbands_flatness_db", "melbands_kurtosis", "melbands_skewness",
+                "melbands_spread", "pitch_salience", "spectral_centroid", "spectral_complexity", "spectral_decrease",
+                "spectral_energy", "spectral_energyband_high", "spectral_energyband_low", "spectral_energyband_middle_high",
+                "spectral_energyband_middle_low", "spectral_entropy", "spectral_flux", "spectral_kurtosis", "spectral_rms",
+                "spectral_rolloff", "spectral_skewness", "spectral_spread", "spectral_strongpeak", "zerocrossingrate")
+            val lowlevelStats = Array(keys.size) {Array(5) {-1.0} }
+            for ((i,key) in keys.withIndex()) {
+                lowlevelStats[i] = stats(lowlevel.getJSONObject(key))
             }
-            is JSONObject -> value.toMap()
-            JSONObject.NULL -> null
-            else            -> value
+
+            val key = scale2label(tonal.getString("chords_key"), tonal.getString("chords_scale"))
+            val key_edma = scale2label(
+                tonal.getJSONObject("key_edma").getString("key"),
+                tonal.getJSONObject("key_edma").getString("scale")
+            )
+            val key_krumhansl = scale2label(
+                tonal.getJSONObject("key_krumhansl").getString("key"),
+                tonal.getJSONObject("key_krumhansl").getString("scale")
+            )
+            val key_temperley = scale2label(
+                tonal.getJSONObject("key_temperley").getString("key"),
+                tonal.getJSONObject("key_temperley").getString("scale")
+            )
+            val chords_strength = stats(tonal.getJSONObject("chords_strength"))
+            val hpcp_crest = stats(tonal.getJSONObject("hpcp_crest"))
+            val hpcp_entropy = stats(tonal.getJSONObject("hpcp_entropy"))
+            val tuning_nontempered_energy_ratio = tonal.getDouble("tuning_nontempered_energy_ratio")
+            val tuning_diatonic_strength = tonal.getDouble("tuning_diatonic_strength")
+
+            val bpm = rhythm.getDouble("bpm")
+            val danceability = rhythm.getDouble("danceability")
+            val beats_loudness = stats(rhythm.getJSONObject("beats_loudness"))
+
+            features = arrayOf(
+                    arrayOf(
+                        year, genre, length, replay_gain, dynamic_complexity, average_loudness,
+                        integrated_loudness, loudness_range, bpm, danceability, tuning_nontempered_energy_ratio,
+                        tuning_diatonic_strength
+                    ),
+                    momentary, short_term, lowlevelStats.flatten().toTypedArray(), key, key_edma, key_krumhansl, key_temperley,
+                    chords_strength, hpcp_crest, hpcp_entropy, beats_loudness
+            ).flatten().toTypedArray()
+        } catch (e: Exception) {
+            Log.e("Feature extraction", "Essentia extraction failed:")
+            Log.e("Feature extraction", e.stackTraceToString())
         }
+
+        // log transform on features
+        for ((i, feat) in features.withIndex()) {
+            features[i] = if (feat < 0.0) -log10(-feat) else if (feat > 0.0) log10(feat) else 0.0
+        }
+        return features
+    }
+
+    // positions of scales on the circle of fifths
+    private val majorKeys = mapOf(
+        "C" to 0.0, "G" to 1.0, "D" to 2.0, "A" to 3.0, "E" to 4.0, "B" to 5.0, "Gb" to 6.0,
+        "F#" to 6.0, "Db" to 7.0, "Ab" to 8.0, "Eb" to 9.0, "Bb" to 10.0, "F" to 11.0
+    )
+    private val minorKeys = mapOf(
+        "A" to 0.0, "E" to 1.0, "B" to 2.0, "F#" to 3.0, "C#" to 4.0, "G#" to 5.0, "D#" to 6.0,
+        "Eb" to 6.0, "Bb" to 7.0, "F" to 8.0, "C" to 9.0, "G" to 10.0, "D" to 11.0
+    )
+    private fun scale2label(key: String, mode: String): Array<Double> {
+        val keyCode = (if (mode == "major") majorKeys[key] else minorKeys[key]) ?: -1.0
+        val modeCode = if (mode == "major") 0.0 else 1.0
+        return arrayOf(keyCode, modeCode)
+    }
+    private fun stats(obj: JSONObject): Array<Double> {
+        return arrayOf(
+            obj.getDouble("min"),
+            obj.getDouble("median"),
+            obj.getDouble("mean"),
+            obj.getDouble("max"),
+            obj.getDouble("var"),
+        )
     }
 
     companion object {

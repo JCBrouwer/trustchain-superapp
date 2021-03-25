@@ -298,7 +298,7 @@ class ReleaseFragment(
         // It is not a streaming torrent, and therefore we can conclude we already have
         // it locally so we can just start playing it
         if (fileToPlay.isFile && fileToPlay.length() > 200 * 1024) {
-            getRecommenderCommunity().recommendStore.updateLocalFeatures(fileToPlay)
+            GlobalScope.launch { getRecommenderCommunity().recommendStore.updateLocalFeatures(fileToPlay) }
             startPlaying(fileToPlay, currentFileIndex)
         } else {
             AudioPlayer.getInstance()

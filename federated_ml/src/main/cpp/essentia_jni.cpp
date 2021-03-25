@@ -62,7 +62,7 @@ int essentia_main(string audioFilename, string outputFilename, string profileNam
 
     try {
         essentia::init();
-        setDebugLevel(EExecution);
+        setDebugLevel(ENone);
 
         cout.precision(10);
 

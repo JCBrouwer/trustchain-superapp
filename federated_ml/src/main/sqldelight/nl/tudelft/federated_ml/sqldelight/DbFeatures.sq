@@ -1,21 +1,13 @@
 CREATE TABLE features (
     key TEXT NOT NULL,
-    song_year REAL,
-    wmp REAL,
-    bpm REAL,
-    dataLen REAL,
-    genre REAL,
-    essentiaFeatures TEXT,
+    songFeatures TEXT,
     count INTEGER NOT NULL,
     PRIMARY KEY (key)
 );
 
 addFeature:
-REPLACE INTO features (key, song_year, wmp, bpm, dataLen, genre, essentiaFeatures, count)
-VALUES(?, ?, ?, ?, ?, ?, ?, ?);
-
-getFeatureCount:
-SELECT count FROM features WHERE key = ? LIMIT 1;
+REPLACE INTO features (key, songFeatures, count)
+VALUES(?, ?, ?);
 
 getFeature:
 SELECT * FROM features WHERE key = ? LIMIT 1;

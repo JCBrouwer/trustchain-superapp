@@ -104,10 +104,9 @@ open class RecommenderCommunity(
         } else {
             peerModel = peerModel as PublicMatrixFactorization
             localModel = localModel as MatrixFactorization
-            if (localModel.numSongs == 0) {
+            if (localModel.songFeatures.size == 0) {
                 localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
-                localModel =
-                    MatrixFactorization(peerModel)
+                localModel = MatrixFactorization(peerModel.peerFeatures)
                 recommendStore.storeModelLocally(localModel)
                 val maxPeersToAsk = 10
                 var count = 0
@@ -126,8 +125,7 @@ open class RecommenderCommunity(
             } else {
                 Log.w("Recommender", "Merging MatrixFactorization")
                 localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
-                localModel.merge(peerModel.age, peerModel.songFeaturesMap, peerModel.songBias)
-                localModel.update()
+                localModel.merge(peerModel.peerFeatures)
                 recommendStore.storeModelLocally(localModel)
                 Log.w("Recommender", "Stored new MatrixFactorization")
                 if (payload.checkTTL()) performRemoteModelExchange(localModel)
@@ -135,38 +133,38 @@ open class RecommenderCommunity(
         }
     }
 
-    private fun trainMatrixFactorization(model: MatrixFactorization) {
-        val maxPeersToAsk = 10
-
-        val numSongs = recommendStore.globalSongCount()
-        var ageGather = Array(numSongs) { _ -> 0.0 }
-        var songFeaturesGather = recommendStore.getSongIds().zip(Array(numSongs) { _ -> Array(model.k) { _ -> 0.0 } }).toMap().toSortedMap()
-        var songBiasGather = Array(numSongs) { _ -> 0.0 }
-
-        for ((index, peer) in getPeers().withIndex()) {
-            if (index >= maxPeersToAsk) break
-            send(
-                peer,
-                serializePacket(
-                    MessageId.REQUEST_MODEL,
-                    RequestModelMessage(myPeer.publicKey.keyToBin(), 3u, "MatrixFactorization")
-                )
-            )
-        }
-
-        // TODO how to receive models from peers all at once rather than 1-by-1 updates from the omModelExchange callback?
+//    private fun trainMatrixFactorization(model: MatrixFactorization) {
+//        val maxPeersToAsk = 10
+//
+//        val numSongs = recommendStore.globalSongCount()
+//        var ageGather = Array(numSongs) { _ -> 0.0 }
+//        var songFeaturesGather = recommendStore.getSongIds().zip(Array(numSongs) { _ -> Array(model.k) { _ -> 0.0 } }).toMap().toSortedMap()
+//        var songBiasGather = Array(numSongs) { _ -> 0.0 }
+//
 //        for ((index, peer) in getPeers().withIndex()) {
 //            if (index >= maxPeersToAsk) break
-//            val (peerAge: Array<Double>, peerSongs: Array<Array<Double>>, peerSongBias: Array<Double>) = receive(peer)
-//            ageGather += peerAge
-//            songFeaturesGather += peerSongs
-//            songBiasGather += peerSongBias
+//            send(
+//                peer,
+//                serializePacket(
+//                    MessageId.REQUEST_MODEL,
+//                    RequestModelMessage(myPeer.publicKey.keyToBin(), 3u, "MatrixFactorization")
+//                )
+//            )
 //        }
-
-        model.merge(ageGather, songFeaturesGather, songBiasGather)
-        model.update()
-        recommendStore.storeModelLocally(model)
-    }
+//
+//        // TODO how to receive models from peers all at once rather than 1-by-1 updates from the omModelExchange callback?
+////        for ((index, peer) in getPeers().withIndex()) {
+////            if (index >= maxPeersToAsk) break
+////            val (peerAge: Array<Double>, peerSongs: Array<Array<Double>>, peerSongBias: Array<Double>) = receive(peer)
+////            ageGather += peerAge
+////            songFeaturesGather += peerSongs
+////            songBiasGather += peerSongBias
+////        }
+//
+//        model.merge(ageGather, songFeaturesGather, songBiasGather)
+//        model.update()
+//        recommendStore.storeModelLocally(model)
+//    }
 
     private fun onModelRequest(packet: Packet) {
         Log.w("Recommender", "Some packet with model received")

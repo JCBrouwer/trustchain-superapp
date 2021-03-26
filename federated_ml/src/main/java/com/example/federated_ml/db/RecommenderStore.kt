@@ -35,7 +35,7 @@ open class RecommenderStore(
     // TODO: fix this to proper path
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
-    val totalAmountFeatures = (5 + 225)
+    private val totalAmountFeatures = 225
 
     fun storeModelLocally(model: Model) {
         if (model.name == "MatrixFactorization") {
@@ -86,11 +86,7 @@ open class RecommenderStore(
                 Log.i("Recommend", "Load existing local model")
                 model = Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
             } else {
-                model = MatrixFactorization(
-                    numSongs = 0,
-                    songNames = HashSet<String>(0),
-                    ratings = Array<Double>(0) { _ -> 0.0 }
-                )
+                model = MatrixFactorization(songNames = emptySet(), ratings = emptyArray())
                 Log.i("Recommend", "Initialized local model")
                 Log.w("Model type", model.name)
             }
@@ -145,12 +141,7 @@ open class RecommenderStore(
         val mp3Features = extractMP3Features(mp3File)
         database.dbFeaturesQueries.addFeature(
             key = k,
-            song_year = mp3Features[0],
-            wmp = mp3Features[1],
-            bpm = mp3Features[2],
-            dataLen = mp3Features[3],
-            genre = mp3Features[4],
-            essentiaFeatures =  Json.encodeToString(mp3Features),
+            songFeatures = Json.encodeToString(mp3Features),
             count = count.toLong()
         )
     }
@@ -236,12 +227,7 @@ open class RecommenderStore(
                             val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
                             database.dbFeaturesQueries.addFeature(
                                 key = k,
-                                song_year = mp3Features[0],
-                                wmp = mp3Features[1],
-                                bpm = mp3Features[2],
-                                dataLen = mp3Features[3],
-                                genre = mp3Features[4],
-                                essentiaFeatures = Json.encodeToString(mp3Features),
+                                songFeatures = Json.encodeToString(mp3Features),
                                 count = count.toLong()
                             )
                         } catch (e: Exception) {
@@ -263,13 +249,7 @@ open class RecommenderStore(
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
         val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
         for (i in batch.indices) {
-            // artist, year, wmp, bpm, dataLen, genre
-            features[i][0] = batch[i].song_year!!
-            features[i][1] = batch[i].wmp!!
-            features[i][2] = batch[i].bpm!!
-            features[i][3] = batch[i].dataLen!!
-            features[i][4] = batch[i].genre!!
-            features[i] += Json.decodeFromString<Array<Double>>(batch[i].essentiaFeatures!!)
+            features[i] = Json.decodeFromString<Array<Double>>(batch[i].songFeatures!!)
             playcounts[i] = batch[i].count.toInt()
             Log.i("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i].key}")
         }

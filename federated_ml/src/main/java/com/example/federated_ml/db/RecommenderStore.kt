@@ -5,28 +5,14 @@ import android.util.Log
 import com.example.federated_ml.Essentia
 import com.example.federated_ml.models.*
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
-import com.example.federated_ml.models.collaborative_filtering.SongFeature
-import com.example.federated_ml.models.collaborative_filtering.SortedMapSerializer
 import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
-import com.fasterxml.jackson.databind.ser.std.NumberSerializers
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ArraySerializer
-import kotlinx.serialization.builtins.DoubleArraySerializer
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonEncoder
 import nl.tudelft.federated_ml.sqldelight.Database
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
@@ -36,7 +22,6 @@ import java.io.File
 import java.util.*
 import kotlin.collections.HashSet
 import kotlin.math.log10
-
 
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
@@ -306,7 +291,7 @@ open class RecommenderStore(
             var short_term = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
             var lowlevelStats = Array(keys.size) { Array(5) { -1.0 } }
 
-            if (essentiaFeatures.has("lowlevel")){
+            if (essentiaFeatures.has("lowlevel")) {
                 val lowlevel = essentiaFeatures.getJSONObject("lowlevel")
                 try {
                     dynamic_complexity = lowlevel.getDouble("dynamic_complexity")
@@ -334,7 +319,7 @@ open class RecommenderStore(
             var hpcp_entropy = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
             var tuning_nontempered_energy_ratio = 0.0
             var tuning_diatonic_strength = 0.0
-            if (essentiaFeatures.has("tonal")){
+            if (essentiaFeatures.has("tonal")) {
                 tonal = essentiaFeatures.getJSONObject("tonal")
                 try {
                     key = scale2label(tonal.getString("chords_key"), tonal.getString("chords_scale"))

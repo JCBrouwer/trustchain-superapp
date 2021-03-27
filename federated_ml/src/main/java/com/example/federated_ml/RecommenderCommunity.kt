@@ -153,13 +153,13 @@ open class RecommenderCommunity(
 //        }
 //
 //        // TODO how to receive models from peers all at once rather than 1-by-1 updates from the omModelExchange callback?
-////        for ((index, peer) in getPeers().withIndex()) {
-////            if (index >= maxPeersToAsk) break
-////            val (peerAge: Array<Double>, peerSongs: Array<Array<Double>>, peerSongBias: Array<Double>) = receive(peer)
-////            ageGather += peerAge
-////            songFeaturesGather += peerSongs
-////            songBiasGather += peerSongBias
-////        }
+// //        for ((index, peer) in getPeers().withIndex()) {
+// //            if (index >= maxPeersToAsk) break
+// //            val (peerAge: Array<Double>, peerSongs: Array<Array<Double>>, peerSongBias: Array<Double>) = receive(peer)
+// //            ageGather += peerAge
+// //            songFeaturesGather += peerSongs
+// //            songBiasGather += peerSongBias
+// //        }
 //
 //        model.merge(ageGather, songFeaturesGather, songBiasGather)
 //        model.update()

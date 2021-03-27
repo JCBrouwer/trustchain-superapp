@@ -34,7 +34,7 @@ object SortedMapSerializer : KSerializer<SortedMap<String, SongFeature>> {
 data class PublicMatrixFactorization(
     @Serializable(with = SortedMapSerializer::class)
     val peerFeatures: SortedMap<String, SongFeature>
-): Model("PublicMatrixFactorization")
+) : Model("PublicMatrixFactorization")
 
 @Serializable
 data class SongFeature(
@@ -81,12 +81,12 @@ data class RateFeature(
     }
 }
 
-fun songFeaturesFromArrays(age:Array<Double>, features: Array<Array<Double>>, bias: Array<Double>): Array<SongFeature> {
-    return age.zip(features).zip(bias) { (a,b),c -> SongFeature(a,b,c) }.toTypedArray()
+fun songFeaturesFromArrays(age: Array<Double>, features: Array<Array<Double>>, bias: Array<Double>): Array<SongFeature> {
+    return age.zip(features).zip(bias) { (a, b), c -> SongFeature(a, b, c) }.toTypedArray()
 }
 
 fun rateFeaturesFromArrays(features: Array<Array<Double>>, ratings: Array<Double>): Array<RateFeature> {
-    return features.zip(ratings) { a,b -> RateFeature(a,b) }.toTypedArray()
+    return features.zip(ratings) { a, b -> RateFeature(a, b) }.toTypedArray()
 }
 
 @Serializable
@@ -102,6 +102,7 @@ open class MatrixFactorization(
     private val minR = 0.0
     private var maxR = 20.0
 
+    @Serializable(with = SortedMapSerializer::class)
     var songFeatures = songNames.zip(
         songFeaturesFromArrays(
             Array(songNames.size) { 0.0 }, // ages
@@ -110,6 +111,7 @@ open class MatrixFactorization(
         )
     ).toMap().toSortedMap()
 
+    @Serializable(with = SortedMapSerializer::class)
     private var rateFeatures = songNames.zip(
         rateFeaturesFromArrays(
             Array(songNames.size) { Array(k) { initFeat() } }, // rate fatures

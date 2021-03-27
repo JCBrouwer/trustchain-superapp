@@ -2,126 +2,227 @@ package com.example.federated_ml.models.collaborative_filtering
 
 import android.util.Log
 import com.example.federated_ml.models.Model
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
-import java.lang.Math.*
+import java.lang.Double.NEGATIVE_INFINITY
+import kotlin.math.*
 import java.util.*
 import kotlin.random.Random.Default.nextDouble
 
+object SortedMapSerializer : KSerializer<SortedMap<String, SongFeature>> {
+    private val mapSerializer = MapSerializer(String.serializer(), SongFeature.serializer())
+
+    override val descriptor: SerialDescriptor = mapSerializer.descriptor
+
+    override fun serialize(encoder: Encoder, value: SortedMap<String, SongFeature>) {
+        mapSerializer.serialize(encoder, value)
+    }
+
+    override fun deserialize(decoder: Decoder): SortedMap<String, SongFeature> {
+        return mapSerializer.deserialize(decoder).toSortedMap()
+    }
+}
+
+@Serializable
+data class PublicMatrixFactorization(
+    @Serializable(with = SortedMapSerializer::class)
+    val peerFeatures: SortedMap<String, SongFeature>
+) : Model("PublicMatrixFactorization")
+
+@Serializable
+data class SongFeature(
+    var age: Double,
+    var feature: Array<Double>,
+    var bias: Double
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as SongFeature
+        if (age != other.age) return false
+        if (!feature.contentEquals(other.feature)) return false
+        if (bias != other.bias) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = age.hashCode()
+        result = 31 * result + feature.contentHashCode()
+        result = 31 * result + bias.hashCode()
+        return result
+    }
+}
+
+@Serializable
+data class RateFeature(
+    var feature: Array<Double>,
+    var rating: Double
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as RateFeature
+        if (!feature.contentEquals(other.feature)) return false
+        if (rating != other.rating) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = feature.contentHashCode()
+        result = 31 * result + rating.hashCode()
+        return result
+    }
+}
+
+fun songFeaturesFromArrays(age: Array<Double>, features: Array<Array<Double>>, bias: Array<Double>): Array<SongFeature> {
+    return age.zip(features).zip(bias) { (a, b), c -> SongFeature(a, b, c) }.toTypedArray()
+}
+
+fun rateFeaturesFromArrays(features: Array<Array<Double>>, ratings: Array<Double>): Array<RateFeature> {
+    return features.zip(ratings) { a, b -> RateFeature(a, b) }.toTypedArray()
+}
+
 @Serializable
 open class MatrixFactorization(
-    val numSongs: Int,
     private var songNames: Set<String>,
-    private var ratings: Array<Double>
+    var ratings: Array<Double>
 ) : Model("MatrixFactorization") {
     val k = 5
+
     private val lr = 0.01
     private val lambda = 0.1
 
     private val minR = 0.0
     private var maxR = 20.0
 
-    private var age = Array(numSongs) { _ -> 0.0 }
-    private var songFeatures = Array(numSongs) { _ -> Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) } }
-    private var songBias = Array(numSongs) { _ -> 0.0 }
+    @Serializable(with = SortedMapSerializer::class)
+    var songFeatures = songNames.zip(
+        songFeaturesFromArrays(
+            Array(songNames.size) { 0.0 }, // ages
+            Array(songNames.size) { Array(k) { initFeat() } }, // song features
+            Array(songNames.size) { 0.0 } // biases
+        )
+    ).toMap().toSortedMap()
 
-    private var rateFeatures = Array(numSongs) { _ -> nextDouble() * sqrt((maxR - minR) / k) }
+    @Serializable(with = SortedMapSerializer::class)
+    private var rateFeatures = songNames.zip(
+        rateFeaturesFromArrays(
+            Array(songNames.size) { Array(k) { initFeat() } }, // rate fatures
+            ratings // actual ratings
+        )
+    ).toMap().toSortedMap()
     private var rateBias = 0.0
 
-    constructor(peerModel: PublicMatrixFactorization) : this(
-        numSongs = peerModel.songBias.size,
-        songNames = peerModel.songFeaturesMap.map { it.key }.toSet(),
-        ratings = Array(peerModel.songBias.size) { _ -> 0.0 }
+    constructor(peerModel: PublicMatrixFactorization) : this(peerModel.peerFeatures)
+    constructor(peerFeatures: SortedMap<String, SongFeature>) : this(
+        songNames = peerFeatures.map { it.key }.toSet(),
+        ratings = Array(peerFeatures.size) { 0.0 }
     ) {
-        this.age = peerModel.age
-        this.songFeatures = peerModel.songFeaturesMap.map { it.value }.toTypedArray()
-        this.songBias = peerModel.songBias
-        update()
+        this.songFeatures = peerFeatures
+    }
+
+    private fun initFeat(): Double {
+        return nextDouble() * sqrt((maxR - minR) / k)
     }
 
     fun predict(): String {
-        val songMap = featuresToMap(songFeatures)
         var bestSong = ""
-        var mostRelevant = -100000.0
-        var scores = emptyArray<Double>()
-        var j = 0
-        for ((name, _) in songMap) {
-            Log.w("Recomend", "$name $ratings[j]")
-            scores[j] = ratings[j]
-            if (ratings[j] == 0.0) {
-                val relevance = rateFeatures * songFeatures[j] + rateBias + songBias[j]
-                scores[j] = relevance
+        var mostRelevant = NEGATIVE_INFINITY
+        songFeatures.forEach {
+            val (name, triple) = it
+            val (_, feature, bias) = triple
+            if (rateFeatures[name]!!.rating == 0.0) {
+                val relevance = rateFeatures[name]!!.feature * feature + rateBias + bias
                 if (relevance > mostRelevant) {
                     bestSong = name
                     mostRelevant = relevance
                 }
             }
-            j += 1
         }
         Log.w("Recommend", "Best colaborative score: $mostRelevant")
         return bestSong
     }
 
-    fun updateRatings(songNames: Set<String>, ratings: Array<Double>) {
-        this.songNames = songNames
-        this.ratings = ratings
-    }
-
-    private fun featuresToMap(arr: Array<Array<Double>>): SortedMap<String, Array<Double>> {
-        return songNames.zip(arr).toMap().toSortedMap()
+    fun updateRatings(newSongNames: Set<String>, newRatings: Array<Double>) {
+        val newRatingsMap = newSongNames.zip(newRatings).toMap()
+        if (this.songNames != newSongNames) {
+            songNames = songNames + newSongNames
+            for (name in songNames) {
+                if (rateFeatures[name] == null) {
+                    rateFeatures[name] = RateFeature(Array(k) { initFeat() }, newRatingsMap[name]!!)
+                }
+            }
+            update()
+        }
     }
 
     override fun update() {
-        for (j in ratings.indices) {
-            if (ratings[j] != 0.0) {
-                val err = ratings[j] - rateFeatures * songFeatures[j] - rateBias - songBias[j]
+        songFeatures.forEach {
+            val (name, triple) = it
+            val (age, feature, bias) = triple
+            if (rateFeatures[name]!!.rating != 0.0) {
+                val err = rateFeatures[name]!!.rating - rateFeatures[name]!!.feature * feature - rateBias - bias
 
-                val (newSongFeatures, newRateFeatures) = Pair(
-                    (1.0 - lr * lambda) * songFeatures[j] + lr * err * rateFeatures,
-                    (1.0 - lr * lambda) * rateFeatures + lr * err * songFeatures[j]
+                val (newSongFeature, newRateFeature) = Pair(
+                    (1.0 - lr * lambda) * feature + lr * err * rateFeatures[name]!!.feature,
+                    (1.0 - lr * lambda) * rateFeatures[name]!!.feature + lr * err * feature
                 )
-                songFeatures[j] = newSongFeatures
-                rateFeatures = newRateFeatures
 
-                songBias[j] += lr * err
+                songFeatures[name]!!.age = age + 1.0
+
+                songFeatures[name]!!.feature = newSongFeature
+                rateFeatures[name]!!.feature = newRateFeature
+
+                songFeatures[name]!!.bias += lr * err
                 rateBias += lr * err
-                age[j] += 1.0
             }
         }
     }
 
-    open fun merge(
-        ageNew: Array<Double>,
-        songFeaturesMap: SortedMap<String, Array<Double>>,
-        songBiasNew: Array<Double>
-    ) {
-        if (songFeaturesMap.keys.toSet() != songNames) {
-            val songMap = songNames.zip(songFeatures).toMap().toSortedMap()
-            songNames = songFeaturesMap.keys.toSet() + songNames
+    open fun merge(peerModel: PublicMatrixFactorization) {
+        merge(peerModel.peerFeatures)
+    }
+    open fun merge(peerFeatures: SortedMap<String, SongFeature>) {
+        if (peerFeatures.keys.toSet() != songNames) {
+            songNames = peerFeatures.keys.toSet() + songNames
             for (name in songNames) {
-                if (songMap[name] == null) {
-                    songMap.put(name, Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) })
+                if (songFeatures[name] == null) {
+                    songFeatures[name] = SongFeature(0.0, Array(k) { initFeat() }, 0.0)
+                    rateFeatures[name] = RateFeature(Array(k) { initFeat() }, 0.0)
                     // initialize rows not yet present in this map
                 }
-                if (songFeaturesMap[name] == null) {
-                    songFeaturesMap.put(name, Array(k) { _ -> nextDouble() * sqrt((maxR - minR) / k) })
+                if (peerFeatures[name] == null) {
+                    peerFeatures[name] = SongFeature(0.0, Array(k) { initFeat() }, 0.0)
                     // initialize rows not yet present in this map
                 }
             }
-            this.songFeatures = songMap.map { it.value }.toTypedArray()
         }
-        val songFeaturesNew = songFeaturesMap.map { it.value }.toTypedArray()
 
         // age weighted average, more weight to rows which have been updated many times
-        for (j in 1..numSongs) {
-            if (ageNew[j] != 0.0) {
-                val w = ageNew[j] / (age[j] + ageNew[j])
-                age[j] = max(age[j], ageNew[j])
-                songFeatures[j] = (1 - w) * songFeatures[j] + w * songFeaturesNew[j]
-                songBias[j] = (1 - w) * songBias[j] + w * songBiasNew[j]
+        songFeatures.forEach {
+            val (name, triple) = it
+            val (age, feature, bias) = triple
+            val (_, tripleNew) = peerFeatures[name]!!
+            val (ageNew, featureNew, biasNew) = tripleNew
+
+            if (ageNew != 0.0) {
+                val w = ageNew / (age + ageNew)
+                songFeatures[name] = SongFeature(
+                    age = max(age, ageNew),
+                    feature = feature * (1 - w) + featureNew * w,
+                    bias = bias * (1 - w) + biasNew * w
+                )
             }
         }
+
+        update()
     }
 
     private fun compress(arr: Array<Double>): Array<Double> {
@@ -131,37 +232,6 @@ open class MatrixFactorization(
     private fun compress(arr: Array<Array<Double>>): Array<Array<Double>> {
         // TODO compress things before sending
         return arr
-    }
-
-    // update step implements gradients of the loss() function
-    private fun frobnorm(mat: Array<Array<Double>>): Double {
-        var sumSq = 0.0
-        for (i in mat.indices) {
-            for (j in mat[0].indices) {
-                sumSq += pow(mat[i][j], 2.0)
-            }
-        }
-        return sqrt(sumSq)
-    }
-    private fun loss(
-        X: Array<Array<Double>>,
-        Y: Array<Array<Double>>,
-        b: Array<Double>,
-        c: Array<Double>
-    ): Double {
-        var out = 0.0
-        for (i in X.indices) {
-            for (j in X[0].indices) {
-                var matmul = 0.0
-                for (l in X[0].indices) {
-                    matmul += X[i][l] * Y[j][l]
-                }
-                val first = ratings[j] - b[i] - c[j] - matmul
-                out += first * first
-            }
-        }
-        val regularization = lambda * (pow(frobnorm(X), 2.0) + pow(frobnorm(Y), 2.0))
-        return (out + regularization) / 2.0
     }
 
     // the function used during automatic serialization in model exchange messages
@@ -177,12 +247,6 @@ open class MatrixFactorization(
             "Serializing MatrixFactorization, including private data: $private"
         )
         return if (private) Json.encodeToString(this)
-        else Json.encodeToString(
-            PublicMatrixFactorization(
-                age,
-                featuresToMap(songFeatures),
-                songBias
-            )
-        )
+        else Json.encodeToString(PublicMatrixFactorization(songFeatures))
     }
 }

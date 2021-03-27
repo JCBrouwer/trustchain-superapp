@@ -10,7 +10,7 @@ open class OnlineModel : Model {
 
     constructor(amountFeatures: Int, name: String) : super(name) {
         this.amountFeatures = amountFeatures
-        this.weights = Array(amountFeatures) { _ -> Random().nextDouble() * 3 }
+        this.weights = Array(amountFeatures) { _ -> 1.0 }
     }
 
     fun merge(otherOnlineModel: OnlineModel): OnlineModel {

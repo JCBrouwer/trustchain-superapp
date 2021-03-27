@@ -22,11 +22,7 @@ class ModelExchangeMessageTest {
     private val originPublicKey = key.pub().keyToBin()
     private val ttl = 2u
     private val model1 = Pegasos(0.4, 10, 5)
-    private val model2 = MatrixFactorization(
-        numSongs = 0,
-        songNames = HashSet<String>(0),
-        ratings = Array<Double>(0) { _ -> 0.0 }
-    )
+    private val model2 = MatrixFactorization(songNames = emptySet(), ratings = emptyArray())
 
     @ExperimentalUnsignedTypes
     @Test

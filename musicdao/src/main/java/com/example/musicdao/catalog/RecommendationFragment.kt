@@ -86,8 +86,8 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         val blocks = data.second
 
         var colab = recStore.getLocalModel("MatrixFactorization") as MatrixFactorization
-        if (colab.numSongs == 0) {
-            colab = MatrixFactorization(recStore.globalSongCount(), recStore.getSongIds(), recStore.getPlaycounts())
+        if (colab.ratings.isEmpty()) {
+            colab = MatrixFactorization(recStore.getSongIds(), recStore.getPlaycounts())
             recStore.storeModelLocally(colab)
         }
         val bestRelease = colab.predict()

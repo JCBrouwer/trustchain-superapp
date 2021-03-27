@@ -19,6 +19,8 @@ import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.*
+import kotlin.collections.HashSet
 import kotlin.math.log10
 
 open class RecommenderStore(
@@ -29,7 +31,7 @@ open class RecommenderStore(
     // TODO: fix this to proper path
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
-    val totalAmountFeatures = 5
+    private val totalAmountFeatures = 225
 
     fun storeModelLocally(model: Model) {
         if (model.name == "MatrixFactorization") {
@@ -80,18 +82,18 @@ open class RecommenderStore(
                 Log.i("Recommend", "Load existing local model")
                 model = Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
             } else {
-                model = MatrixFactorization(
-                    numSongs = 0,
-                    songNames = HashSet<String>(0),
-                    ratings = Array<Double>(0) { _ -> 0.0 }
-                )
+                model = MatrixFactorization(songNames = emptySet(), ratings = emptyArray())
                 Log.i("Recommend", "Initialized local model")
                 Log.w("Model type", model.name)
             }
         }
         val trainingData = getLocalSongData()
-        if (trainingData.first.isNotEmpty() && (name == "Pegasos" || name == "Adaline")) {
-            (model as OnlineModel).update(trainingData.first, trainingData.second)
+        if (trainingData.first.isNotEmpty()) {
+            if (name == "Pegasos") {
+                (model as Pegasos).update(trainingData.first, trainingData.second)
+            } else if (name == "Adaline") {
+                (model as Adaline).update(trainingData.first, trainingData.second)
+            }
         }
         storeModelLocally(model)
         Log.i("Recommend", "Model completely loaded")
@@ -139,11 +141,7 @@ open class RecommenderStore(
         val mp3Features = extractMP3Features(mp3File)
         database.dbFeaturesQueries.addFeature(
             key = k,
-            song_year = mp3Features[0],
-            wmp = mp3Features[1],
-            bpm = mp3Features[2],
-            dataLen = mp3Features[3],
-            genre = mp3Features[4],
+            songFeatures = mp3Features.contentToString(),
             count = count.toLong()
         )
     }
@@ -229,11 +227,7 @@ open class RecommenderStore(
                             val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
                             database.dbFeaturesQueries.addFeature(
                                 key = k,
-                                song_year = mp3Features[0],
-                                wmp = mp3Features[1],
-                                bpm = mp3Features[2],
-                                dataLen = mp3Features[3],
-                                genre = mp3Features[4],
+                                songFeatures = mp3Features.contentToString(),
                                 count = count.toLong()
                             )
                         } catch (e: Exception) {
@@ -255,12 +249,7 @@ open class RecommenderStore(
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
         val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
         for (i in batch.indices) {
-            // artist, year, wmp, bpm, dataLen, genre
-            features[i][0] = batch[i].song_year!!
-            features[i][1] = batch[i].wmp!!
-            features[i][2] = batch[i].bpm!!
-            features[i][3] = batch[i].dataLen!!
-            features[i][4] = batch[i].genre!!
+            features[i] = Json.decodeFromString<DoubleArray>(batch[i].songFeatures!!).toTypedArray()
             playcounts[i] = batch[i].count.toInt()
             Log.i("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i].key}")
         }
@@ -288,21 +277,6 @@ open class RecommenderStore(
                 }
             }
             val essentiaFeatures = JSONObject(File(jsonfile).bufferedReader().use { it.readText() })
-
-            val lowlevel = essentiaFeatures.getJSONObject("lowlevel")
-            val tonal = essentiaFeatures.getJSONObject("tonal")
-            val rhythm = essentiaFeatures.getJSONObject("rhythm")
-            val metadata = essentiaFeatures.getJSONObject("metadata")
-
-            val length = metadata.getJSONObject("audio_properties").getDouble("length")
-            val replay_gain = metadata.getJSONObject("audio_properties").getDouble("replay_gain")
-
-            val dynamic_complexity = lowlevel.getDouble("dynamic_complexity")
-            val average_loudness = lowlevel.getDouble("average_loudness")
-            val integrated_loudness = lowlevel.getJSONObject("loudness_ebu128").getDouble("integrated")
-            val loudness_range = lowlevel.getJSONObject("loudness_ebu128").getDouble("loudness_range")
-            val momentary = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("momentary"))
-            val short_term = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("short_term"))
             val keys = arrayOf(
                 "barkbands_crest", "barkbands_flatness_db", "barkbands_kurtosis", "barkbands_skewness", "barkbands_spread",
                 "dissonance", "erbbands_crest", "erbbands_flatness_db", "erbbands_kurtosis", "erbbands_skewness",
@@ -312,35 +286,96 @@ open class RecommenderStore(
                 "spectral_energyband_middle_low", "spectral_entropy", "spectral_flux", "spectral_kurtosis", "spectral_rms",
                 "spectral_rolloff", "spectral_skewness", "spectral_spread", "spectral_strongpeak", "zerocrossingrate"
             )
-            val lowlevelStats = Array(keys.size) { Array(5) { -1.0 } }
-            for ((i, key) in keys.withIndex()) {
-                lowlevelStats[i] = stats(lowlevel.getJSONObject(key))
+
+            var dynamic_complexity = 0.0
+            var average_loudness = 0.0
+            var integrated_loudness = 0.0
+            var loudness_range = 0.0
+            var momentary = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
+            var short_term = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
+            var lowlevelStats = Array(keys.size) { Array(5) { -1.0 } }
+
+            if (essentiaFeatures.has("lowlevel")) {
+                val lowlevel = essentiaFeatures.getJSONObject("lowlevel")
+                try {
+                    dynamic_complexity = lowlevel.getDouble("dynamic_complexity")
+                    average_loudness = lowlevel.getDouble("average_loudness")
+                    integrated_loudness = lowlevel.getJSONObject("loudness_ebu128").getDouble("integrated")
+                    loudness_range = lowlevel.getJSONObject("loudness_ebu128").getDouble("loudness_range")
+                    momentary = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("momentary"))
+                    short_term = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("short_term"))
+
+                    for ((i, key) in keys.withIndex()) {
+                        lowlevelStats[i] = stats(lowlevel.getJSONObject(key))
+                    }
+                } catch (e: java.lang.Exception) {
+                    Log.w("Feature extraction", e.toString())
+                }
             }
 
-            val key = scale2label(tonal.getString("chords_key"), tonal.getString("chords_scale"))
-            val key_edma = scale2label(
-                tonal.getJSONObject("key_edma").getString("key"),
-                tonal.getJSONObject("key_edma").getString("scale")
-            )
-            val key_krumhansl = scale2label(
-                tonal.getJSONObject("key_krumhansl").getString("key"),
-                tonal.getJSONObject("key_krumhansl").getString("scale")
-            )
-            val key_temperley = scale2label(
-                tonal.getJSONObject("key_temperley").getString("key"),
-                tonal.getJSONObject("key_temperley").getString("scale")
-            )
-            val chords_strength = stats(tonal.getJSONObject("chords_strength"))
-            val hpcp_crest = stats(tonal.getJSONObject("hpcp_crest"))
-            val hpcp_entropy = stats(tonal.getJSONObject("hpcp_entropy"))
-            val tuning_nontempered_energy_ratio = tonal.getDouble("tuning_nontempered_energy_ratio")
-            val tuning_diatonic_strength = tonal.getDouble("tuning_diatonic_strength")
+            val tonal: JSONObject
+            var key = arrayOf(0.0, 0.0)
+            var key_edma = arrayOf(0.0, 0.0)
+            var key_krumhansl = arrayOf(0.0, 0.0)
+            var key_temperley = arrayOf(0.0, 0.0)
+            var chords_strength = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
+            var hpcp_crest = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
+            var hpcp_entropy = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
+            var tuning_nontempered_energy_ratio = 0.0
+            var tuning_diatonic_strength = 0.0
+            if (essentiaFeatures.has("tonal")) {
+                tonal = essentiaFeatures.getJSONObject("tonal")
+                try {
+                    key = scale2label(tonal.getString("chords_key"), tonal.getString("chords_scale"))
+                    key_edma = scale2label(
+                        tonal.getJSONObject("key_edma").getString("key"),
+                        tonal.getJSONObject("key_edma").getString("scale")
+                    )
+                    key_krumhansl = scale2label(
+                        tonal.getJSONObject("key_krumhansl").getString("key"),
+                        tonal.getJSONObject("key_krumhansl").getString("scale")
+                    )
+                    key_temperley = scale2label(
+                        tonal.getJSONObject("key_temperley").getString("key"),
+                        tonal.getJSONObject("key_temperley").getString("scale")
+                    )
+                    chords_strength = stats(tonal.getJSONObject("chords_strength"))
+                    hpcp_crest = stats(tonal.getJSONObject("hpcp_crest"))
+                    hpcp_entropy = stats(tonal.getJSONObject("hpcp_entropy"))
+                    tuning_nontempered_energy_ratio = tonal.getDouble("tuning_nontempered_energy_ratio")
+                    tuning_diatonic_strength = tonal.getDouble("tuning_diatonic_strength")
+                } catch (e: java.lang.Exception) {
+                    Log.w("Feature extraction", e.toString())
+                }
+            }
 
-            val bpm = rhythm.getDouble("bpm")
-            val danceability = rhythm.getDouble("danceability")
-            val beats_loudness = stats(rhythm.getJSONObject("beats_loudness"))
+            val rhythm: JSONObject
+            var bpm = 0.0
+            var danceability = 0.0
+            var beats_loudness = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
+            if (essentiaFeatures.has("rhythm")) {
+                try {
+                    rhythm = essentiaFeatures.getJSONObject("rhythm")
+                    bpm = rhythm.getDouble("bpm")
+                    danceability = rhythm.getDouble("danceability")
+                    beats_loudness = stats(rhythm.getJSONObject("beats_loudness"))
+                } catch (e: java.lang.Exception) {
+                    Log.w("Feature extraction", e.toString())
+                }
+            }
 
-            Log.i("Feature extraction", "Essentia: dynamic_complexity:$dynamic_complexity average_loudness:$average_loudness bpm:$bpm danceability:$danceability key:${tonal.getString("chords_key") + tonal.getString("chords_scale")}")
+            val metadata: JSONObject
+            var length = 0.0
+            var replay_gain = 0.0
+            if (essentiaFeatures.has("rhythm")) {
+                metadata = essentiaFeatures.getJSONObject("metadata")
+                try {
+                    length = metadata.getJSONObject("audio_properties").getDouble("length")
+                    replay_gain = metadata.getJSONObject("audio_properties").getDouble("replay_gain")
+                } catch (e: java.lang.Exception) {
+                    Log.w("Feature extraction", e.toString())
+                }
+            }
 
             features = arrayOf(
                 arrayOf(
@@ -394,11 +429,10 @@ open class RecommenderStore(
 
     private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
         when (val value = this[it]) {
-            is JSONArray ->
-                {
-                    val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
-                    JSONObject(map).toMap().values.toList()
-                }
+            is JSONArray -> {
+                val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
+                JSONObject(map).toMap().values.toList()
+            }
             is JSONObject -> value.toMap()
             JSONObject.NULL -> null
             else -> value

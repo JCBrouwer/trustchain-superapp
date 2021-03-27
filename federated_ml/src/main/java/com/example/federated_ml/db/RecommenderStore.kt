@@ -88,8 +88,12 @@ open class RecommenderStore(
             }
         }
         val trainingData = getLocalSongData()
-        if (trainingData.first.isNotEmpty() && (name == "Pegasos" || name == "Adaline")) {
-            (model as OnlineModel).update(trainingData.first, trainingData.second)
+        if (trainingData.first.isNotEmpty()) {
+            if (name == "Pegasos") {
+                (model as Pegasos).update(trainingData.first, trainingData.second)
+            } else if (name == "Adaline") {
+                (model as Adaline).update(trainingData.first, trainingData.second)
+            }
         }
         storeModelLocally(model)
         Log.i("Recommend", "Model completely loaded")

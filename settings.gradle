@@ -7,13 +7,8 @@ project(':ipv8').projectDir = new File(settingsDir, 'kotlin-ipv8/ipv8')
 include ':ipv8-android'
 project(':ipv8-android').projectDir = new File(settingsDir, 'kotlin-ipv8/ipv8-android')
 
-include ':musicdao-datafeeder'
-
 include 'ipv8-jvm'
 project(':ipv8-jvm').projectDir = new File(settingsDir, 'kotlin-ipv8/ipv8-jvm')
-
-include ':federated_ml'
-project(':federated_ml').projectDir = new File(settingsDir, 'federated_ml')
 
 include ':app'
 include ':common'
@@ -26,5 +21,7 @@ include ':distributedai'
 include ':freedomOfComputing'
 include ':trustchain-voter'
 include ':musicdao'
+include ':musicdao-datafeeder'
+include ':federated_ml'
 include ':peerchat'
 include ':eurotoken'

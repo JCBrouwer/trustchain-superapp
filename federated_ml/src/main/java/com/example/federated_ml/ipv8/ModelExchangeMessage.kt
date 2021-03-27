@@ -1,9 +1,12 @@
 package com.example.federated_ml.ipv8
 
 import android.util.Log
+import com.example.federated_ml.models.*
+import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
+import com.example.federated_ml.models.feature_based.Adaline
+import com.example.federated_ml.models.feature_based.Pegasos
 import kotlin.UInt
 import kotlinx.serialization.json.*
-import com.example.federated_ml.models.OnlineModel
 import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.messaging.*
 
@@ -14,7 +17,7 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
     val originPublicKey: ByteArray,
     var ttl: UInt,
     val modelType: String,
-    val model: OnlineModel
+    val model: Model
 ) : Serializable {
 
     override fun serialize(): ByteArray {
@@ -41,23 +44,33 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
                 offset + localOffset,
                 offset + localOffset + SERIALIZED_PUBLIC_KEY_SIZE
             )
-            Log.w("!!!!!!!!!!!", originPublicKey.toString())
+
             localOffset += SERIALIZED_PUBLIC_KEY_SIZE
             val ttl = deserializeUInt(buffer, offset + localOffset)
-
             localOffset += SERIALIZED_UINT_SIZE
-            val (modelType, modelTypeSize) = deserializeVarLen(buffer, offset + localOffset)
+
+            val (modelTypeBytes, modelTypeSize) = deserializeVarLen(buffer, offset + localOffset)
+            val modelType = modelTypeBytes.toString(Charsets.UTF_8)
             localOffset += modelTypeSize
-            val (model, modelSize) = deserializeVarLen(buffer, offset + localOffset)
+            val (modelBytes, modelSize) = deserializeVarLen(buffer, offset + localOffset)
+            val modelJsonStr = modelBytes.toString(Charsets.UTF_8)
             localOffset += modelSize
+
+            val model = if (modelType == "Adaline")
+                Json.decodeFromString<Adaline>(modelJsonStr)
+            else if (modelType == "Pegasos")
+                Json.decodeFromString<Pegasos>(modelJsonStr)
+            else
+                Json.decodeFromString<PublicMatrixFactorization>(modelJsonStr)
 
             return Pair(
                 first = ModelExchangeMessage(
                     originPublicKey = originPublicKey,
                     ttl = ttl,
-                    modelType = modelType.toString(Charsets.UTF_8),
-                    model = Json.decodeFromString(model.toString(Charsets.UTF_8))
-                ), second = localOffset
+                    modelType = modelType,
+                    model = model,
+                ),
+                second = localOffset
             )
         }
     }

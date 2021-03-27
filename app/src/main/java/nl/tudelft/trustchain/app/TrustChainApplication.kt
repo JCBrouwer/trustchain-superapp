@@ -10,6 +10,8 @@ import com.example.musicdao.ipv8.MusicCommunity
 import com.example.federated_ml.RecommenderCommunity
 import com.example.federated_ml.db.RecommenderStore
 import com.squareup.sqldelight.android.AndroidSqliteDriver
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import nl.tudelft.ipv8.IPv8Configuration
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.OverlayConfiguration
@@ -68,7 +70,8 @@ class TrustChainApplication : Application() {
                 createVotingCommunity(),
                 createMusicCommunity(),
                 createRecommenderCommunity()
-            ), walkerInterval = 5.0
+            ),
+            walkerInterval = 5.0
         )
 
         IPv8Android.Factory(this)
@@ -89,42 +92,66 @@ class TrustChainApplication : Application() {
         val euroTokenCommunity = ipv8.getOverlay<EuroTokenCommunity>()!!
         euroTokenCommunity.setTransactionRepository(tr)
 
-        trustchain.registerTransactionValidator(BLOCK_TYPE, object : TransactionValidator {
-            override fun validate(
-                block: TrustChainBlock,
-                database: TrustChainStore
-            ): ValidationResult {
-                if (block.transaction["message"] != null || block.isAgreement) {
-                    return ValidationResult.Valid
-                } else {
-                    return ValidationResult.Invalid(listOf("Proposal must have a message"))
+        trustchain.registerTransactionValidator(
+            BLOCK_TYPE,
+            object : TransactionValidator {
+                override fun validate(
+                    block: TrustChainBlock,
+                    database: TrustChainStore
+                ): ValidationResult {
+                    return if (block.transaction["message"] != null || block.isAgreement) {
+                        ValidationResult.Valid
+                    } else {
+                        ValidationResult.Invalid(listOf("Proposal must have a message"))
+                    }
                 }
             }
-        })
+        )
 
-        trustchain.registerBlockSigner(BLOCK_TYPE, object : BlockSigner {
-            override fun onSignatureRequest(block: TrustChainBlock) {
-                trustchain.createAgreementBlock(block, mapOf<Any?, Any?>())
+        trustchain.registerBlockSigner(
+            BLOCK_TYPE,
+            object : BlockSigner {
+                override fun onSignatureRequest(block: TrustChainBlock) {
+                    trustchain.createAgreementBlock(block, mapOf<Any?, Any?>())
+                }
             }
-        })
+        )
 
-        trustchain.addListener(BLOCK_TYPE, object : BlockListener {
-            override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d("TrustChainDemo", "onBlockReceived: ${block.blockId} ${block.transaction}")
+        trustchain.addListener(
+            BLOCK_TYPE,
+            object : BlockListener {
+                override fun onBlockReceived(block: TrustChainBlock) {
+                    Log.d(
+                        "TrustChainDemo",
+                        "onBlockReceived: ${block.blockId} ${block.transaction}"
+                    )
+                }
             }
-        })
+        )
 
-        trustchain.addListener(CoinCommunity.JOIN_BLOCK, object : BlockListener {
-            override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d("Coin", "onBlockReceived: ${block.blockId} ${block.transaction}")
+        trustchain.addListener(
+            CoinCommunity.JOIN_BLOCK,
+            object : BlockListener {
+                override fun onBlockReceived(block: TrustChainBlock) {
+                    Log.d(
+                        "Coin",
+                        "onBlockReceived: ${block.blockId} ${block.transaction}"
+                    )
+                }
             }
-        })
+        )
 
-        trustchain.addListener(CoinCommunity.SIGNATURE_ASK_BLOCK, object : BlockListener {
-            override fun onBlockReceived(block: TrustChainBlock) {
-                Log.d("Coin", "onBlockReceived: ${block.blockId} ${block.transaction}")
+        trustchain.addListener(
+            CoinCommunity.SIGNATURE_ASK_BLOCK,
+            object : BlockListener {
+                override fun onBlockReceived(block: TrustChainBlock) {
+                    Log.d(
+                        "Coin",
+                        "onBlockReceived: ${block.blockId} ${block.transaction}"
+                    )
+                }
             }
-        })
+        )
     }
 
     private fun createDiscoveryCommunity(): OverlayConfiguration<DiscoveryCommunity> {
@@ -234,15 +261,23 @@ class TrustChainApplication : Application() {
     }
 
     private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
+        // TODO: for debugging, remove later
+        // this.applicationContext.deleteDatabase("federated_ml.db")
+
         val settings = TrustChainSettings()
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
         val musicStore = TrustChainSQLiteStore(Database(musicDriver))
         val driver = AndroidSqliteDriver(MLDatabase.Schema, this, "federated_ml.db")
         val database = MLDatabase(driver)
 
-//        // TODO: for debugging, remove later
-//        database.dbModelQueries.deleteAll()
+        // TODO: for debugging, remove later
+        // database.dbFeaturesQueries.deleteAllFeatures()
+        // database.dbModelQueries.deleteAll()
+
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
+        if (database.dbFeaturesQueries.getAllFeatures().executeAsList().isEmpty()) {
+            GlobalScope.launch { recommendStore.addAllLocalFeatures() } // analyze local music files
+        }
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(
             RecommenderCommunity.Factory(recommendStore, settings, musicStore),

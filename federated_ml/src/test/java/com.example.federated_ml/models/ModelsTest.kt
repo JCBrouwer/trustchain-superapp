@@ -1,37 +1,136 @@
 package com.example.federated_ml.models
 
-import com.example.federated_ml.WeakLearner
+import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
+import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
+import com.example.federated_ml.models.collaborative_filtering.SongFeature
+import com.example.federated_ml.models.feature_based.Adaline
+import com.example.federated_ml.models.feature_based.Pegasos
+import io.mockk.InternalPlatformDsl.toStr
+import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert
 import org.junit.Test
 import kotlin.random.Random
 
 class ModelsTest {
+    private val amountFeatures = 10
+    private var features: Array<Array<Double>> = Array(amountFeatures) { _ -> Array<Double>(amountFeatures) { Random.nextDouble(0.0, 5.0) } }
+    private var labels = IntArray(amountFeatures) { Random.nextInt(0, 2) }
 
     @Test
-    fun createWeakLearners() {
-        val totalAmountSongs = 10
-        val weakLearners = mutableListOf<WeakLearner>()
+    fun testCreateAndUpdateMF() {
+        val model = MatrixFactorization(emptySet(), emptyArray())
 
-        // Create 5 weak learners
-        for (i in 1..5) {
-            // generate random songs history
-            val amountSongs = Random.nextInt(totalAmountSongs)
-            val songsHistory = Array<Int>(amountSongs) { Random.nextInt(totalAmountSongs) }
+        model.merge(
+            sortedMapOf(
+                Pair("a", SongFeature(5.0, Array(5) { Random.nextDouble(1.0, 5.0) }, 0.0)),
+                Pair("b", SongFeature(2.0, Array(5) { Random.nextDouble(0.0, 3.0) }, 0.0)),
+                Pair("c", SongFeature(7.0, Array(5) { Random.nextDouble(0.0, 8.0) }, 0.0)),
+            )
+        )
 
-            // initiate user / learner with this songs history
-            val wl = WeakLearner(i, songsHistory, false)
-            weakLearners.add(wl)
+        Assert.assertThat(model, instanceOf(MatrixFactorization::class.java))
+        Assert.assertEquals(model.songFeatures.size, 3)
+    }
+
+    @Test
+    fun testMFPredictions() {
+        val pubModel = PublicMatrixFactorization(
+            sortedMapOf(
+                Pair("good", SongFeature(1.0, Array(5) { Random.nextDouble(1.0, 5.0) }, 0.0)),
+                Pair("bad", SongFeature(1.0, Array(5) { 0.0 }, 0.0)), // nobody likes this song
+            )
+        )
+        val model = MatrixFactorization(pubModel)
+        val pred = model.predict()
+        Assert.assertEquals(pred, "good")
+    }
+
+    @Test
+    fun testMFRatingsUpdate() {
+        val model = MatrixFactorization(
+            sortedMapOf(
+                Pair("good", SongFeature(1.0, Array(5) { Random.nextDouble(1.0, 5.0) }, 0.0)),
+                Pair("bad", SongFeature(1.0, Array(5) { 0.0 }, 0.0)), // nobody likes this song
+            )
+        )
+
+        model.updateRatings(
+            setOf("good", "bad"),
+            arrayOf(0.0, 1.0) // except for me apparently
+        )
+
+        Assert.assertNotEquals(model.songFeatures["bad"], Array(5) { 0.0 })
+    }
+
+    @Test
+    fun testPegasos() {
+        val model = Pegasos(0.4, amountFeatures, 5)
+
+        model.update(features, labels)
+
+        model.predict(Array(amountFeatures) { Random.nextDouble(0.0, 5.0) })
+
+        val mergeModelEq = Pegasos(0.4, amountFeatures, 5)
+        model.merge(mergeModelEq)
+        Assert.assertThat(model, instanceOf(Pegasos::class.java))
+
+        val mergeModelDiff = Adaline(0.1, amountFeatures)
+        model.merge(mergeModelDiff)
+        Assert.assertThat(model, instanceOf(Pegasos::class.java))
+    }
+
+    @Test
+    fun testPegasosPredictions() {
+        val model = Pegasos(0.1, 2, 100)
+        val biasedFeatures = arrayOf(arrayOf(100.0), arrayOf(-1.0))
+        val biasedLabels = intArrayOf(50, 0)
+
+        for (i in 0..10000) {
+            model.update(biasedFeatures, biasedLabels)
         }
 
-        /* TODO Apparently android unit testing doesn't actually create objects like you'd expect.
-                We need to figure out how to actually fill our feature arrays rather than use the
-                automatically mocked versions if we actually want to test predictions */
-//        val amountFeatures = 10
-//        val testFeatures = arrayOf(Array<Double>(amountFeatures) { Random.nextDouble(0.0, 5.0) })
-//        for (wl in weakLearners) {
-//            wl.makePrediction(testFeatures)
-//        }
+        val biasedTestSamples = arrayOf(arrayOf(100.0), arrayOf(-1.0))
 
-        Assert.assertEquals(1, 1) // just make sure the weak learners finish training
+        val res = model.predict(biasedTestSamples)
+        Assert.assertTrue(
+            "Test Pegasos " + res[0].toStr() + ", " + res[1].toStr(),
+            res[0] >= res[1]
+        )
+    }
+
+    @Test
+    fun testAdaline() {
+        val model = Adaline(0.1, amountFeatures)
+
+        model.update(features, labels)
+
+        model.predict(Array(amountFeatures) { Random.nextDouble(0.0, 5.0) })
+
+        val mergeModelEq = Adaline(0.1, amountFeatures)
+        model.merge(mergeModelEq)
+        Assert.assertThat(model, instanceOf(Adaline::class.java))
+
+        val mergeModelDiff = Pegasos(0.4, amountFeatures, 5)
+        model.merge(mergeModelDiff)
+        Assert.assertThat(model, instanceOf(Adaline::class.java))
+    }
+
+    @Test
+    fun testAdalinePredictions() {
+        val model = Adaline(1.0, 2)
+        val biasedFeatures = arrayOf(arrayOf(100.0), arrayOf(-1.0))
+        val biasedLabels = intArrayOf(50, 0)
+
+        for (i in 0..10000) {
+            model.update(biasedFeatures, biasedLabels)
+        }
+
+        val biasedTestSamples = arrayOf(arrayOf(100.0), arrayOf(-1.0))
+
+        val res = model.predict(biasedTestSamples)
+        Assert.assertTrue(
+            "Test Adaline " + res[0].toStr() + ", " + res[1].toStr(),
+            res[0] >= res[1]
+        )
     }
 }

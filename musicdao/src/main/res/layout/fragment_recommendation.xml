@@ -12,12 +12,13 @@
         android:layout_height="wrap_content"
         app:flexWrap="wrap"
         app:justifyContent="space_evenly">
+
         <TextView
             android:id="@+id/loadingRecommendations"
             android:layout_width="match_parent"
             android:layout_height="200dp"
             android:gravity="center"
-            android:text="Recommendations will appear here once you've listened to some tunes"
+            android:text="Refresh to get recommendations"
             android:textColor="@color/white" />
     </com.google.android.flexbox.FlexboxLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

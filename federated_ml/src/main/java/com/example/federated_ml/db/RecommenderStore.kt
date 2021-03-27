@@ -32,7 +32,7 @@ open class RecommenderStore(
     // TODO: fix this to proper path
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
-    private val totalAmountFeatures = 225
+    private val totalAmountFeatures = 225 // 2 block features + 223 essentia features
 
     fun storeModelLocally(model: Model) {
         if (model.name == "MatrixFactorization") {
@@ -147,10 +147,7 @@ open class RecommenderStore(
     }
 
     private fun blockMetadata(block: TrustChainBlock): Array<Double> {
-        var dataLen = -1.0
-        var bpm = -1.0
         var year = -1.0
-        var wmp = -1.0
         var genre = -1.0
         val k: String
 
@@ -186,19 +183,7 @@ open class RecommenderStore(
             genre = block.transaction["genre"] as Double
         }
 
-        if (block.transaction["wmp"] != null) {
-            wmp = block.transaction["wmp"] as Double
-        }
-
-        if (block.transaction["bpm"] != null) {
-            bpm = block.transaction["bmp"] as Double
-        }
-
-        if (block.transaction["dataLen"] != null) {
-            dataLen = block.transaction["dataLen"] as Double
-        }
-
-        return arrayOf(year, wmp, bpm, dataLen, genre)
+        return arrayOf(year, genre) + Array(223) { _ -> -1.0 }
     }
 
     fun globalSongCount(): Int {

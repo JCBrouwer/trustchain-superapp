@@ -5,17 +5,28 @@ import android.util.Log
 import com.example.federated_ml.Essentia
 import com.example.federated_ml.models.*
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
+import com.example.federated_ml.models.collaborative_filtering.SongFeature
+import com.example.federated_ml.models.collaborative_filtering.SortedMapSerializer
 import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
+import com.fasterxml.jackson.databind.ser.std.NumberSerializers
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ArraySerializer
 import kotlinx.serialization.builtins.DoubleArraySerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonEncoder
 import nl.tudelft.federated_ml.sqldelight.Database
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
@@ -141,7 +152,7 @@ open class RecommenderStore(
         val mp3Features = extractMP3Features(mp3File)
         database.dbFeaturesQueries.addFeature(
             key = k,
-            songFeatures = Json.encodeToString(mp3Features),
+            songFeatures = mp3Features.contentToString(),
             count = count.toLong()
         )
     }
@@ -227,7 +238,7 @@ open class RecommenderStore(
                             val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
                             database.dbFeaturesQueries.addFeature(
                                 key = k,
-                                songFeatures = Json.encodeToString(mp3Features),
+                                songFeatures = mp3Features.contentToString(),
                                 count = count.toLong()
                             )
                         } catch (e: Exception) {
@@ -249,7 +260,7 @@ open class RecommenderStore(
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
         val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
         for (i in batch.indices) {
-            features[i] = emptyArray<Double>() //Json.decodeFromString<Array<Double>>(batch[i].songFeatures!!)
+            features[i] = Json.decodeFromString<DoubleArray>(batch[i].songFeatures!!).toTypedArray()
             playcounts[i] = batch[i].count.toInt()
             Log.i("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i].key}")
         }

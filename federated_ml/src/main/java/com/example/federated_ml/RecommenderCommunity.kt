@@ -8,7 +8,6 @@ import com.example.federated_ml.ipv8.RequestModelMessage
 import com.example.federated_ml.models.*
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
-import com.fasterxml.jackson.annotation.JsonFormat
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
@@ -94,7 +93,7 @@ open class RecommenderCommunity(
         return count
     }
 
-    fun performLocalFeaturesExchange(){
+    fun performLocalFeaturesExchange() {
         val myFeatures = recommendStore.getMyFeatures()
         for (feature in myFeatures) {
             feature.songFeatures?.let { performFeaturesExchange(feature.key, it) }

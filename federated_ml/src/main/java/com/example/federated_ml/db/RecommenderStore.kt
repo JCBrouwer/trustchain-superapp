@@ -152,6 +152,15 @@ open class RecommenderStore(
         var year = -1.0
         var wmp = -1.0
         var genre = -1.0
+        val k: String
+
+        if (block.transaction["title"] != null && block.transaction["artist"] != null) {
+            k = "local-${block.transaction["title"]}-${block.transaction["artist"]}"
+            val unseenFeatures = this.database.dbUnseenFeaturesQueries.getFeature(k).executeAsOneOrNull()
+            if (unseenFeatures != null) {
+                return Json.decodeFromString<DoubleArray>(unseenFeatures.songFeatures!!).toTypedArray()
+            }
+        }
 
         if (block.transaction["date"] != null) {
             try {
@@ -240,10 +249,10 @@ open class RecommenderStore(
         }
     }
 
-    fun addNewFeatures(songIdentifier: String, features: String){
+    fun addNewFeatures(songIdentifier: String, features: String) {
         val seen = database.dbFeaturesQueries.getFeature(songIdentifier).executeAsOneOrNull()
         val unseen = database.dbUnseenFeaturesQueries.getFeature(songIdentifier).executeAsOneOrNull()
-        if (seen == null && unseen == null){
+        if (seen == null && unseen == null) {
             database.dbUnseenFeaturesQueries.addFeature(
                 key = songIdentifier,
                 songFeatures = features
@@ -438,7 +447,7 @@ open class RecommenderStore(
         return JSONObject(jsonString).toMap()
     }
 
-    fun getMyFeatures() : List<Features> {
+    fun getMyFeatures(): List<Features> {
         return this.database.dbFeaturesQueries.getAllFeatures().executeAsList()
     }
 

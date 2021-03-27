@@ -1,10 +1,12 @@
 package com.example.federated_ml.models
 
+import android.util.Log
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
 import com.example.federated_ml.models.collaborative_filtering.SongFeature
 import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
+import io.mockk.InternalPlatformDsl.toStr
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert
 import org.junit.Test
@@ -78,21 +80,22 @@ class ModelsTest {
         Assert.assertThat(model, instanceOf(Pegasos::class.java))
     }
 
-//    @Test
-//    fun testPegasosPredictions() {
-//        val model = Pegasos(0.1, 2, 10)
-//        val biasedFeatures =  arrayOf(arrayOf(100.0, -1.0), arrayOf(-1.0, 100.0))
-//        val biasedLabels = intArrayOf(50, 0)
-//
-//        for (i in 0..1000) {
-//            model.update(biasedFeatures, biasedLabels)
-//        }
-//
-//        val biasedTestSamples = arrayOf(arrayOf(-1.0, 99.0), arrayOf(99.0, -1.0))
-//
-//        val res = model.predict(biasedTestSamples)
-//        Assert.assertTrue(res[0] < res[1])
-//    }
+    @Test
+    fun testPegasosPredictions() {
+        val model = Pegasos(0.1, 2, 100)
+        val biasedFeatures =  arrayOf(arrayOf(100.0), arrayOf(-1.0))
+        val biasedLabels = intArrayOf(50, 0)
+
+        for (i in 0..10000) {
+            model.update(biasedFeatures, biasedLabels)
+        }
+
+        val biasedTestSamples = arrayOf(arrayOf(100.0), arrayOf(-1.0))
+
+        val res = model.predict(biasedTestSamples)
+        Assert.assertTrue("Test Pegasos " + res[0].toStr() + ", " + res[1].toStr(),
+            res[0] >= res[1])
+    }
 
     @Test
     fun testAdaline() {
@@ -111,19 +114,20 @@ class ModelsTest {
         Assert.assertThat(model, instanceOf(Adaline::class.java))
     }
 
-//    @Test
-//    fun testAdalinePredictions() {
-//        val model = Adaline(0.1, 2)
-//        val biasedFeatures =  arrayOf(arrayOf(100.0, -1.0), arrayOf(-1.0, 100.0))
-//        val biasedLabels = intArrayOf(50, 0)
-//
-//        for (i in 0..1000) {
-//            model.update(biasedFeatures, biasedLabels)
-//        }
-//
-//        val biasedTestSamples = arrayOf(arrayOf(-1.0, 99.0), arrayOf(99.0, -1.0))
-//
-//        val res = model.predict(biasedTestSamples)
-//         Assert.assertTrue(res[0] < res[1])
-//    }
+    @Test
+    fun testAdalinePredictions() {
+        val model = Adaline(1.0, 2)
+        val biasedFeatures =  arrayOf(arrayOf(100.0), arrayOf(-1.0))
+        val biasedLabels = intArrayOf(50, 0)
+
+        for (i in 0..10000) {
+            model.update(biasedFeatures, biasedLabels)
+        }
+
+        val biasedTestSamples = arrayOf(arrayOf(100.0), arrayOf(-1.0))
+
+        val res = model.predict(biasedTestSamples)
+        Assert.assertTrue("Test Adaline " + res[0].toStr() + ", " + res[1].toStr(),
+            res[0] >= res[1])
+    }
 }

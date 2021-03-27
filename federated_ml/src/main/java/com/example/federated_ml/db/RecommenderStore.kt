@@ -249,7 +249,7 @@ open class RecommenderStore(
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
         val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
         for (i in batch.indices) {
-            features[i] = Json.decodeFromString<Array<Double>>(batch[i].songFeatures!!)
+            features[i] = emptyArray<Double>() //Json.decodeFromString<Array<Double>>(batch[i].songFeatures!!)
             playcounts[i] = batch[i].count.toInt()
             Log.i("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i].key}")
         }

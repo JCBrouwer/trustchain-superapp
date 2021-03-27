@@ -92,7 +92,7 @@ fun rateFeaturesFromArrays(features: Array<Array<Double>>, ratings: Array<Double
 @Serializable
 open class MatrixFactorization(
     private var songNames: Set<String>,
-    private var ratings: Array<Double>
+    var ratings: Array<Double>
 ) : Model("MatrixFactorization") {
     val k = 5
 

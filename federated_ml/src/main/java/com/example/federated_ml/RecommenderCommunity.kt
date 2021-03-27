@@ -2,11 +2,13 @@ package com.example.federated_ml
 
 import android.util.Log
 import com.example.federated_ml.db.RecommenderStore
+import com.example.federated_ml.ipv8.FeaturesExchangeMessage
 import com.example.federated_ml.ipv8.ModelExchangeMessage
 import com.example.federated_ml.ipv8.RequestModelMessage
 import com.example.federated_ml.models.*
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
+import com.fasterxml.jackson.annotation.JsonFormat
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
@@ -39,6 +41,7 @@ open class RecommenderCommunity(
     init {
         messageHandlers[MessageId.MODEL_EXCHANGE_MESSAGE] = ::onModelExchange
         messageHandlers[MessageId.REQUEST_MODEL] = ::onModelRequest
+        messageHandlers[MessageId.EXCHANGE_FEATURES] = ::onFeaturesExchange
     }
 
     override fun load() {
@@ -46,6 +49,16 @@ open class RecommenderCommunity(
 
         // TODO: adjust how many models we want to be initiated
         if (Random.nextInt(0, 1) == 0) initiateWalkingModel()
+    }
+
+    fun exchangeMyFeatures() {
+        try {
+            Log.w("Recommender", "Send my features")
+            performLocalFeaturesExchange()
+        } catch (e: Exception) {
+            Log.w("Recommender", "Sending local features failed")
+            e.printStackTrace()
+        }
     }
 
     fun initiateWalkingModel() {
@@ -78,6 +91,36 @@ open class RecommenderCommunity(
             count += 1
         }
         Log.w("Recommender", "Model exchanged with $count peer(s)")
+        return count
+    }
+
+    fun performLocalFeaturesExchange(){
+        val myFeatures = recommendStore.getMyFeatures()
+        for (feature in myFeatures) {
+            feature.songFeatures?.let { performFeaturesExchange(feature.key, it) }
+        }
+    }
+
+    @ExperimentalUnsignedTypes
+    fun performFeaturesExchange(
+        identifier: String,
+        features: String,
+        ttl: UInt = 1u,
+        originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
+    ): Int {
+        Log.w("Recommender", "My key is $originPublicKey")
+        val maxPeersToAsk = 5
+        var count = 0
+        for ((index, peer) in getPeers().withIndex()) {
+            if (index >= maxPeersToAsk) break
+            val packet = serializePacket(
+                MessageId.EXCHANGE_FEATURES,
+                FeaturesExchangeMessage(originPublicKey, ttl, identifier, features)
+            )
+            send(peer, packet)
+            count += 1
+        }
+        Log.w("Recommender", "Features exchanged with $count peer(s)")
         return count
     }
 
@@ -131,6 +174,20 @@ open class RecommenderCommunity(
                 if (payload.checkTTL()) performRemoteModelExchange(localModel)
             }
         }
+    }
+
+    @ExperimentalUnsignedTypes
+    fun onFeaturesExchange(packet: Packet) {
+        Log.w("Recommender", "Some packet with features received")
+        val (_, payload) = packet.getAuthPayload(FeaturesExchangeMessage)
+
+        // packet contains model type and weights from peer
+        val songIdentifier = payload.songIdentifier.toLowerCase(Locale.ROOT)
+        var features = payload.features
+        Log.w("Recommender", "Song features are de-packaged")
+
+        recommendStore.addNewFeatures(songIdentifier, features)
+        if (payload.checkTTL()) performFeaturesExchange(songIdentifier, features)
     }
 
 //    private fun trainMatrixFactorization(model: MatrixFactorization) {
@@ -220,5 +277,7 @@ open class RecommenderCommunity(
             get() { return 27 }
         val REQUEST_MODEL: Int
             get() { return 40 }
+        val EXCHANGE_FEATURES: Int
+            get() { return 99 }
     }
 }

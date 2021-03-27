@@ -22,6 +22,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Log.w("Recommend", "RecommendationFragment view created")
+        getRecommenderCommunity().exchangeMyFeatures()
 
         lifecycleScope.launchWhenCreated {
             while (isActive) {
@@ -39,6 +40,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
                 activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
                 refreshRecommend.isRefreshing = false
             }
+            getRecommenderCommunity().exchangeMyFeatures()
         }
     }
 

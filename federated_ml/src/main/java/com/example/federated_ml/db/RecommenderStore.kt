@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import nl.tudelft.federated_ml.sqldelight.Database
+import nl.tudelft.federated_ml.sqldelight.Features
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import org.json.JSONArray
@@ -113,7 +114,6 @@ open class RecommenderStore(
     }
 
     fun getSongIds(): Set<String> {
-//        return database.dbFeaturesQueries.getSongIds().executeAsList().toSet()
         val songBlocks = musicStore.getBlocksWithType("publish_release")
         val songIds = HashSet<String>()
         for (block in songBlocks) {
@@ -237,6 +237,17 @@ open class RecommenderStore(
                     }
                 }
             }
+        }
+    }
+
+    fun addNewFeatures(songIdentifier: String, features: String){
+        val seen = database.dbFeaturesQueries.getFeature(songIdentifier).executeAsOneOrNull()
+        val unseen = database.dbUnseenFeaturesQueries.getFeature(songIdentifier).executeAsOneOrNull()
+        if (seen == null && unseen == null){
+            database.dbUnseenFeaturesQueries.addFeature(
+                key = songIdentifier,
+                songFeatures = features
+            )
         }
     }
 
@@ -425,6 +436,10 @@ open class RecommenderStore(
     fun readJsonFile(filepath: String): Map<String, *> {
         val jsonString: String = File(filepath).bufferedReader().use { it.readText() }
         return JSONObject(jsonString).toMap()
+    }
+
+    fun getMyFeatures() : List<Features> {
+        return this.database.dbFeaturesQueries.getAllFeatures().executeAsList()
     }
 
     private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {

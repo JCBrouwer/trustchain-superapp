@@ -8,6 +8,7 @@ import com.example.federated_ml.ipv8.RequestModelMessage
 import com.example.federated_ml.models.*
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
+import nl.tudelft.ipv8.IPv4Address
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
@@ -74,10 +75,10 @@ open class RecommenderCommunity(
     @ExperimentalUnsignedTypes
     fun performRemoteModelExchange(
         model: Model,
-        ttl: UInt = 1u,
+        ttl: UInt = 2u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
-        Log.w("Recommender", "My key is $originPublicKey")
+        Log.w("Recommender", "My key is ${myPeer.publicKey}")
         val maxPeersToAsk = 5
         var count = 0
         for ((index, peer) in getPeers().withIndex()) {
@@ -86,14 +87,14 @@ open class RecommenderCommunity(
                 MessageId.MODEL_EXCHANGE_MESSAGE,
                 ModelExchangeMessage(originPublicKey, ttl, model.name, model)
             )
+            Log.w("Recommender", "Sending models to ${peer.address}")
             send(peer, packet)
             count += 1
         }
-        Log.w("Recommender", "Model exchanged with $count peer(s)")
         return count
     }
 
-    fun performLocalFeaturesExchange() {
+    private fun performLocalFeaturesExchange() {
         val myFeatures = recommendStore.getMyFeatures()
         for (feature in myFeatures) {
             feature.songFeatures?.let { performFeaturesExchange(feature.key, it) }
@@ -104,10 +105,9 @@ open class RecommenderCommunity(
     fun performFeaturesExchange(
         identifier: String,
         features: String,
-        ttl: UInt = 1u,
+        ttl: UInt = 2u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
-        Log.w("Recommender", "My key is $originPublicKey")
         val maxPeersToAsk = 5
         var count = 0
         for ((index, peer) in getPeers().withIndex()) {
@@ -116,6 +116,7 @@ open class RecommenderCommunity(
                 MessageId.EXCHANGE_FEATURES,
                 FeaturesExchangeMessage(originPublicKey, ttl, identifier, features)
             )
+            Log.w("Recommender", "Sending features to ${peer.address}")
             send(peer, packet)
             count += 1
         }
@@ -139,7 +140,7 @@ open class RecommenderCommunity(
             val data = recommendStore.getLocalSongData()
             val songFeatures = data.first
             val playcounts = data.second
-            val models = createModelMU(localModel as OnlineModel, peerModel as OnlineModel, songFeatures, playcounts)
+            val models = mergeFeatureModel(localModel as OnlineModel, peerModel as OnlineModel, songFeatures, playcounts)
             Log.w("Recommender", "Walking an random models are merged")
             recommendStore.storeModelLocally(models.first)
             if (payload.checkTTL()) performRemoteModelExchange(models.second)
@@ -150,7 +151,7 @@ open class RecommenderCommunity(
                 localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
                 localModel = MatrixFactorization(peerModel.peerFeatures)
                 recommendStore.storeModelLocally(localModel)
-                val maxPeersToAsk = 10
+                val maxPeersToAsk = 5
                 var count = 0
                 for ((index, peer) in getPeers().withIndex()) {
                     if (index >= maxPeersToAsk) break
@@ -158,7 +159,7 @@ open class RecommenderCommunity(
                         peer,
                         serializePacket(
                             MessageId.REQUEST_MODEL,
-                            RequestModelMessage(myPeer.publicKey.keyToBin(), 1u, "MatrixFactorization")
+                            RequestModelMessage(myPeer.publicKey.keyToBin(), 2u, "MatrixFactorization")
                         )
                     )
                     count += 1
@@ -189,41 +190,8 @@ open class RecommenderCommunity(
         if (payload.checkTTL()) performFeaturesExchange(songIdentifier, features)
     }
 
-//    private fun trainMatrixFactorization(model: MatrixFactorization) {
-//        val maxPeersToAsk = 10
-//
-//        val numSongs = recommendStore.globalSongCount()
-//        var ageGather = Array(numSongs) { _ -> 0.0 }
-//        var songFeaturesGather = recommendStore.getSongIds().zip(Array(numSongs) { _ -> Array(model.k) { _ -> 0.0 } }).toMap().toSortedMap()
-//        var songBiasGather = Array(numSongs) { _ -> 0.0 }
-//
-//        for ((index, peer) in getPeers().withIndex()) {
-//            if (index >= maxPeersToAsk) break
-//            send(
-//                peer,
-//                serializePacket(
-//                    MessageId.REQUEST_MODEL,
-//                    RequestModelMessage(myPeer.publicKey.keyToBin(), 3u, "MatrixFactorization")
-//                )
-//            )
-//        }
-//
-//        // TODO how to receive models from peers all at once rather than 1-by-1 updates from the omModelExchange callback?
-// //        for ((index, peer) in getPeers().withIndex()) {
-// //            if (index >= maxPeersToAsk) break
-// //            val (peerAge: Array<Double>, peerSongs: Array<Array<Double>>, peerSongBias: Array<Double>) = receive(peer)
-// //            ageGather += peerAge
-// //            songFeaturesGather += peerSongs
-// //            songBiasGather += peerSongBias
-// //        }
-//
-//        model.merge(ageGather, songFeaturesGather, songBiasGather)
-//        model.update()
-//        recommendStore.storeModelLocally(model)
-//    }
-
     private fun onModelRequest(packet: Packet) {
-        Log.w("Recommender", "Some packet with model received")
+        Log.w("Recommender", "Model request received")
         val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         val model = recommendStore.getLocalModel(modelType)
@@ -236,30 +204,7 @@ open class RecommenderCommunity(
         )
     }
 
-    fun createModelRW(
-        incomingModel: OnlineModel,
-        localModel: OnlineModel,
-        features: Array<Array<Double>>,
-        labels: IntArray
-    ):
-        Pair<OnlineModel, OnlineModel> {
-            incomingModel.update(features, labels)
-            return Pair(localModel, incomingModel)
-        }
-
-    fun createModelUM(
-        incomingModel: OnlineModel,
-        localModel: OnlineModel,
-        features: Array<Array<Double>>,
-        labels: IntArray
-    ):
-        Pair<OnlineModel, OnlineModel> {
-            incomingModel.update(features, labels)
-            localModel.merge(incomingModel)
-            return Pair(localModel, incomingModel)
-        }
-
-    fun createModelMU(
+    fun mergeFeatureModel(
         incomingModel: OnlineModel,
         localModel: OnlineModel,
         features: Array<Array<Double>>,

@@ -15,6 +15,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import nl.tudelft.federated_ml.sqldelight.Database
 import nl.tudelft.federated_ml.sqldelight.Features
+import nl.tudelft.federated_ml.sqldelight.Unseen_features
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import org.json.JSONArray
@@ -256,7 +257,7 @@ open class RecommenderStore(
         for (i in batch.indices) {
             features[i] = Json.decodeFromString<DoubleArray>(batch[i].songFeatures!!).toTypedArray()
             playcounts[i] = batch[i].count.toInt()
-            Log.i("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i].key}")
+//            Log.i("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i].key}")
         }
         return Pair(features, playcounts)
     }
@@ -273,7 +274,21 @@ open class RecommenderStore(
         val genre = (mp3File.id3v2Tag ?: mp3File.id3v1Tag)?.genre?.toDouble() ?: -1.0
         try {
             val filename = mp3File.filename
+
+            val k = if (mp3File.id3v2Tag != null)
+                "local-${mp3File.id3v2Tag.title}-${mp3File.id3v2Tag.artist}"
+            else if (mp3File.id3v1Tag != null)
+                "local-${mp3File.id3v1Tag.title}-${mp3File.id3v1Tag.artist}"
+            else
+                ""
+
+            if (haveFeature(k)) {
+                val featureText = database.dbFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures ?: database.dbUnseenFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures
+                return Json.decodeFromString<DoubleArray>(featureText!!).toTypedArray()
+            }
+
             val jsonfile = filename.replace(".mp3", ".json")
+
             if (!File(jsonfile).exists()) {
                 if (Essentia.extractData(filename, jsonfile) == 1) {
                     Log.e("Feature extraction", "Error extracting data with Essentia")
@@ -427,25 +442,18 @@ open class RecommenderStore(
         )
     }
 
-    fun readJsonFile(filepath: String): Map<String, *> {
-        val jsonString: String = File(filepath).bufferedReader().use { it.readText() }
-        return JSONObject(jsonString).toMap()
-    }
-
     fun getMyFeatures(): List<Features> {
         return this.database.dbFeaturesQueries.getAllFeatures().executeAsList()
     }
 
-    private fun JSONObject.toMap(): Map<String, *> = keys().asSequence().associateWith {
-        when (val value = this[it]) {
-            is JSONArray -> {
-                val map = (0 until value.length()).associate { Pair(it.toString(), value[it]) }
-                JSONObject(map).toMap().values.toList()
-            }
-            is JSONObject -> value.toMap()
-            JSONObject.NULL -> null
-            else -> value
-        }
+    private fun getRemoteFeatures(): List<Unseen_features> {
+        return this.database.dbUnseenFeaturesQueries.getAllFeatures().executeAsList()
+    }
+
+    private fun haveFeature(key: String): Boolean {
+        for (feat in getMyFeatures()) if (feat.key == key) return true
+        for (feat in getRemoteFeatures()) if (feat.key == key) return true
+        return false
     }
 
     companion object {

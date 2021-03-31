@@ -17,7 +17,6 @@ open class FeaturesExchangeMessage @ExperimentalUnsignedTypes constructor(
 ) : Serializable {
 
     override fun serialize(): ByteArray {
-        Log.w("INIT KEY", originPublicKey.toString())
         return originPublicKey +
             serializeUInt(ttl) +
             serializeVarLen(songIdentifier.toByteArray(Charsets.UTF_8)) +

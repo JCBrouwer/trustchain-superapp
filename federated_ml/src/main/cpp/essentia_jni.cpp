@@ -7,6 +7,11 @@
 #include <essentia/utils/extractor_music/extractor_version.h>
 #include <android/log.h>
 
+#include <csetjmp>
+#include <csignal>
+#include <cstdlib>
+#include <iostream>
+
 using namespace std;
 using namespace essentia;
 using namespace essentia::standard;
@@ -57,6 +62,14 @@ void outputToFile(Pool& pool, const string& outputFilename, Pool& options) {
   delete output;
 }
 
+jmp_buf env;
+
+void on_sigabrt (int signum)
+{
+    signal (signum, SIG_DFL);
+    longjmp (env, 1);
+}
+
 int essentia_main(string audioFilename, string outputFilename, string profileName) {
     // Returns: 1 on essentia error
 
@@ -79,7 +92,14 @@ int essentia_main(string audioFilename, string outputFilename, string profileNam
         extractor->output("results").set(results);
         extractor->output("resultsFrames").set(resultsFrames);
 
-        extractor->compute();
+        if (setjmp (env) == 0) {
+            signal(SIGABRT, &on_sigabrt);
+            extractor->compute();
+            signal (SIGABRT, SIG_DFL);
+        }
+        else {
+            std::cout << "aborted\n";
+        }
 
         mergeValues(results, options);
 

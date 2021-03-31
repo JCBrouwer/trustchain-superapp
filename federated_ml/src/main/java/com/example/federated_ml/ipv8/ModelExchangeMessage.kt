@@ -21,7 +21,6 @@ open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
 ) : Serializable {
 
     override fun serialize(): ByteArray {
-        Log.w("INIT KEY", originPublicKey.toString())
         return originPublicKey +
             serializeUInt(ttl) +
             serializeVarLen(modelType.toByteArray(Charsets.UTF_8)) +

@@ -8,7 +8,6 @@ import com.example.federated_ml.ipv8.RequestModelMessage
 import com.example.federated_ml.models.*
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
-import nl.tudelft.ipv8.IPv4Address
 import nl.tudelft.ipv8.Overlay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler

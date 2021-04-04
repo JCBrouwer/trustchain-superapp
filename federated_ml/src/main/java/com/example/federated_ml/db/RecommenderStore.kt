@@ -18,7 +18,6 @@ import nl.tudelft.federated_ml.sqldelight.Features
 import nl.tudelft.federated_ml.sqldelight.Unseen_features
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.*

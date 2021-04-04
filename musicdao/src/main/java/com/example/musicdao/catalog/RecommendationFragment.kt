@@ -103,14 +103,17 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
 
         Log.w("Recommend", "Retrieving local recommendation model")
         val predictions = getBaggedPredictions(data)
-        var best = 0
         var bestScore = NEGATIVE_INFINITY
+        var candidateRecommendations = emptyArray<Int>()
         for ((i, pred) in predictions.withIndex()) {
             if (bestScore < pred) {
-                best = i
                 bestScore = pred
+                candidateRecommendations = arrayOf(i)
+            } else if (bestScore == pred) {
+                candidateRecommendations += i
             }
         }
+        val best = candidateRecommendations.random()
         Log.w("Recommend", "PICKED BLOCK $best with score $bestScore")
         val debugScore = predictions[best].toString()
         Log.w("Recommender", "After refreshing, best local score is $debugScore")

@@ -136,7 +136,7 @@ class MusicCommunity(
         releaseBlocks.shuffled().withIndex().forEach {
             count += 1
             if (it.index >= maxBlocks) return count
-            sendBlock(it.value, peer, ttl=3)
+            sendBlock(it.value, peer, ttl = 3)
         }
         return count
     }

@@ -81,11 +81,11 @@ class ModelsTest {
 
     @Test
     fun testPegasosPredictions() {
-        val model = Pegasos(0.1, 2, 100)
+        val model = Pegasos(0.1, 1, 100)
         val biasedFeatures = arrayOf(arrayOf(100.0), arrayOf(-1.0))
         val biasedLabels = intArrayOf(50, 0)
 
-        for (i in 0..10000) {
+        for (i in 0..1000) {
             model.update(biasedFeatures, biasedLabels)
         }
 
@@ -121,7 +121,7 @@ class ModelsTest {
         val biasedFeatures = arrayOf(arrayOf(100.0), arrayOf(-1.0))
         val biasedLabels = intArrayOf(50, 0)
 
-        for (i in 0..10000) {
+        for (i in 0..1000) {
             model.update(biasedFeatures, biasedLabels)
         }
 

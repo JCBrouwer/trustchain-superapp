@@ -24,16 +24,23 @@ import java.util.*
 import kotlin.collections.HashSet
 import kotlin.math.log10
 
+/**
+ * Handles database operations and preprocessing for local models and features
+ */
 open class RecommenderStore(
     private val musicStore: TrustChainSQLiteStore,
     private val database: Database
 ) {
     lateinit var key: ByteArray
-    // TODO: fix this to proper path
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
     private val totalAmountFeatures = 225 // 2 block features + 223 essentia features
 
+    /**
+     * save local model to the database
+     *
+     * @param model model to be stored
+     */
     fun storeModelLocally(model: Model) {
         if (model.name == "MatrixFactorization") {
             database.dbModelQueries.addModel(
@@ -56,6 +63,12 @@ open class RecommenderStore(
         }
     }
 
+    /**
+     * loads model from the local database using name is a key
+     *
+     * @param name model name
+     * @return loaded model
+     */
     fun getLocalModel(name: String): Model {
         Log.w("Recommend", "Loading $name")
         val dbModel = database.dbModelQueries.getModel(name).executeAsOneOrNull()
@@ -101,18 +114,30 @@ open class RecommenderStore(
         return model
     }
 
-    // TODO do getSongIds & getPlaycounts return the same size and order array in all cases?
+    /**
+     * get playcounts for local songs (i.e. get labels for local data)
+     *
+     * @return array of playcounts
+     */
     fun getPlaycounts(): Array<Double> {
         val songBlocks = musicStore.getBlocksWithType("publish_release")
         val playcounts = Array(globalSongCount()) { _ -> 0.0 }
         for ((i, block) in songBlocks.withIndex()) {
             if (block.transaction["title"] != null && block.transaction["artist"] != null) {
-                playcounts[i] = database.dbFeaturesQueries.getFeature("local-${block.transaction["title"]}-${block.transaction["artist"]}").executeAsOneOrNull()?.count?.toDouble() ?: 0.0
+                playcounts[i] = database.dbFeaturesQueries.getFeature(
+                    "local-${block.transaction["title"]}-${block.transaction["artist"]}"
+                )
+                    .executeAsOneOrNull()?.count?.toDouble() ?: 0.0
             }
         }
         return playcounts
     }
 
+    /**
+     * extract song ids from trustchain blocks with music data
+     *
+     * @return distinct song ids
+     */
     fun getSongIds(): Set<String> {
         val songBlocks = musicStore.getBlocksWithType("publish_release")
         val songIds = HashSet<String>()
@@ -124,6 +149,11 @@ open class RecommenderStore(
         return songIds
     }
 
+    /**
+     * Update local features with features from new local file
+     *
+     * @param file unseen music file
+     */
     fun updateLocalFeatures(file: File) {
         val mp3File = Mp3File(file)
         val k = if (mp3File.id3v2Tag != null)
@@ -146,6 +176,13 @@ open class RecommenderStore(
         )
     }
 
+    /**
+     * extracts music block metadata and transforms it to array of features
+     * that can be directly fed into ml models
+     *
+     * @param block music block
+     * @return array of features for given instance
+     */
     private fun blockMetadata(block: TrustChainBlock): Array<Double> {
         var year = -1.0
         var genre = -1.0
@@ -186,6 +223,11 @@ open class RecommenderStore(
         return arrayOf(year, genre) + Array(223) { _ -> -1.0 }
     }
 
+    /**
+     * get amount of songs from trustchain for which we can extract features
+     *
+     * @return amount of test songs
+     */
     fun globalSongCount(): Int {
         val s = getSongBlockMetadata(musicStore.getBlocksWithType("publish_release")).size
         return s
@@ -199,6 +241,9 @@ open class RecommenderStore(
         return features
     }
 
+    /**
+     * process local files adnd add songs features to the db
+     */
     fun addAllLocalFeatures() {
         Log.w("Recommender Store", "Getting playcounts...")
         if (!musicDir.isDirectory) return
@@ -234,6 +279,14 @@ open class RecommenderStore(
         }
     }
 
+    /**
+     * this method is used upon reception of gossiped features (by other peers)
+     * process received features and store to the table of unseen features
+     * if don't have this song locally
+     *
+     * @param songIdentifier song id
+     * @param features song feature
+     */
     fun addNewFeatures(songIdentifier: String, features: String) {
         val seen = database.dbFeaturesQueries.getFeature(songIdentifier).executeAsOneOrNull()
         val unseen = database.dbUnseenFeaturesQueries.getFeature(songIdentifier).executeAsOneOrNull()
@@ -245,10 +298,19 @@ open class RecommenderStore(
         }
     }
 
+    /**
+     * get local song data for model training
+     *
+     * @return training data (pair of features and labels) from local songs
+     */
     fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
         val batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
         if (batch.isEmpty()) {
-            Log.e("Recommend", "Local feature database is empty! Analyzing files in background thread now, current recommendation will be empty.")
+            Log.e(
+                "Recommend",
+                "Local feature database is empty! " +
+                    "Analyzing files in background thread now, current recommendation will be empty."
+            )
             GlobalScope.launch { addAllLocalFeatures() } // analyze local music files
         }
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
@@ -256,17 +318,27 @@ open class RecommenderStore(
         for (i in batch.indices) {
             features[i] = Json.decodeFromString<DoubleArray>(batch[i].songFeatures!!).toTypedArray()
             playcounts[i] = batch[i].count.toInt()
-//            Log.i("Recommender Store", "Playcount is ${playcounts[i]} for song ${batch[i].key}")
         }
         return Pair(features, playcounts)
     }
 
+    /**
+     * load new songs from trustchain
+     *
+     * @return pair of new song's features and corresponding trustchain blocks
+     */
     fun getNewSongs(): Pair<Array<Array<Double>>, List<TrustChainBlock>> {
         val songsHistory = musicStore.getBlocksWithType("publish_release")
         val data = getSongBlockMetadata(songsHistory)
         return Pair(data, songsHistory)
     }
 
+    /**
+     * extracts mp3features from a given file using Essentia
+     *
+     * @param mp3File file with song
+     * @return features
+     */
     private fun extractMP3Features(mp3File: Mp3File): Array<Double> {
         var features = Array<Double>(225) { -1.0 }
         val year = (mp3File.id3v2Tag ?: mp3File.id3v1Tag)?.year?.toDouble() ?: -1.0
@@ -282,7 +354,8 @@ open class RecommenderStore(
                 ""
 
             if (haveFeature(k)) {
-                val featureText = database.dbFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures ?: database.dbUnseenFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures
+                val featureText = database.dbFeaturesQueries.getFeature(k).executeAsOneOrNull()
+                    ?.songFeatures ?: database.dbUnseenFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures
                 return Json.decodeFromString<DoubleArray>(featureText!!).toTypedArray()
             }
 

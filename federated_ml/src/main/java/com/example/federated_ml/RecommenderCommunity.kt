@@ -17,6 +17,9 @@ import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 
+/**
+ * Recommender community for gossiping recommendation models and songs features among peers
+ */
 @ExperimentalUnsignedTypes
 open class RecommenderCommunity(
     val recommendStore: RecommenderStore,
@@ -43,13 +46,18 @@ open class RecommenderCommunity(
         messageHandlers[MessageId.EXCHANGE_FEATURES] = ::onFeaturesExchange
     }
 
+    /**
+     * on initialization initiate walking models
+     */
     override fun load() {
         super.load()
 
-        // TODO: adjust how many models we want to be initiated
         if (Random.nextInt(0, 1) == 0) initiateWalkingModel()
     }
 
+    /**
+     * exchange extracted features for local songs with other peers
+     */
     fun exchangeMyFeatures() {
         try {
             Log.w("Recommender", "Send my features")
@@ -60,6 +68,9 @@ open class RecommenderCommunity(
         }
     }
 
+    /**
+     * Load / create walking models (feature based and collaborative filtering)
+     */
     fun initiateWalkingModel() {
         try {
             Log.w("Recommender", "Initiate random walk")
@@ -71,6 +82,14 @@ open class RecommenderCommunity(
         }
     }
 
+    /**
+     * Exchange walking model with other peers
+     *
+     * @param model walking model
+     * @param ttl ttl of a model packet
+     * @param originPublicKey public key
+     * @return amount of peers to whom model has been sent
+     */
     @ExperimentalUnsignedTypes
     fun performRemoteModelExchange(
         model: Model,
@@ -93,6 +112,9 @@ open class RecommenderCommunity(
         return count
     }
 
+    /**
+     * Exchange local song's features with other peers
+     */
     private fun performLocalFeaturesExchange() {
         val myFeatures = recommendStore.getMyFeatures()
         for (feature in myFeatures) {
@@ -100,6 +122,15 @@ open class RecommenderCommunity(
         }
     }
 
+    /**
+     * exchange packet with song features with other peers
+     *
+     * @param identifier song indentifier
+     * @param features song features
+     * @param ttl packet ttl
+     * @param originPublicKey original public key
+     * @return amount of peers to whom features has been sent
+     */
     @ExperimentalUnsignedTypes
     fun performFeaturesExchange(
         identifier: String,
@@ -123,6 +154,12 @@ open class RecommenderCommunity(
         return count
     }
 
+    /**
+     * Handling incoming walking model by updating it with local features
+     * and merging with local model
+     *
+     * @param packet incoming packet with walking model
+     */
     @ExperimentalUnsignedTypes
     fun onModelExchange(packet: Packet) {
         Log.w("Recommender", "Some packet with model received")
@@ -175,6 +212,12 @@ open class RecommenderCommunity(
         }
     }
 
+    /**
+     * Handling incomingpacket with song features
+     * by adding 'unseen' features to the local database
+     *
+     * @param packet incoming packet with song features
+     */
     @ExperimentalUnsignedTypes
     fun onFeaturesExchange(packet: Packet) {
         Log.w("Recommender", "Some packet with features received")
@@ -189,6 +232,11 @@ open class RecommenderCommunity(
         if (payload.checkTTL()) performFeaturesExchange(songIdentifier, features)
     }
 
+    /**
+     * Handle model request from other peers
+     *
+     * @param packet request model packet
+     */
     private fun onModelRequest(packet: Packet) {
         Log.w("Recommender", "Model request received")
         val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
@@ -203,6 +251,15 @@ open class RecommenderCommunity(
         )
     }
 
+    /**
+     * Handle local and walking model merging and updating
+     *
+     * @param incomingModel walking model
+     * @param localModel local model
+     * @param features local features
+     * @param labels local labels
+     * @return pair of merged local and merged walking models
+     */
     fun mergeFeatureModel(
         incomingModel: OnlineModel,
         localModel: OnlineModel,

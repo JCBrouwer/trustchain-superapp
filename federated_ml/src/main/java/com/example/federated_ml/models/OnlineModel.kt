@@ -3,6 +3,9 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import java.util.*
 
+/**
+ * Online model generalization of Adaline and Pegasos models (feature-based models)
+ */
 @Serializable
 open class OnlineModel : Model {
     private val amountFeatures: Int
@@ -13,6 +16,12 @@ open class OnlineModel : Model {
         this.weights = Array(amountFeatures) { _ -> 1.0 }
     }
 
+    /**
+     * merge 2 online models
+     *
+     * @param otherOnlineModel other model to merge with
+     * @return merged model
+     */
     fun merge(otherOnlineModel: OnlineModel): OnlineModel {
         for (idx in weights.indices) {
             weights[idx] = (weights[idx] + otherOnlineModel.weights[idx]) / 2
@@ -20,6 +29,13 @@ open class OnlineModel : Model {
         return this
     }
 
+    /**
+     * make predictions for a batch of input instances
+     *
+     * @param x - array of feature arrays
+     * @param y - array of labels
+     * @return array of predictions
+     */
     fun predict(x: Array<Array<Double>>): DoubleArray {
         val result = DoubleArray(x.size)
         for ((idx, item) in x.withIndex()) {
@@ -28,6 +44,13 @@ open class OnlineModel : Model {
         return result
     }
 
+    /**
+     * test method for getting prediction accuracy on some test instances
+     *
+     * @param x - array of feature arrays
+     * @param y - array of labels
+     * @return prediction score
+     */
     fun score(x: Array<Array<Double>>, y: IntArray): Double {
         var correct = 0.0
         for (i in x.indices) {

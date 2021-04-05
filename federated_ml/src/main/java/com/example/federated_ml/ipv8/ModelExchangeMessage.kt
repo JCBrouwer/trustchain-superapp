@@ -10,7 +10,7 @@ import kotlinx.serialization.decodeFromString
 import nl.tudelft.ipv8.messaging.*
 
 /**
- * This is a message from a peer sending and asking for a model from other peers
+ * This is a message from a peer sending walking model to other peers
  */
 open class ModelExchangeMessage @ExperimentalUnsignedTypes constructor(
     val originPublicKey: ByteArray,

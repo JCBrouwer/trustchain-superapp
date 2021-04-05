@@ -30,12 +30,24 @@ object SortedMapSerializer : KSerializer<SortedMap<String, SongFeature>> {
     }
 }
 
+/**
+ * TODO
+ *
+ * @property peerFeatures
+ */
 @Serializable
 data class PublicMatrixFactorization(
     @Serializable(with = SortedMapSerializer::class)
     val peerFeatures: SortedMap<String, SongFeature>
 ) : Model("PublicMatrixFactorization")
 
+/**
+ * TODO
+ *
+ * @property age
+ * @property feature
+ * @property bias
+ */
 @Serializable
 data class SongFeature(
     var age: Double,
@@ -60,6 +72,12 @@ data class SongFeature(
     }
 }
 
+/**
+ * TODO
+ *
+ * @property feature
+ * @property rating
+ */
 @Serializable
 data class RateFeature(
     var feature: Array<Double>,
@@ -89,6 +107,12 @@ fun rateFeaturesFromArrays(features: Array<Array<Double>>, ratings: Array<Double
     return features.zip(ratings) { a, b -> RateFeature(a, b) }.toTypedArray()
 }
 
+/**
+ * TODO
+ *
+ * @property songNames
+ * @property ratings
+ */
 @Serializable
 open class MatrixFactorization(
     private var songNames: Set<String>,
@@ -128,10 +152,20 @@ open class MatrixFactorization(
         this.songFeatures = peerFeatures
     }
 
+    /**
+     * TODO
+     *
+     * @return
+     */
     private fun initFeat(): Double {
         return nextDouble() * sqrt((maxR - minR) / k)
     }
 
+    /**
+     * TODO
+     *
+     * @return
+     */
     fun predict(): String {
         var bestSong = ""
         var mostRelevant = NEGATIVE_INFINITY
@@ -150,6 +184,12 @@ open class MatrixFactorization(
         return bestSong
     }
 
+    /**
+     * TODO
+     *
+     * @param newSongNames
+     * @param newRatings
+     */
     fun updateRatings(newSongNames: Set<String>, newRatings: Array<Double>) {
         val newRatingsMap = newSongNames.zip(newRatings).toMap()
         if (this.songNames != newSongNames) {
@@ -163,6 +203,10 @@ open class MatrixFactorization(
         }
     }
 
+    /**
+     * TODO
+     *
+     */
     override fun update() {
         songFeatures.forEach {
             val (name, triple) = it
@@ -186,9 +230,20 @@ open class MatrixFactorization(
         }
     }
 
+    /**
+     * TODO
+     *
+     * @param peerModel
+     */
     open fun merge(peerModel: PublicMatrixFactorization) {
         merge(peerModel.peerFeatures)
     }
+
+    /**
+     * TODO
+     *
+     * @param peerFeatures
+     */
     open fun merge(peerFeatures: SortedMap<String, SongFeature>) {
         if (peerFeatures.keys.toSet() != songNames) {
             songNames = peerFeatures.keys.toSet() + songNames

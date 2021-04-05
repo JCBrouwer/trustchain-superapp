@@ -5,6 +5,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
 
+/**
+ * Machine Learning Adaline model (Adaptive Linear Neuron)
+ * Single layer NN used in gossiping user preference models
+ */
 @Serializable
 class Adaline : OnlineModel {
     private val learningRate: Double
@@ -14,6 +18,12 @@ class Adaline : OnlineModel {
         this.learningRate = learningRate
     }
 
+    /**
+     * update model with single data instance
+     *
+     * @param x - feature array
+     * @param y - label
+     */
     override fun update(x: Array<Double>, y: Int) {
         val error = y - activation(forward(x))
         this.bias += this.learningRate * error
@@ -22,6 +32,12 @@ class Adaline : OnlineModel {
         }
     }
 
+    /**
+     * update model with multiple data instances
+     *
+     * @param x - array of feature arrays
+     * @param y - array of labels
+     */
     override fun update(x: Array<Array<Double>>, y: IntArray) {
         require(x.size == y.size) {
             String.format("Input vector x of size %d not equal to length %d of y", x.size, y.size)
@@ -31,10 +47,23 @@ class Adaline : OnlineModel {
         }
     }
 
+    /**
+     * predict score for a given data instance
+     *
+     * @param x feature array
+     * @return predicted score
+     */
     override fun predict(x: Array<Double>): Double {
         return activation(forward(x))
     }
 
+    /**
+     * binary classification of input instance based on activation
+     * e.g. - like / dislike song
+     *
+     * @param x feature array
+     * @return binary predicted label
+     */
     fun classify(x: Array<Double>): Double {
         return if (activation(forward(x)) >= 0.0) {
             1.0
@@ -43,11 +72,22 @@ class Adaline : OnlineModel {
         }
     }
 
-    // Linear activation function for now
+    /**
+     * Adaline activation function
+     *
+     * @param x output of the previous neuron
+     * @return activation of x
+     */
     private fun activation(x: Double): Double {
         return x
     }
 
+    /**
+     * Forward pass of Adaline
+     *
+     * @param x single data instance
+     * @return propagated value
+     */
     private fun forward(x: Array<Double>): Double {
         var weightedSum = this.bias
         for (idx in 1 until x.size) {

@@ -3,6 +3,11 @@ import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
 import kotlin.random.Random
 
+/**
+ * DEPRECATED WEAK LEARNER CLASS
+ * may still be used for testing
+ * represents learning peer in a trustchain community
+ */
 class WeakLearner(id: Int, songsHistory: Array<Int>, shouldHaveLocalModel: Boolean) {
     // total amount of known songs
     private val amountSongs = 10

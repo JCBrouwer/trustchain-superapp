@@ -6,7 +6,7 @@ import kotlinx.serialization.json.*
 import nl.tudelft.ipv8.messaging.*
 
 /**
- * This is a message from a peer sending and asking for a model from other peers
+ * This is a message from a peer sending local songs features to other peers
  */
 open class FeaturesExchangeMessage @ExperimentalUnsignedTypes constructor(
     val originPublicKey: ByteArray,

@@ -1,8 +1,5 @@
 package com.example.federated_ml.ipv8
 
-import com.example.federated_ml.models.*
-import kotlin.UInt
-import kotlinx.serialization.json.*
 import nl.tudelft.ipv8.messaging.*
 
 /**

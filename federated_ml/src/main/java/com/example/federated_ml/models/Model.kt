@@ -1,6 +1,7 @@
 package com.example.federated_ml.models
 
-import kotlinx.serialization.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**

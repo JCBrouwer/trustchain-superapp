@@ -1,10 +1,10 @@
 package com.example.federated_ml.ipv8
 
 import android.util.SparseArray
+import kotlinx.serialization.*
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import kotlinx.serialization.*
 
 /**
  * @author Asaf Pinhassi www.mobiledev.co.il https://stackoverflow.com/a/21574953

@@ -12,8 +12,10 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import java.lang.Double.NEGATIVE_INFINITY
-import kotlin.math.*
 import java.util.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.sqrt
 import kotlin.random.Random.Default.nextDouble
 
 object SongFeatureSerializer : KSerializer<SortedMap<String, SongFeature>> {

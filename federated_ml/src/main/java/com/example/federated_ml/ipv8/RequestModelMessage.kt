@@ -1,6 +1,5 @@
 package com.example.federated_ml.ipv8
 
-import kotlin.UInt
 import nl.tudelft.ipv8.messaging.*
 
 /**

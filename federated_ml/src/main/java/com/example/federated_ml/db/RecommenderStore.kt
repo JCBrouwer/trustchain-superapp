@@ -1,11 +1,9 @@
 package com.example.federated_ml.db
 
 import android.annotation.SuppressLint
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.example.federated_ml.Essentia
-import com.example.federated_ml.models.*
+import com.example.federated_ml.models.Model
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.feature_based.Adaline
 import com.example.federated_ml.models.feature_based.Pegasos
@@ -22,9 +20,6 @@ import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
 import org.json.JSONObject
 import java.io.File
-import java.util.*
-import java.util.Collections.emptySortedMap
-import kotlin.collections.HashSet
 import kotlin.math.log10
 
 /**

@@ -5,7 +5,8 @@ import com.example.federated_ml.db.RecommenderStore
 import com.example.federated_ml.ipv8.FeaturesExchangeMessage
 import com.example.federated_ml.ipv8.ModelExchangeMessage
 import com.example.federated_ml.ipv8.RequestModelMessage
-import com.example.federated_ml.models.*
+import com.example.federated_ml.models.Model
+import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.collaborative_filtering.PublicMatrixFactorization
 import nl.tudelft.ipv8.Overlay

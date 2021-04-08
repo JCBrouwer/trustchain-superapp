@@ -1,7 +1,7 @@
 package com.example.federated_ml.models.collaborative_filtering
 
 operator fun Array<Double>.plus(other: Double): Array<Double> {
-    return this.map {it + other }.toTypedArray()
+    return this.map { it + other }.toTypedArray()
 }
 
 operator fun Double.plus(doubles: Array<Double>): Array<Double> {
@@ -9,7 +9,7 @@ operator fun Double.plus(doubles: Array<Double>): Array<Double> {
 }
 
 operator fun Array<Double>.minus(other: Double): Array<Double> {
-    return this.map {it - other }.toTypedArray()
+    return this.map { it - other }.toTypedArray()
 }
 
 operator fun Double.minus(doubles: Array<Double>): Array<Double> {
@@ -17,7 +17,7 @@ operator fun Double.minus(doubles: Array<Double>): Array<Double> {
 }
 
 operator fun Array<Double>.times(other: Double): Array<Double> {
-    return this.map {it * other }.toTypedArray()
+    return this.map { it * other }.toTypedArray()
 }
 
 operator fun Double.times(doubles: Array<Double>): Array<Double> {
@@ -25,7 +25,7 @@ operator fun Double.times(doubles: Array<Double>): Array<Double> {
 }
 
 operator fun Array<Double>.div(other: Double): Array<Double> {
-    return this.map {it / other }.toTypedArray()
+    return this.map { it / other }.toTypedArray()
 }
 
 operator fun Double.div(doubles: Array<Double>): Array<Double> {
@@ -33,13 +33,13 @@ operator fun Double.div(doubles: Array<Double>): Array<Double> {
 }
 
 operator fun Array<Double>.plus(other: Array<Double>): Array<Double> {
-    return this.zip(other).map {(i1, i2) -> i1 + i2 }.toTypedArray()
+    return this.zip(other).map { (i1, i2) -> i1 + i2 }.toTypedArray()
 }
 
 operator fun Array<Double>.minus(other: Array<Double>): Array<Double> {
-    return this.zip(other).map {(i1, i2) -> i1 - i2 }.toTypedArray()
+    return this.zip(other).map { (i1, i2) -> i1 - i2 }.toTypedArray()
 }
 
 operator fun Array<Double>.times(other: Array<Double>): Double {
-    return this.zip(other).map {(i1, i2) -> i1 * i2 }.toTypedArray().sum()
+    return this.zip(other).map { (i1, i2) -> i1 * i2 }.toTypedArray().sum()
 }

@@ -11,7 +11,7 @@ class ColabFilterTest {
 
     @Test
     fun testCreateAndUpdate() {
-        val model = MatrixFactorization(Array(0){""}.zip(Array(0){0.0}).toMap().toSortedMap())
+        val model = MatrixFactorization(Array(0) { "" }.zip(Array(0) { 0.0 }).toMap().toSortedMap())
 
         model.merge(
             sortedMapOf(
@@ -47,10 +47,12 @@ class ColabFilterTest {
             )
         )
 
-        model.updateRatings(sortedMapOf(
-            Pair("good", 0.0),
-            Pair("bad", 1.0)
-        ))
+        model.updateRatings(
+            sortedMapOf(
+                Pair("good", 0.0),
+                Pair("bad", 1.0)
+            )
+        )
 
         Assert.assertNotEquals(model.songFeatures["bad"], Array(5) { 0.0 })
     }
@@ -63,7 +65,7 @@ class ColabFilterTest {
                 Pair("bad", SongFeature(1.0, Array(5) { 1.0 }, 0.0)), // nobody likes this song
             )
         )
-        val models = Array(3) {MatrixFactorization(pubModel)}
+        val models = Array(3) { MatrixFactorization(pubModel) }
 
         val updatedModel = MatrixFactorization(pubModel)
         updatedModel.updateRatings(sortedMapOf(Pair("new", 5.0)))
@@ -75,7 +77,7 @@ class ColabFilterTest {
         }
     }
 
-    private fun pairwiseDifference(models: Array<MatrixFactorization>): Double{
+    private fun pairwiseDifference(models: Array<MatrixFactorization>): Double {
         var diff = 0.0
         var total = 0.0
         for (m1 in models) {
@@ -165,7 +167,7 @@ class ColabFilterTest {
             "ccc" == models[8].predict(),
             "cc" == models[9].predict(),
             "b" == models[7].predict()
-        ).map{if (it) 1 else 0}.sum()
+        ).map { if (it) 1 else 0 }.sum()
 
         Assert.assertTrue(numCorrect >= 7)
     }

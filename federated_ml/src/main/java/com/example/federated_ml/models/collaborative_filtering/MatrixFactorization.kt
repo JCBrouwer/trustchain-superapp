@@ -161,7 +161,7 @@ open class MatrixFactorization(
      *
      * @param newRatings
      */
-    fun updateRatings(newRatings: SortedMap<String,Double>) {
+    fun updateRatings(newRatings: SortedMap<String, Double>) {
         for ((name, rating) in newRatings) {
             ratings[name] = rating
             if (songFeatures[name] == null) { // maybe initialize newly rated song

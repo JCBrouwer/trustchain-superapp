@@ -101,7 +101,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
                     break
             }
             updateRecommendFragment(bestBlock, 0)
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             Log.e("Recommend", "Colaborative filtering prediction failed")
             Log.e("Recommend", e.toString())
         }
@@ -124,7 +124,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
             val debugScore = predictions[best].toString()
             Log.w("Recommender", "After refreshing, best local score is $debugScore")
             updateRecommendFragment(blocks[best], 1)
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             Log.e("Recommend", "Feature-based model prediction failed")
             Log.e("Recommend", e.toString())
         }

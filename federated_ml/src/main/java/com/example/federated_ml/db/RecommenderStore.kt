@@ -94,7 +94,7 @@ open class RecommenderStore(
                 Log.i("Recommend", "Load existing local model")
                 model = Json.decodeFromString<MatrixFactorization>(dbModel.parameters)
             } else {
-                model = MatrixFactorization(Array(0){""}.zip(Array(0){0.0}).toMap().toSortedMap())
+                model = MatrixFactorization(Array(0) { "" }.zip(Array(0) { 0.0 }).toMap().toSortedMap())
                 Log.i("Recommend", "Initialized local model")
                 Log.i("Recommend", model.name)
             }

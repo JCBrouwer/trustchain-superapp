@@ -5,4 +5,4 @@ local.properties
 .gradle
 .project
 .settings
-federated_ml/.cxx
+gossipML/.cxx

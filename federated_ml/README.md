@@ -11,7 +11,7 @@ Every time a user open music dao, they are asked to realod the page in order to 
 **Recommendations**
 
 <br />
-<img src="docs/images/screenshot_6.png" width="200px"> <img src="docs/images/screenshot_7.png" width="200px"> <img src="docs/images/screenshot_8.png" width="200px">
+<img src="docs/imgs/recommendations.png" width="200px">
 
 Recommender community yields 2 recommendations made by 2 different models. In general, federated nachine learning library has 2 types of model: feature-based models and collaborative filtering models, so recommendations are given one per each model type.
 Collaborative filtering models include 1 model so far: a Matrix Factorization Model from [this paper](https://dmle.iais.fraunhofer.de/papers/hegedus2019decentralized.pdf)

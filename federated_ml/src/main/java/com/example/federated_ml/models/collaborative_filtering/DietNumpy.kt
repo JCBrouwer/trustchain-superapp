@@ -1,17 +1,23 @@
 package com.example.federated_ml.models.collaborative_filtering
 
 operator fun Array<Double>.plus(other: Double): Array<Double> {
-    for (i in 0 until size) this[i] += other
-    return this
+    return this.map {it + other }.toTypedArray()
 }
 
 operator fun Double.plus(doubles: Array<Double>): Array<Double> {
     return doubles + this
 }
 
+operator fun Array<Double>.minus(other: Double): Array<Double> {
+    return this.map {it - other }.toTypedArray()
+}
+
+operator fun Double.minus(doubles: Array<Double>): Array<Double> {
+    return doubles - this
+}
+
 operator fun Array<Double>.times(other: Double): Array<Double> {
-    for (i in 0 until size) this[i] *= other
-    return this
+    return this.map {it * other }.toTypedArray()
 }
 
 operator fun Double.times(doubles: Array<Double>): Array<Double> {
@@ -19,35 +25,21 @@ operator fun Double.times(doubles: Array<Double>): Array<Double> {
 }
 
 operator fun Array<Double>.div(other: Double): Array<Double> {
-    for (i in 0 until size) this[i] /= other
-    return this
+    return this.map {it / other }.toTypedArray()
 }
 
 operator fun Double.div(doubles: Array<Double>): Array<Double> {
     return doubles / this
 }
 
-operator fun Array<Double>.minus(other: Double): Array<Double> {
-    for (i in 0 until size) this[i] -= other
-    return this
-}
-
-operator fun Double.minus(doubles: Array<Double>): Array<Double> {
-    return doubles - this
-}
-
 operator fun Array<Double>.plus(other: Array<Double>): Array<Double> {
-    for (i in 0 until size) this[i] += other[i]
-    return this
+    return this.zip(other).map {(i1, i2) -> i1 + i2 }.toTypedArray()
 }
 
 operator fun Array<Double>.minus(other: Array<Double>): Array<Double> {
-    for (i in 0 until size) this[i] -= other[i]
-    return this
+    return this.zip(other).map {(i1, i2) -> i1 - i2 }.toTypedArray()
 }
 
 operator fun Array<Double>.times(other: Array<Double>): Double {
-    var out = 0.0
-    for (i in 0 until size) out += this[i] * other[i]
-    return out
+    return this.zip(other).map {(i1, i2) -> i1 * i2 }.toTypedArray().sum()
 }

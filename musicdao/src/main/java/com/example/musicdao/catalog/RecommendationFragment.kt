@@ -87,36 +87,46 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         val data = recStore.getNewSongs()
         val blocks = data.second
 
-        var colab = recStore.getLocalModel("MatrixFactorization") as MatrixFactorization
-        if (colab.ratings.isEmpty()) {
-            colab = MatrixFactorization(recStore.getSongIds(), recStore.getPlaycounts())
-            recStore.storeModelLocally(colab)
-        }
-        val bestRelease = colab.predict()
-        var bestBlock = blocks[0]
-        for (block in blocks) {
-            bestBlock = block
-            if ("${block.transaction["title"]}-${block.transaction["artist"]}" == bestRelease)
-                break
-        }
-        updateRecommendFragment(bestBlock, 0)
-
-        Log.w("Recommend", "Retrieving local recommendation model")
-        val predictions = getBaggedPredictions(data)
-        var bestScore = NEGATIVE_INFINITY
-        var candidateRecommendations = emptyArray<Int>()
-        for ((i, pred) in predictions.withIndex()) {
-            if (bestScore < pred) {
-                bestScore = pred
-                candidateRecommendations = arrayOf(i)
-            } else if (bestScore == pred) {
-                candidateRecommendations += i
+        try {
+            var colab = recStore.getLocalModel("MatrixFactorization") as MatrixFactorization
+            if (colab.ratings.isEmpty()) {
+                colab = MatrixFactorization(recStore.getSongIds().zip(recStore.getPlaycounts()).toMap().toSortedMap())
+                recStore.storeModelLocally(colab)
             }
+            val bestRelease = colab.predict()
+            var bestBlock = blocks[0]
+            for (block in blocks) {
+                bestBlock = block
+                if ("${block.transaction["title"]}-${block.transaction["artist"]}" == bestRelease)
+                    break
+            }
+            updateRecommendFragment(bestBlock, 0)
+        } catch(e: Exception) {
+            Log.e("Recommend", "Colaborative filtering prediction failed")
+            Log.e("Recommend", e.toString())
         }
-        val best = candidateRecommendations.random()
-        Log.w("Recommend", "PICKED BLOCK $best with score $bestScore")
-        val debugScore = predictions[best].toString()
-        Log.w("Recommender", "After refreshing, best local score is $debugScore")
-        updateRecommendFragment(blocks[best], 1)
+
+        try {
+            Log.w("Recommend", "Retrieving local recommendation model")
+            val predictions = getBaggedPredictions(data)
+            var bestScore = NEGATIVE_INFINITY
+            var candidateRecommendations = emptyArray<Int>()
+            for ((i, pred) in predictions.withIndex()) {
+                if (bestScore < pred) {
+                    bestScore = pred
+                    candidateRecommendations = arrayOf(i)
+                } else if (bestScore == pred) {
+                    candidateRecommendations += i
+                }
+            }
+            val best = candidateRecommendations.random()
+            Log.w("Recommend", "PICKED BLOCK $best with score $bestScore")
+            val debugScore = predictions[best].toString()
+            Log.w("Recommender", "After refreshing, best local score is $debugScore")
+            updateRecommendFragment(blocks[best], 1)
+        } catch(e: Exception) {
+            Log.e("Recommend", "Feature-based model prediction failed")
+            Log.e("Recommend", e.toString())
+        }
     }
 }

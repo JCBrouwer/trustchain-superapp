@@ -10,7 +10,6 @@ import org.junit.Test
 import com.example.federated_ml.models.OnlineModel
 import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
 import com.example.federated_ml.models.feature_based.Pegasos
-import java.util.*
 
 @ExperimentalUnsignedTypes
 class ModelExchangeMessageTest {
@@ -22,7 +21,7 @@ class ModelExchangeMessageTest {
     private val originPublicKey = key.pub().keyToBin()
     private val ttl = 2u
     private val model1 = Pegasos(0.4, 10, 5)
-    private val model2 = MatrixFactorization(songNames = emptySet(), ratings = emptyArray())
+    private val model2 = MatrixFactorization(Array(0){""}.zip(Array(0){0.0}).toMap().toSortedMap())
 
     @ExperimentalUnsignedTypes
     @Test

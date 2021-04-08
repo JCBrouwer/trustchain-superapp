@@ -185,7 +185,7 @@ open class RecommenderCommunity(
             localModel = localModel as MatrixFactorization
             if (localModel.songFeatures.size == 0) {
                 localModel = MatrixFactorization(peerModel.peerFeatures)
-                localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
+                localModel.updateRatings(recommendStore.getSongIds().zip(recommendStore.getPlaycounts()).toMap().toSortedMap())
                 recommendStore.storeModelLocally(localModel)
                 val maxPeersToAsk = 5
                 var count = 0
@@ -203,7 +203,7 @@ open class RecommenderCommunity(
                 Log.w("Recommender", "Model request sent to $count peer(s)")
             } else {
                 Log.w("Recommender", "Merging MatrixFactorization")
-                localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
+                localModel.updateRatings(recommendStore.getSongIds().zip(recommendStore.getPlaycounts()).toMap().toSortedMap())
                 localModel.merge(peerModel.peerFeatures)
                 recommendStore.storeModelLocally(localModel)
                 Log.w("Recommender", "Stored new MatrixFactorization")
@@ -225,7 +225,7 @@ open class RecommenderCommunity(
 
         // packet contains model type and weights from peer
         val songIdentifier = payload.songIdentifier.toLowerCase(Locale.ROOT)
-        var features = payload.features
+        val features = payload.features
         Log.w("Recommender", "Song features are de-packaged")
 
         recommendStore.addNewFeatures(songIdentifier, features)
@@ -260,7 +260,7 @@ open class RecommenderCommunity(
      * @param labels local labels
      * @return pair of merged local and merged walking models
      */
-    fun mergeFeatureModel(
+    private fun mergeFeatureModel(
         incomingModel: OnlineModel,
         localModel: OnlineModel,
         features: Array<Array<Double>>,

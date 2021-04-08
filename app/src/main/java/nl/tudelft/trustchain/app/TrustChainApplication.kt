@@ -273,7 +273,7 @@ class TrustChainApplication : Application() {
         // TODO: for debugging, remove later
         // database.dbFeaturesQueries.deleteAllFeatures()
         // database.dbUnseenFeaturesQueries.deleteAllFeatures()
-        // database.dbModelQueries.deleteAll()
+//         database.dbModelQueries.deleteAll()
 
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
         if (database.dbFeaturesQueries.getAllFeatures().executeAsList().isEmpty()) {

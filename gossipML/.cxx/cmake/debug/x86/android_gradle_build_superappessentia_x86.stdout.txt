@@ -1,0 +1,2 @@
+ninja: Entering directory `/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/.cxx/cmake/debug/x86'
+ninja: no work to do.

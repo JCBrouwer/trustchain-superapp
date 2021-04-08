@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/src/main/cpp/CMakeLists.txt",
+    "/home/hans/Android/Sdk/ndk/21.1.6352462/build/cmake/android.toolchain.cmake",
+    "/home/hans/Android/Sdk/ndk/21.1.6352462/build/cmake/platforms.cmake"
+  ],
+  "cleanCommands": [
+    "/home/hans/Android/Sdk/cmake/3.10.2.4988404/bin/ninja -C \"/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/.cxx/cmake/debug/x86_64\" clean"
+  ],
+  "buildTargetsCommand": "/home/hans/Android/Sdk/cmake/3.10.2.4988404/bin/ninja  -C \"/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/.cxx/cmake/debug/x86_64\" {LIST_OF_TARGETS_TO_BUILD}",
+  "libraries": {
+    "superappessentia-Debug-x86_64": {
+      "artifactName": "superappessentia",
+      "buildCommand": "/home/hans/Android/Sdk/cmake/3.10.2.4988404/bin/ninja -C \"/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/.cxx/cmake/debug/x86_64\" superappessentia",
+      "abi": "x86_64",
+      "output": "/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/build/intermediates/cmake/debug/obj/x86_64/libsuperappessentia.so",
+      "runtimeFiles": []
+    }
+  }
+}

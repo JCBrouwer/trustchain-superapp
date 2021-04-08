@@ -4,8 +4,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.lifecycle.lifecycleScope
-import com.example.federated_ml.models.collaborative_filtering.MatrixFactorization
-import com.example.federated_ml.models.feature_based.Pegasos
+import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.MatrixFactorization
+import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
 import com.example.musicdao.MusicBaseFragment
 import com.example.musicdao.R
 import com.example.musicdao.util.Util

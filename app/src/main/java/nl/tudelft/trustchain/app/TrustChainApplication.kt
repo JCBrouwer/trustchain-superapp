@@ -7,8 +7,9 @@ import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
 import com.example.musicdao.ipv8.MusicCommunity
-import com.example.federated_ml.RecommenderCommunity
-import com.example.federated_ml.db.RecommenderStore
+import nl.tudelft.trustchain.gossipML.RecommenderCommunity
+import nl.tudelft.trustchain.gossipML.db.RecommenderStore
+import nl.tudelft.gossipML.sqldelight.Database as MLDatabase
 import com.squareup.sqldelight.android.AndroidSqliteDriver
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -44,7 +45,6 @@ import nl.tudelft.trustchain.eurotoken.community.EuroTokenCommunity
 import nl.tudelft.trustchain.peerchat.community.PeerChatCommunity
 import nl.tudelft.trustchain.peerchat.db.PeerChatStore
 import nl.tudelft.trustchain.voting.VotingCommunity
-import nl.tudelft.federated_ml.sqldelight.Database as MLDatabase
 
 @ExperimentalUnsignedTypes
 class TrustChainApplication : Application() {
@@ -273,7 +273,7 @@ class TrustChainApplication : Application() {
         // TODO: for debugging, remove later
         // database.dbFeaturesQueries.deleteAllFeatures()
         // database.dbUnseenFeaturesQueries.deleteAllFeatures()
-//         database.dbModelQueries.deleteAll()
+        // database.dbModelQueries.deleteAll()
 
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
         if (database.dbFeaturesQueries.getAllFeatures().executeAsList().isEmpty()) {

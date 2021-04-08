@@ -1,7 +1,7 @@
 package com.example.musicdao
 
 import androidx.annotation.LayoutRes
-import com.example.federated_ml.RecommenderCommunity
+import nl.tudelft.trustchain.gossipML.RecommenderCommunity
 import com.example.musicdao.ipv8.MusicCommunity
 import nl.tudelft.trustchain.common.ui.BaseFragment
 

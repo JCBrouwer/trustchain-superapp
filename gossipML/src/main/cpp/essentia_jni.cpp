@@ -6,7 +6,6 @@
 #include <essentia/pool.h>
 #include <essentia/utils/extractor_music/extractor_version.h>
 #include <android/log.h>
-
 #include <csetjmp>
 #include <csignal>
 #include <cstdlib>
@@ -67,10 +66,11 @@ jmp_buf env;
 void on_sigabrt (int signum)
 {
     signal (signum, SIG_DFL);
+    __android_log_write(ANDROID_LOG_ERROR, "Essentia Android", "SIGSEGV or SIGABRT :(");
     longjmp (env, 1);
 }
 
-int essentia_main(string audioFilename, string outputFilename, string profileName) {
+int essentia_main(string audioFilename, string outputFilename) {
     // Returns: 1 on essentia error
 
     try {
@@ -83,10 +83,9 @@ int essentia_main(string audioFilename, string outputFilename, string profileNam
         setExtractorDefaultOptions(options);
         setExtractorOptions("", options);
 
-        Algorithm* extractor = AlgorithmFactory::create("MusicExtractor", "profile", "");
 
-        Pool results;
-        Pool resultsFrames;
+        Algorithm* extractor = AlgorithmFactory::create("MusicExtractor");
+        Pool results, resultsFrames;
 
         extractor->input("filename").set(audioFilename);
         extractor->output("results").set(results);
@@ -94,19 +93,16 @@ int essentia_main(string audioFilename, string outputFilename, string profileNam
 
         if (setjmp (env) == 0) {
             signal(SIGABRT, &on_sigabrt);
+            signal(SIGSEGV, &on_sigabrt);
             extractor->compute();
-            signal (SIGABRT, SIG_DFL);
         }
         else {
-            std::cout << "aborted\n";
+            return 1;
         }
 
         mergeValues(results, options);
 
         outputToFile(results, outputFilename, options);
-        if (options.value<Real>("outputFrames")) {
-            outputToFile(resultsFrames, outputFilename+"_frames", options);
-        }
         delete extractor;
         essentia::shutdown();
     }
@@ -131,10 +127,9 @@ string convertJStringToString(JNIEnv *env, jstring str) {
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_example_federated_1ml_Essentia_extractData(JNIEnv *env, jclass,
-        jstring input_path, jstring output_path) {
+Java_nl_tudelft_trustchain_gossipML_Essentia_extractData(JNIEnv *env, jclass, jstring input_path, jstring output_path) {
     std::string input = convertJStringToString(env, input_path);
     std::string output = convertJStringToString(env, output_path);
-    int returnCode = essentia_main(input, output, "");
+    int returnCode = essentia_main(input, output);
     return returnCode;
 }

@@ -198,7 +198,6 @@ open class RecommenderStore(
             try {
                 year = Integer.parseInt(block.transaction["date"] as String).toDouble()
             } catch (e: Exception) {
-                System.out.println(block.transaction["date"])
             }
 
             try {
@@ -210,7 +209,6 @@ open class RecommenderStore(
                         ).split("/").toTypedArray()[-1]
                 ).toDouble()
             } catch (e: Exception) {
-                System.out.println(block.transaction["date"])
             }
         }
 
@@ -257,18 +255,20 @@ open class RecommenderStore(
                 for (f in audioFiles) {
                     if (Mp3File(f).id3v2Tag != null) {
                         val updatedFile = Mp3File(f)
-                        try {
-                            val mp3Features = extractMP3Features(Mp3File(f))
-                            val count = 1
-                            val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
-                            database.dbFeaturesQueries.addFeature(
-                                key = k,
-                                songFeatures = mp3Features.contentToString(),
-                                count = count.toLong()
-                            )
-                        } catch (e: Exception) {
-                            Log.e("Recommend", "Extracting audio features failed!")
-                            Log.e("Recommend", e.toString())
+                        val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
+                        if (!haveFeature(k)) {
+                            try {
+                                val mp3Features = extractMP3Features(Mp3File(f))
+                                val count = 1
+                                database.dbFeaturesQueries.addFeature(
+                                    key = k,
+                                    songFeatures = mp3Features.contentToString(),
+                                    count = count.toLong()
+                                )
+                            } catch (e: Exception) {
+                                Log.e("Recommend", "Extracting audio features failed!")
+                                Log.e("Recommend", e.toString())
+                            }
                         }
                         idx += 1
                     }
@@ -302,6 +302,7 @@ open class RecommenderStore(
      * @return training data (pair of features and labels) from local songs
      */
     fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
+        GlobalScope.launch { addAllLocalFeatures() } // analyze local music files
         val batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
         if (batch.isEmpty()) {
             Log.w(
@@ -309,7 +310,7 @@ open class RecommenderStore(
                 "Local feature database is empty! " +
                     "Analyzing files in background thread now, current recommendation will be empty."
             )
-            GlobalScope.launch { addAllLocalFeatures() } // analyze local music files
+            return Pair(emptyArray(), emptyArray<Int>().toIntArray())
         }
         val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
         val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
@@ -485,6 +486,7 @@ open class RecommenderStore(
         for ((i, feat) in features.withIndex()) {
             features[i] = if (feat < 0.0) -log10(-feat) else if (feat > 0.0) log10(feat) else 0.0
         }
+        Log.i("Recommend","Extracted MP3 features")
         return features
     }
 

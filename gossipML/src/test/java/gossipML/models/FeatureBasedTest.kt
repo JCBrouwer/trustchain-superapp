@@ -3,6 +3,7 @@ package nl.tudelft.trustchain.gossipML.models
 import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
 import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
 import io.mockk.InternalPlatformDsl.toStr
+import nl.tudelft.trustchain.gossipML.Essentia
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert
 import org.junit.Test

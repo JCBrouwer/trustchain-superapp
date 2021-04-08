@@ -276,9 +276,7 @@ class TrustChainApplication : Application() {
         // database.dbModelQueries.deleteAll()
 
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
-        if (database.dbFeaturesQueries.getAllFeatures().executeAsList().isEmpty()) {
-            GlobalScope.launch { recommendStore.addAllLocalFeatures() } // analyze local music files
-        }
+        GlobalScope.launch { recommendStore.addAllLocalFeatures() }
         val randomWalk = RandomWalk.Factory()
         return OverlayConfiguration(
             RecommenderCommunity.Factory(recommendStore, settings, musicStore),

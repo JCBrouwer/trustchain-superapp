@@ -184,8 +184,8 @@ open class RecommenderCommunity(
             peerModel = peerModel as PublicMatrixFactorization
             localModel = localModel as MatrixFactorization
             if (localModel.songFeatures.size == 0) {
-                localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
                 localModel = MatrixFactorization(peerModel.peerFeatures)
+                localModel.updateRatings(recommendStore.getSongIds(), recommendStore.getPlaycounts())
                 recommendStore.storeModelLocally(localModel)
                 val maxPeersToAsk = 5
                 var count = 0

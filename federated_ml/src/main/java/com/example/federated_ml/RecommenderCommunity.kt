@@ -60,10 +60,10 @@ open class RecommenderCommunity(
      */
     fun exchangeMyFeatures() {
         try {
-            Log.w("Recommender", "Send my features")
+            Log.i("Recommend", "Send my features")
             performLocalFeaturesExchange()
         } catch (e: Exception) {
-            Log.w("Recommender", "Sending local features failed")
+            Log.i("Recommend", "Sending local features failed")
             e.printStackTrace()
         }
     }
@@ -73,11 +73,11 @@ open class RecommenderCommunity(
      */
     fun initiateWalkingModel() {
         try {
-            Log.w("Recommender", "Initiate random walk")
+            Log.i("Recommend", "Initiate random walk")
             performRemoteModelExchange(recommendStore.getLocalModel("Pegasos"))
             performRemoteModelExchange(recommendStore.getLocalModel("MatrixFactorization"))
         } catch (e: Exception) {
-            Log.w("Recommender", "Random walk failed")
+            Log.i("Recommend", "Random walk failed")
             e.printStackTrace()
         }
     }
@@ -96,7 +96,6 @@ open class RecommenderCommunity(
         ttl: UInt = 2u,
         originPublicKey: ByteArray = myPeer.publicKey.keyToBin()
     ): Int {
-        Log.w("Recommender", "My key is ${myPeer.publicKey}")
         val maxPeersToAsk = 5
         var count = 0
         for ((index, peer) in getPeers().withIndex()) {
@@ -105,7 +104,7 @@ open class RecommenderCommunity(
                 MessageId.MODEL_EXCHANGE_MESSAGE,
                 ModelExchangeMessage(originPublicKey, ttl, model.name, model)
             )
-            Log.w("Recommender", "Sending models to ${peer.address}")
+            Log.i("Recommend", "Sending models to ${peer.address}")
             send(peer, packet)
             count += 1
         }
@@ -146,11 +145,11 @@ open class RecommenderCommunity(
                 MessageId.EXCHANGE_FEATURES,
                 FeaturesExchangeMessage(originPublicKey, ttl, identifier, features)
             )
-            Log.w("Recommender", "Sending features to ${peer.address}")
+            Log.i("Recommend", "Sending features to ${peer.address}")
             send(peer, packet)
             count += 1
         }
-        Log.w("Recommender", "Features exchanged with $count peer(s)")
+        Log.i("Recommend", "Features exchanged with $count peer(s)")
         return count
     }
 
@@ -162,13 +161,13 @@ open class RecommenderCommunity(
      */
     @ExperimentalUnsignedTypes
     fun onModelExchange(packet: Packet) {
-        Log.w("Recommender", "Some packet with model received")
+        Log.i("Recommend", "Some packet with model received")
         val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
 
         // packet contains model type and weights from peer
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         var peerModel = payload.model
-        Log.w("Recommender", "Walking model is de-packaged")
+        Log.i("Recommend", "Walking model is de-packaged")
 
         var localModel = recommendStore.getLocalModel(modelType)
 
@@ -177,7 +176,7 @@ open class RecommenderCommunity(
             val songFeatures = data.first
             val playcounts = data.second
             val models = mergeFeatureModel(localModel as OnlineModel, peerModel as OnlineModel, songFeatures, playcounts)
-            Log.w("Recommender", "Walking an random models are merged")
+            Log.i("Recommend", "Walking an random models are merged")
             recommendStore.storeModelLocally(models.first)
             if (payload.checkTTL()) performRemoteModelExchange(models.second)
         } else {
@@ -200,13 +199,13 @@ open class RecommenderCommunity(
                     )
                     count += 1
                 }
-                Log.w("Recommender", "Model request sent to $count peer(s)")
+                Log.i("Recommend", "Model request sent to $count peer(s)")
             } else {
-                Log.w("Recommender", "Merging MatrixFactorization")
+                Log.i("Recommend", "Merging MatrixFactorization")
                 localModel.updateRatings(recommendStore.getSongIds().zip(recommendStore.getPlaycounts()).toMap().toSortedMap())
                 localModel.merge(peerModel.peerFeatures)
                 recommendStore.storeModelLocally(localModel)
-                Log.w("Recommender", "Stored new MatrixFactorization")
+                Log.i("Recommend", "Stored new MatrixFactorization")
                 if (payload.checkTTL()) performRemoteModelExchange(localModel)
             }
         }
@@ -220,13 +219,13 @@ open class RecommenderCommunity(
      */
     @ExperimentalUnsignedTypes
     fun onFeaturesExchange(packet: Packet) {
-        Log.w("Recommender", "Some packet with features received")
+        Log.i("Recommend", "Some packet with features received")
         val (_, payload) = packet.getAuthPayload(FeaturesExchangeMessage)
 
         // packet contains model type and weights from peer
         val songIdentifier = payload.songIdentifier.toLowerCase(Locale.ROOT)
         val features = payload.features
-        Log.w("Recommender", "Song features are de-packaged")
+        Log.i("Recommend", "Song features are de-packaged")
 
         recommendStore.addNewFeatures(songIdentifier, features)
         if (payload.checkTTL()) performFeaturesExchange(songIdentifier, features)
@@ -238,7 +237,7 @@ open class RecommenderCommunity(
      * @param packet request model packet
      */
     private fun onModelRequest(packet: Packet) {
-        Log.w("Recommender", "Model request received")
+        Log.i("Recommend", "Model request received")
         val (_, payload) = packet.getAuthPayload(ModelExchangeMessage)
         val modelType = payload.modelType.toLowerCase(Locale.ROOT)
         val model = recommendStore.getLocalModel(modelType)

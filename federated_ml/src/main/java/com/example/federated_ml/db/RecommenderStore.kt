@@ -73,7 +73,7 @@ open class RecommenderStore(
      * @return loaded model
      */
     fun getLocalModel(name: String): Model {
-        Log.w("Recommend", "Loading $name")
+        Log.i("Recommend", "Loading $name")
         val dbModel = database.dbModelQueries.getModel(name).executeAsOneOrNull()
         val model: Model
         if (name == "Adaline") {
@@ -83,7 +83,7 @@ open class RecommenderStore(
             } else {
                 model = Adaline(0.1, totalAmountFeatures)
                 Log.i("Recommend", "Initialized local model")
-                Log.w("Model type", model.name)
+                Log.i("Recommend", model.name)
             }
         } else if (name == "Pegasos") {
             if (dbModel != null) {
@@ -92,7 +92,7 @@ open class RecommenderStore(
             } else {
                 model = Pegasos(0.01, totalAmountFeatures, 10)
                 Log.i("Recommend", "Initialized local model")
-                Log.w("Model type", model.name)
+                Log.i("Recommend", model.name)
             }
         } else {
             if (dbModel != null) {
@@ -101,7 +101,7 @@ open class RecommenderStore(
             } else {
                 model = MatrixFactorization(Array(0){""}.zip(Array(0){0.0}).toMap().toSortedMap())
                 Log.i("Recommend", "Initialized local model")
-                Log.w("Model type", model.name)
+                Log.i("Recommend", model.name)
             }
         }
         val trainingData = getLocalSongData()
@@ -248,18 +248,17 @@ open class RecommenderStore(
      * process local files adnd add songs features to the db
      */
     fun addAllLocalFeatures() {
-        Log.w("Recommender Store", "Getting playcounts...")
         if (!musicDir.isDirectory) return
 
         val allFiles = musicDir.listFiles() ?: return
-        Log.w("Recommender Store", "Amount of files is ${allFiles.size}")
+        Log.i("Recommend", "Amount of files is ${allFiles.size}")
 
         var idx = 0
         for (albumFile in allFiles) {
-            Log.w("Recommender Store", "Local album is ${albumFile.name}")
+            Log.i("Recommend", "Local album is ${albumFile.name}")
             if (albumFile.isDirectory) {
                 val audioFiles = albumFile.listFiles(AudioFileFilter()) ?: continue
-                Log.w("Recommender Store", "Local songs amount in alum: ${audioFiles.size}")
+                Log.i("Recommend", "Local songs amount in alum: ${audioFiles.size}")
                 for (f in audioFiles) {
                     if (Mp3File(f).id3v2Tag != null) {
                         val updatedFile = Mp3File(f)
@@ -273,7 +272,8 @@ open class RecommenderStore(
                                 count = count.toLong()
                             )
                         } catch (e: Exception) {
-                            Log.w("Init local features", e)
+                            Log.e("Recommend", "Extracting audio features failed!")
+                            Log.e("Recommend", e.toString())
                         }
                         idx += 1
                     }
@@ -309,7 +309,7 @@ open class RecommenderStore(
     fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
         val batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
         if (batch.isEmpty()) {
-            Log.e(
+            Log.w(
                 "Recommend",
                 "Local feature database is empty! " +
                     "Analyzing files in background thread now, current recommendation will be empty."
@@ -366,9 +366,9 @@ open class RecommenderStore(
 
             if (!File(jsonfile).exists()) {
                 if (Essentia.extractData(filename, jsonfile) == 1) {
-                    Log.e("Feature extraction", "Error extracting data with Essentia")
+                    Log.e("Recommend", "Error extracting data with Essentia")
                 } else {
-                    Log.i("Feature extraction", "Got essentia features for $filename")
+                    Log.i("Recommend", "Got essentia features for $filename")
                 }
             }
             val essentiaFeatures = JSONObject(File(jsonfile).bufferedReader().use { it.readText() })
@@ -404,7 +404,7 @@ open class RecommenderStore(
                         lowlevelStats[i] = stats(lowlevel.getJSONObject(key))
                     }
                 } catch (e: java.lang.Exception) {
-                    Log.w("Feature extraction", e.toString())
+                    Log.e("Recommend", e.toString())
                 }
             }
 
@@ -440,7 +440,7 @@ open class RecommenderStore(
                     tuning_nontempered_energy_ratio = tonal.getDouble("tuning_nontempered_energy_ratio")
                     tuning_diatonic_strength = tonal.getDouble("tuning_diatonic_strength")
                 } catch (e: java.lang.Exception) {
-                    Log.w("Feature extraction", e.toString())
+                    Log.e("Recommend", e.toString())
                 }
             }
 
@@ -455,7 +455,7 @@ open class RecommenderStore(
                     danceability = rhythm.getDouble("danceability")
                     beats_loudness = stats(rhythm.getJSONObject("beats_loudness"))
                 } catch (e: java.lang.Exception) {
-                    Log.w("Feature extraction", e.toString())
+                    Log.e("Recommend", e.toString())
                 }
             }
 
@@ -468,7 +468,7 @@ open class RecommenderStore(
                     length = metadata.getJSONObject("audio_properties").getDouble("length")
                     replay_gain = metadata.getJSONObject("audio_properties").getDouble("replay_gain")
                 } catch (e: java.lang.Exception) {
-                    Log.w("Feature extraction", e.toString())
+                    Log.e("Recommend", e.toString())
                 }
             }
 
@@ -482,8 +482,8 @@ open class RecommenderStore(
                 chords_strength, hpcp_crest, hpcp_entropy, beats_loudness
             ).flatten().toTypedArray()
         } catch (e: Exception) {
-            Log.e("Feature extraction", "Essentia extraction failed:")
-            Log.e("Feature extraction", e.stackTraceToString())
+            Log.e("Recommend", "Essentia extraction failed:")
+            Log.e("Recommend", e.stackTraceToString())
         }
 
         // log transform on features

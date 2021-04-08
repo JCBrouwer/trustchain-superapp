@@ -150,7 +150,7 @@ open class MatrixFactorization(
                 }
             }
         }
-        Log.w("Recommend", "Best colaborative score: $mostRelevant")
+        Log.i("Recommend", "Best colaborative score: $mostRelevant")
         return bestSong
     }
 

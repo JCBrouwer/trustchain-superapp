@@ -1,3 +1,0 @@
-/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/.cxx/cmake/release/x86_64/CMakeFiles/edit_cache.dir
-/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/.cxx/cmake/release/x86_64/CMakeFiles/rebuild_cache.dir
-/home/hans/Code/BlockchainEngineering/trustchain-superapp/gossipML/.cxx/cmake/release/x86_64/CMakeFiles/superappessentia.dir

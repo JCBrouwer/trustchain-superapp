@@ -23,7 +23,6 @@ import org.json.JSONObject
 import java.io.File
 import kotlin.math.log10
 
-
 /**
  * Handles database operations and preprocessing for local models and features
  */
@@ -260,7 +259,7 @@ open class RecommenderStore(
                         val updatedFile = Mp3File(f)
 
                         val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
-                        Log.i("Recommend","${updatedFile.filename} haveFeature: ${haveFeature(k, zerosFine = false)}")
+                        Log.i("Recommend", "${updatedFile.filename} haveFeature: ${haveFeature(k, zerosFine = false)}")
                         if (!haveFeature(k, zerosFine = false)) {
                             try {
                                 val mp3Features = extractMP3Features(Mp3File(f))
@@ -528,11 +527,11 @@ open class RecommenderStore(
         return this.database.dbUnseenFeaturesQueries.getAllFeatures().executeAsList()
     }
 
-    private fun haveFeature(key: String, zerosFine : Boolean = true): Boolean {
+    private fun haveFeature(key: String, zerosFine: Boolean = true): Boolean {
         for (feat in getMyFeatures())
             if (feat.key == key) {
                 return if (zerosFine) true else {
-                    for ((i,d) in Json.decodeFromString<DoubleArray>(feat.songFeatures!!).toTypedArray().withIndex()) {
+                    for ((i, d) in Json.decodeFromString<DoubleArray>(feat.songFeatures!!).toTypedArray().withIndex()) {
                         if (i >= 2 && d != 0.0)
                             return true
                     }
@@ -540,10 +539,9 @@ open class RecommenderStore(
                 }
             }
         for (feat in getRemoteFeatures())
-            if (feat.key == key)
-            {
+            if (feat.key == key) {
                 return if (zerosFine) true else {
-                    for ((i,d) in Json.decodeFromString<DoubleArray>(feat.songFeatures!!).toTypedArray().withIndex()) {
+                    for ((i, d) in Json.decodeFromString<DoubleArray>(feat.songFeatures!!).toTypedArray().withIndex()) {
                         if (i >= 2 && d != 0.0)
                             return true
                     }

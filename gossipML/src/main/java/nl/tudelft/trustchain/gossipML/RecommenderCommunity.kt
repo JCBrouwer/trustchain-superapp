@@ -1,6 +1,12 @@
 package nl.tudelft.trustchain.gossipML
 
 import android.util.Log
+import nl.tudelft.ipv8.Overlay
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
+import nl.tudelft.ipv8.attestation.trustchain.TrustChainSettings
+import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
+import nl.tudelft.ipv8.messaging.Packet
 import nl.tudelft.trustchain.gossipML.db.RecommenderStore
 import nl.tudelft.trustchain.gossipML.ipv8.FeaturesExchangeMessage
 import nl.tudelft.trustchain.gossipML.ipv8.ModelExchangeMessage
@@ -9,12 +15,6 @@ import nl.tudelft.trustchain.gossipML.models.Model
 import nl.tudelft.trustchain.gossipML.models.OnlineModel
 import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.MatrixFactorization
 import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.PublicMatrixFactorization
-import nl.tudelft.ipv8.Overlay
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainCommunity
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainCrawler
-import nl.tudelft.ipv8.attestation.trustchain.TrustChainSettings
-import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainStore
-import nl.tudelft.ipv8.messaging.Packet
 import java.util.*
 import kotlin.random.Random
 

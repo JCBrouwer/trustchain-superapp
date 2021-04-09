@@ -104,9 +104,9 @@ open class RecommenderStore(
         val trainingData = getLocalSongData()
         if (trainingData.first.isNotEmpty()) {
             if (name == "Pegasos") {
-                (model as Pegasos).update(trainingData.first, trainingData.second.map{it.toDouble()}.toTypedArray())
+                (model as Pegasos).update(trainingData.first, trainingData.second.map { it.toDouble() }.toTypedArray())
             } else if (name == "Adaline") {
-                (model as Adaline).update(trainingData.first, trainingData.second.map{it.toDouble()}.toTypedArray())
+                (model as Adaline).update(trainingData.first, trainingData.second.map { it.toDouble() }.toTypedArray())
             }
         }
         storeModelLocally(model)

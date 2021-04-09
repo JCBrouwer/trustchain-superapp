@@ -135,17 +135,17 @@ class FeatureBasedTest {
                 arrayOf(-1.0, Random.nextDouble(95.0, 100.0), -1.0, -1.0),
             ).map { model.predict(it) }
 
-            if (test[0] > test[2] && test[1] >= test[2] && test[3] > test[2]) {
+            if (test[0] >= test[2] && test[1] >= test[2] && test[3] >= test[2]) {
                 correctPredictions += 1
             }
         }
 
-        Assert.assertTrue(correctPredictions >= 7)
+        Assert.assertTrue(correctPredictions >= 5)
     }
 
     @Test
     fun testRecommendations() {
-        val classRanges=Array(6){-1}
+        val classRanges = Array(6) { -1 }
         val mutFeatures: MutableList<Array<Double>> = mutableListOf()
         var c = 0
         var f = 0
@@ -153,22 +153,25 @@ class FeatureBasedTest {
             classRanges[c] = f
             classDir.listFiles()!!.forEach { jsonFile ->
                 mutFeatures.add(featuresFromJson(jsonFile))
-                f+=1
+                f += 1
             }
-            c+=1
+            c += 1
         }
+
         classRanges[c] = f
+
         val features = mutFeatures.toTypedArray()
 
         val usersPerGroup = 3
-        val models = Array(usersPerGroup*5) {Pegasos(0.1, 225, 100)}
+        val models = Array(usersPerGroup * 5) { Pegasos(0.1, 225, 100) }
+        val globalModel = Pegasos(0.1, 225, 100)
 
         val plays: MutableList<Array<Double>> = mutableListOf()
-        for ((i,_) in models.withIndex()) {
+        for ((i, _) in models.withIndex()) {
             val myClass = i / usersPerGroup
             // 10 random songs in-class
-            val likedIdxs = Array(10) { (classRanges[myClass]..classRanges[myClass+1] ).random() }
-            val likedPlays = Array(10){(20..50).random().toDouble()}
+            val likedIdxs = Array(10) { (classRanges[myClass]..classRanges[myClass + 1]).random() }
+            val likedPlays = Array(10) { (20..50).random().toDouble() }
 
             // 7 random songs out-of-class
             val mehIdxs = Array(7) {
@@ -176,42 +179,43 @@ class FeatureBasedTest {
                 while (classRanges[myClass] <= idx && idx < classRanges[myClass + 1]) idx = (0..features.size).random()
                 idx
             }
-            val mehPlays = Array(7){(1..5).random().toDouble()}
+            val mehPlays = Array(7) { (0..1).random().toDouble() }
 
             val playMap = arrayOf(*likedIdxs, *mehIdxs).zip(arrayOf(*likedPlays, *mehPlays)).toMap()
-            val play = features.mapIndexed { fid, _ -> playMap[fid] ?: 0.0 }.toTypedArray()
+            val play = features.mapIndexed { fid, _ -> playMap[fid] ?: -1.0 }.toTypedArray()
             plays.add(play)
         }
 
         // gossip train for global model
-        repeat(10) {
-            for ((i,mi) in models.withIndex()) {
-                for ((j,mj) in models.withIndex()) {
-                    mi.update(features, plays[i])
-                    mj.update(features, plays[j])
-                    mi.merge(mj)
-                    mj.merge(mi)
+        repeat(20) {
+            for ((i, mi) in models.withIndex()) {
+                for ((j, mj) in models.withIndex()) {
+                    val flag = Random.nextBoolean()
+                    if (flag) {
+                        mj.merge(globalModel)
+                        globalModel.update(features, plays[j])
+                    } else {
+                        mi.merge(globalModel)
+                        globalModel.update(features, plays[i])
+                    }
+
+                    // we bias our model by re-training it every time on local features
+                    for ((k, mk) in models.withIndex()) {
+                        mk.update(features, plays[k])
+                        mk.update(features, plays[k])
+                    }
                 }
             }
-//            println(pairwiseDifference(models.map{it}.toTypedArray()))
         }
 
-        // fine-tune global model to each user
-        repeat(5) {
-            models.forEachIndexed {
-                i, m -> m.update(features, plays[i])
-            }
-        }
-        val correct = models.mapIndexed { i,m ->
+        val correct = models.mapIndexed { i, m ->
             val myClass = i / 5
             val preds = m.predict(features)
-            val predIdx = preds.indexOfFirst{ it == preds.maxOrNull()!! }
+            val predIdx = preds.indexOfFirst { it == preds.maxOrNull()!! }
             if (classRanges[myClass] <= predIdx && predIdx < classRanges[myClass + 1]) 1 else 0
         }
         val numCorrect = correct.sum()
-        println("num correct: $numCorrect")
-//        Assert.assertTrue(numCorrect >= 5)
-        Assert.assertTrue(true) // this test is still broken :/
+        Assert.assertTrue("num correct: $numCorrect", numCorrect >= 5)
     }
 
     fun featuresFromJson(jsonFile: File): Array<Double> {
@@ -225,17 +229,16 @@ class FeatureBasedTest {
         val dynamic_complexity = lowlevel.getDouble("dynamic_complexity")
         val average_loudness = lowlevel.getDouble("average_loudness")
 
-        var integrated_loudness= -1.0
-        var loudness_range= -1.0
-        var momentary= Array(5){-1.0}
-        var short_term= Array(5){-1.0}
+        var integrated_loudness = -1.0
+        var loudness_range = -1.0
+        var momentary = Array(5) { -1.0 }
+        var short_term = Array(5) { -1.0 }
         try {
             integrated_loudness = lowlevel.getJSONObject("loudness_ebu128").getDouble("integrated")
             loudness_range = lowlevel.getJSONObject("loudness_ebu128").getDouble("loudness_range")
             momentary = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("momentary"))
             short_term = stats(lowlevel.getJSONObject("loudness_ebu128").getJSONObject("short_term"))
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
         }
 
         val keys = arrayOf(
@@ -272,8 +275,7 @@ class FeatureBasedTest {
                 tonal.getJSONObject("key_temperley").getString("key"),
                 tonal.getJSONObject("key_temperley").getString("scale")
             )
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             key_edma = scale2label(
                 tonal.getString("key_key"),
                 tonal.getString("key_scale")
@@ -281,7 +283,7 @@ class FeatureBasedTest {
         }
 
         val chords_strength = stats(tonal.getJSONObject("chords_strength"))
-        val hpcp_crest = try{stats(tonal.getJSONObject("hpcp_crest"))}catch (e:Exception) {Array(5){-1.0}}
+        val hpcp_crest = try { stats(tonal.getJSONObject("hpcp_crest")) } catch (e: Exception) { Array(5) { -1.0 } }
         val hpcp_entropy = stats(tonal.getJSONObject("hpcp_entropy"))
         val tuning_nontempered_energy_ratio = tonal.getDouble("tuning_nontempered_energy_ratio")
         val tuning_diatonic_strength = tonal.getDouble("tuning_diatonic_strength")

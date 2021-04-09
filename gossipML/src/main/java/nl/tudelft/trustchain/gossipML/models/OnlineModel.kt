@@ -24,7 +24,7 @@ open class OnlineModel : Model {
      */
     fun merge(otherOnlineModel: OnlineModel): OnlineModel {
         for (idx in weights.indices) {
-            weights[idx] = (weights[idx] + otherOnlineModel.weights[idx]) / 2
+            weights[idx] = (weights[idx] * 0.9) + (otherOnlineModel.weights[idx] / 10) // it was divied by 2?
         }
         return this
     }
@@ -37,7 +37,7 @@ open class OnlineModel : Model {
      * @return array of predictions
      */
     fun predict(x: Array<Array<Double>>): Array<Double> {
-        val result = Array(x.size) {0.0}
+        val result = Array(x.size) { 0.0 }
         for ((idx, item) in x.withIndex()) {
             result[idx] = predict(item)
         }

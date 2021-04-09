@@ -69,8 +69,8 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         val modelNames = arrayOf("Pegasos")
         for (name in modelNames) {
             Log.w("Recommend", "Getting model $name")
-            var colab = getRecommenderCommunity().recommendStore.getLocalModel(name)
-            var bestRelease = (colab as Pegasos).predict(data.first).toTypedArray()
+            val colab = getRecommenderCommunity().recommendStore.getLocalModel(name)
+            var bestRelease = (colab as Pegasos).predict(data.first)
             val sum = bestRelease.sumByDouble { it }
             bestRelease = bestRelease.indices.map { bestRelease[it] / sum }.toTypedArray()
             jointRelease = jointRelease.indices.map { jointRelease[it] + bestRelease[it] }.toTypedArray()

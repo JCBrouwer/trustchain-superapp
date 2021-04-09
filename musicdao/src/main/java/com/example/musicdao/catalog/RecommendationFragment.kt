@@ -4,14 +4,14 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.lifecycle.lifecycleScope
-import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.MatrixFactorization
-import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
 import com.example.musicdao.MusicBaseFragment
 import com.example.musicdao.R
 import com.example.musicdao.util.Util
 import kotlinx.android.synthetic.main.fragment_recommendation.*
 import kotlinx.coroutines.delay
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
+import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.MatrixFactorization
+import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
 import java.io.File
 import java.lang.Double.NEGATIVE_INFINITY
 

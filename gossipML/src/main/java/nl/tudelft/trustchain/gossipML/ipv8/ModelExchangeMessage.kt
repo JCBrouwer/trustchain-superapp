@@ -1,12 +1,12 @@
 package nl.tudelft.trustchain.gossipML.ipv8
 
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import nl.tudelft.ipv8.messaging.*
 import nl.tudelft.trustchain.gossipML.models.Model
 import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.PublicMatrixFactorization
 import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
 import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import nl.tudelft.ipv8.messaging.*
 
 /**
  * This is a message from a peer sending walking model to other peers

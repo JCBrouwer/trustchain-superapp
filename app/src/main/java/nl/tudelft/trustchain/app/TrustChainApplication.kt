@@ -7,9 +7,6 @@ import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
 import com.example.musicdao.ipv8.MusicCommunity
-import nl.tudelft.trustchain.gossipML.RecommenderCommunity
-import nl.tudelft.trustchain.gossipML.db.RecommenderStore
-import nl.tudelft.gossipML.sqldelight.Database as MLDatabase
 import com.squareup.sqldelight.android.AndroidSqliteDriver
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -42,9 +39,12 @@ import nl.tudelft.trustchain.common.eurotoken.GatewayStore
 import nl.tudelft.trustchain.common.eurotoken.TransactionRepository
 import nl.tudelft.trustchain.currencyii.CoinCommunity
 import nl.tudelft.trustchain.eurotoken.community.EuroTokenCommunity
+import nl.tudelft.trustchain.gossipML.RecommenderCommunity
+import nl.tudelft.trustchain.gossipML.db.RecommenderStore
 import nl.tudelft.trustchain.peerchat.community.PeerChatCommunity
 import nl.tudelft.trustchain.peerchat.db.PeerChatStore
 import nl.tudelft.trustchain.voting.VotingCommunity
+import nl.tudelft.gossipML.sqldelight.Database as MLDatabase
 
 @ExperimentalUnsignedTypes
 class TrustChainApplication : Application() {

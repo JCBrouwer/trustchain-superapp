@@ -1,7 +1,6 @@
 package nl.tudelft.trustchain.gossipML.models.collaborative_filtering
 
 import android.util.Log
-import nl.tudelft.trustchain.gossipML.models.Model
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.MapSerializer
@@ -11,6 +10,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import nl.tudelft.trustchain.gossipML.models.Model
 import java.lang.Double.NEGATIVE_INFINITY
 import java.util.*
 import kotlin.math.abs

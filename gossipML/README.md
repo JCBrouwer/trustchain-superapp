@@ -1,4 +1,4 @@
-# Federated machine learning module for nusic recommendations
+# Federated machine learning module for privacy-preserving music recommendations via gossiping
 
 This repository contains a collection of Online models built on top of [IPv8](https://github.com/MattSkala/kotlin-ipv8)
 

@@ -1,9 +1,9 @@
 package com.example.musicdao
 
 import androidx.annotation.LayoutRes
-import nl.tudelft.trustchain.gossipML.RecommenderCommunity
 import com.example.musicdao.ipv8.MusicCommunity
 import nl.tudelft.trustchain.common.ui.BaseFragment
+import nl.tudelft.trustchain.gossipML.RecommenderCommunity
 
 /**
  * An abstract layer between the MusicCommunity and an Android Fragment

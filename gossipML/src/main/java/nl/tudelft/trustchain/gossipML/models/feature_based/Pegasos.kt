@@ -1,8 +1,8 @@
 package nl.tudelft.trustchain.gossipML.models.feature_based
-import nl.tudelft.trustchain.gossipML.models.OnlineModel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import nl.tudelft.trustchain.gossipML.models.OnlineModel
 import java.util.*
 
 /**

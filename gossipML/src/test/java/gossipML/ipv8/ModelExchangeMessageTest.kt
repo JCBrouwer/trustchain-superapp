@@ -1,15 +1,15 @@
 package nl.tudelft.trustchain.gossipML.ipv8
 
-import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
 import com.goterl.lazycode.lazysodium.LazySodiumJava
 import com.goterl.lazycode.lazysodium.SodiumJava
 import nl.tudelft.ipv8.keyvault.LibNaClSK
 import nl.tudelft.ipv8.util.hexToBytes
-import org.junit.Assert
-import org.junit.Test
 import nl.tudelft.trustchain.gossipML.models.OnlineModel
 import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.MatrixFactorization
+import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
 import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
+import org.junit.Assert
+import org.junit.Test
 
 @ExperimentalUnsignedTypes
 class ModelExchangeMessageTest {

@@ -3,7 +3,6 @@ package nl.tudelft.trustchain.gossipML.models
 import io.mockk.InternalPlatformDsl.toStr
 import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
 import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
-import io.mockk.InternalPlatformDsl.toStr
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert
 import org.junit.Test
@@ -62,10 +61,7 @@ class FeatureBasedTest {
         val biasedTestSamples = arrayOf(arrayOf(100.0), arrayOf(-1.0))
 
         val res = model.predict(biasedTestSamples)
-        Assert.assertTrue(
-            "Test Adaline " + res[0].toStr() + ", " + res[1].toStr(),
-            res[0] >= res[1]
-        )
+        Assert.assertTrue(res[0] >= res[1])
     }
 
     private fun pairwiseDifference(models: Array<OnlineModel>): Double {
@@ -136,11 +132,11 @@ class FeatureBasedTest {
                 arrayOf(-1.0, Random.nextDouble(95.0, 100.0), -1.0, -1.0),
             ).map { it -> (model.predict(it)) }
 
-            if (test[0] > test[2] && test[1] > test[2] && test[3] > test[2]) {
+            if (test[0] > test[2] && test[1] >= test[2] && test[3] > test[2]) {
                 correctPredictions += 1
             }
         }
 
-        Assert.assertTrue(correctPredictions >= 5)
+        Assert.assertTrue(correctPredictions >= 7)
     }
 }

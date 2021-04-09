@@ -1,7 +1,6 @@
 package nl.tudelft.trustchain.gossipML.db
 
 import android.annotation.SuppressLint
-import android.media.MediaMetadataRetriever
 import android.util.Log
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File

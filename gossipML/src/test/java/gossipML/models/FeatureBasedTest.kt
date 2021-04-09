@@ -3,7 +3,6 @@ package nl.tudelft.trustchain.gossipML.models
 import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
 import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
 import io.mockk.InternalPlatformDsl.toStr
-import nl.tudelft.trustchain.gossipML.Essentia
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert
 import org.junit.Test
@@ -83,7 +82,6 @@ class FeatureBasedTest {
         return diff / total
     }
 
-
     @Test
     fun testGossipConvergence() {
         val model1 = Adaline(1.0, 4)
@@ -111,21 +109,19 @@ class FeatureBasedTest {
     fun testRecommendations() {
         val model = Pegasos(0.1, 4, 100)
         val features = arrayOf(
-            arrayOf(-1.0, 33.0, -1.0, -1.0),
-            arrayOf(-1.0, 224.0, -1.0, -1.0),
+            arrayOf(-1.0, 97.0, -1.0, -1.0),
+            arrayOf(-1.0, 101.0, -1.0, -1.0),
             arrayOf(-1.0, -1.0, -1.0, -1.0),
-            arrayOf(-1.0, 89.0, -1.0, -1.0),
+            arrayOf(-1.0, 95.0, -1.0, -1.0),
         )
 
         val labels = intArrayOf(50, 44, 0, 49)
 
-        for (i in 0..100) {
-            model.update(features, labels)
-        }
+        model.update(features, labels)
 
         val test = arrayOf(
-            arrayOf(-1.0, 43.0, -1.0, -1.0),
-            arrayOf(-1.0, 155.0, -1.0, -1.0),
+            arrayOf(-1.0, 98.0, -1.0, -1.0),
+            arrayOf(-1.0, 100.0, -1.0, -1.0),
             arrayOf(-1.0, -1.0, -1.0, -1.0),
             arrayOf(-1.0, 99.0, -1.0, -1.0),
         ).map { it -> (model.predict(it)) }

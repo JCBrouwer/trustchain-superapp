@@ -1,9 +1,6 @@
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SmallTest
-import androidx.test.platform.app.InstrumentationRegistry
 import nl.tudelft.trustchain.gossipML.Essentia
 import org.junit.Assert.assertEquals
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
@@ -14,9 +11,9 @@ class EssentiaTest {
     @Test
     fun testEssentia() {
         var filepath = File("src/androidTest/assets/GrayMicRecords-LofiDream.mp3").absolutePath
-        assertEquals(0, Essentia.extractData(filepath, filepath.replace(".mp3",".json")))
+        assertEquals(0, Essentia.extractData(filepath, filepath.replace(".mp3", ".json")))
 
         filepath = File("src/androidTest/assets/Helen&Shanna-Saudades.mp3").absolutePath
-        assertEquals(0, Essentia.extractData(filepath, filepath.replace(".mp3",".json")))
+        assertEquals(0, Essentia.extractData(filepath, filepath.replace(".mp3", ".json")))
     }
 }

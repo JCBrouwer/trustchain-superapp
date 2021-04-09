@@ -145,7 +145,6 @@ open class MatrixFactorization(
             val (_, feature, bias) = triple
             if (ratings[name]!! == 0.0) {
                 val relevance = rateFeature * feature + rateBias + bias
-//                println("$name $relevance = \n[${rateFeature.joinToString()}] * \n[${feature.joinToString()}] + $rateBias + $bias")
                 if (relevance > mostRelevant) {
                     bestSong = name
                     mostRelevant = relevance

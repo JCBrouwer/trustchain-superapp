@@ -27,7 +27,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         lifecycleScope.launchWhenCreated {
             while (isActive) {
                 getRecommenderCommunity().initiateWalkingModel()
-                delay(10 * 1000)
+                delay(60 * 1000)
             }
         }
         refreshRecommend.setOnRefreshListener {

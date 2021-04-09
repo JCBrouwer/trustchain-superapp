@@ -107,27 +107,39 @@ class FeatureBasedTest {
 
     @Test
     fun testRecommendations() {
-        val model = Pegasos(0.1, 4, 100)
         val features = arrayOf(
             arrayOf(-1.0, 97.0, -1.0, -1.0),
             arrayOf(-1.0, 101.0, -1.0, -1.0),
             arrayOf(-1.0, -1.0, -1.0, -1.0),
             arrayOf(-1.0, 95.0, -1.0, -1.0),
+            arrayOf(-1.0, 97.0, -1.0, -1.0),
+            arrayOf(-1.0, 101.0, -1.0, -1.0),
+            arrayOf(-1.0, -1.0, -1.0, -1.0),
+            arrayOf(-1.0, 95.0, -1.0, -1.0),
+            arrayOf(-1.0, 103.0, -1.0, -1.0),
+            arrayOf(-1.0, 101.0, -1.0, -1.0),
+            arrayOf(-1.0, 0.0, -1.0, -1.0),
+            arrayOf(-1.0, 96.0, -1.0, -1.0),
         )
-
-        val labels = intArrayOf(50, 44, 0, 49)
-
+        val labels = intArrayOf(50, 44, 0, 49, 50, 44, 1, 49, 50, 44, 1, 49)
+        val model = Pegasos(0.1, 4, 100)
         model.update(features, labels)
 
-        val test = arrayOf(
-            arrayOf(-1.0, 98.0, -1.0, -1.0),
-            arrayOf(-1.0, 100.0, -1.0, -1.0),
-            arrayOf(-1.0, -1.0, -1.0, -1.0),
-            arrayOf(-1.0, 99.0, -1.0, -1.0),
-        ).map { it -> (model.predict(it)) }
+        var correctPredictions = 0
 
-        Assert.assertTrue(test[0] > test[2])
-        Assert.assertTrue(test[1] > test[2])
-        Assert.assertTrue(test[3] > test[2])
+        for (i in 0..10) {
+            val test = arrayOf(
+                arrayOf(-1.0, Random.nextDouble(95.0, 100.0), -1.0, -1.0),
+                arrayOf(-1.0, Random.nextDouble(95.0, 100.0), -1.0, -1.0),
+                arrayOf(-1.0, Random.nextDouble(0.0, 1.0), -1.0, -1.0),
+                arrayOf(-1.0, Random.nextDouble(95.0, 100.0), -1.0, -1.0),
+            ).map { it -> (model.predict(it)) }
+
+            if (test[0] > test[2] && test[1] > test[2] && test[3] > test[2]) {
+                correctPredictions += 1
+            }
+        }
+
+        Assert.assertTrue(correctPredictions >= 7)
     }
 }

@@ -1,15 +1,12 @@
 package nl.tudelft.trustchain.gossipML.db
 
 import android.annotation.SuppressLint
+import android.media.MediaMetadataRetriever
 import android.util.Log
-import nl.tudelft.trustchain.gossipML.Essentia
-import nl.tudelft.trustchain.gossipML.models.Model
-import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.MatrixFactorization
-import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
-import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
 import com.example.musicdao_datafeeder.AudioFileFilter
 import com.mpatric.mp3agic.Mp3File
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -18,9 +15,15 @@ import nl.tudelft.gossipML.sqldelight.Features
 import nl.tudelft.gossipML.sqldelight.Unseen_features
 import nl.tudelft.ipv8.attestation.trustchain.TrustChainBlock
 import nl.tudelft.ipv8.attestation.trustchain.store.TrustChainSQLiteStore
+import nl.tudelft.trustchain.gossipML.Essentia
+import nl.tudelft.trustchain.gossipML.models.Model
+import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.MatrixFactorization
+import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
+import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
 import org.json.JSONObject
 import java.io.File
 import kotlin.math.log10
+
 
 /**
  * Handles database operations and preprocessing for local models and features
@@ -33,6 +36,7 @@ open class RecommenderStore(
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
     private val totalAmountFeatures = 225 // 2 block features + 223 essentia features
+    lateinit var essentiaJob: Job
 
     /**
      * save local model to the database
@@ -255,8 +259,10 @@ open class RecommenderStore(
                 for (f in audioFiles) {
                     if (Mp3File(f).id3v2Tag != null) {
                         val updatedFile = Mp3File(f)
+
                         val k = "local-${updatedFile.id3v2Tag.title}-${updatedFile.id3v2Tag.artist}"
-                        if (!haveFeature(k)) {
+                        Log.i("Recommend","${updatedFile.filename} haveFeature: ${haveFeature(k, zerosFine = false)}")
+                        if (!haveFeature(k, zerosFine = false)) {
                             try {
                                 val mp3Features = extractMP3Features(Mp3File(f))
                                 val count = 1
@@ -302,7 +308,8 @@ open class RecommenderStore(
      * @return training data (pair of features and labels) from local songs
      */
     fun getLocalSongData(): Pair<Array<Array<Double>>, IntArray> {
-        GlobalScope.launch { addAllLocalFeatures() } // analyze local music files
+        if (!essentiaJob.isActive)
+            essentiaJob = GlobalScope.launch { addAllLocalFeatures() } // analyze local music files
         val batch = database.dbFeaturesQueries.getAllFeatures().executeAsList()
         if (batch.isEmpty()) {
             Log.w(
@@ -486,7 +493,7 @@ open class RecommenderStore(
         for ((i, feat) in features.withIndex()) {
             features[i] = if (feat < 0.0) -log10(-feat) else if (feat > 0.0) log10(feat) else 0.0
         }
-        Log.i("Recommend","Extracted MP3 features")
+        Log.i("Recommend", "Extracted MP3 features")
         return features
     }
 
@@ -522,9 +529,28 @@ open class RecommenderStore(
         return this.database.dbUnseenFeaturesQueries.getAllFeatures().executeAsList()
     }
 
-    private fun haveFeature(key: String): Boolean {
-        for (feat in getMyFeatures()) if (feat.key == key) return true
-        for (feat in getRemoteFeatures()) if (feat.key == key) return true
+    private fun haveFeature(key: String, zerosFine : Boolean = true): Boolean {
+        for (feat in getMyFeatures())
+            if (feat.key == key) {
+                return if (zerosFine) true else {
+                    for ((i,d) in Json.decodeFromString<DoubleArray>(feat.songFeatures!!).toTypedArray().withIndex()) {
+                        if (i >= 2 && d != 0.0)
+                            return true
+                    }
+                    return false
+                }
+            }
+        for (feat in getRemoteFeatures())
+            if (feat.key == key)
+            {
+                return if (zerosFine) true else {
+                    for ((i,d) in Json.decodeFromString<DoubleArray>(feat.songFeatures!!).toTypedArray().withIndex()) {
+                        if (i >= 2 && d != 0.0)
+                            return true
+                    }
+                    return false
+                }
+            }
         return false
     }
 

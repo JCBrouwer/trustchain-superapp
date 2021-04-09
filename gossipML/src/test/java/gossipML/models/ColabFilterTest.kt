@@ -123,7 +123,7 @@ class ColabFilterTest {
         }
 
         // models never converge completely because update() is called after merging
-        Assert.assertTrue(pairwiseDifference(models) < 0.03)
+        Assert.assertTrue(pairwiseDifference(models) < 0.05)
     }
 
     @Test

@@ -24,7 +24,7 @@ class Adaline : OnlineModel {
      * @param x - feature array
      * @param y - label
      */
-    override fun update(x: Array<Double>, y: Int) {
+    override fun update(x: Array<Double>, y: Double) {
         val error = y - activation(forward(x))
         this.bias += this.learningRate * error
         for ((idx, item) in x.withIndex()) {
@@ -38,7 +38,7 @@ class Adaline : OnlineModel {
      * @param x - array of feature arrays
      * @param y - array of labels
      */
-    override fun update(x: Array<Array<Double>>, y: IntArray) {
+    override fun update(x: Array<Array<Double>>, y: Array<Double>) {
         require(x.size == y.size) {
             String.format("Input vector x of size %d not equal to length %d of y", x.size, y.size)
         }

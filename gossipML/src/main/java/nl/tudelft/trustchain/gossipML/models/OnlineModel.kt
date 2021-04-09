@@ -8,8 +8,8 @@ import java.util.*
  */
 @Serializable
 open class OnlineModel : Model {
-    private val amountFeatures: Int
-    internal var weights: Array<Double>
+    val amountFeatures: Int
+    var weights: Array<Double>
 
     constructor(amountFeatures: Int, name: String) : super(name) {
         this.amountFeatures = amountFeatures
@@ -36,8 +36,8 @@ open class OnlineModel : Model {
      * @param y - array of labels
      * @return array of predictions
      */
-    fun predict(x: Array<Array<Double>>): DoubleArray {
-        val result = DoubleArray(x.size)
+    fun predict(x: Array<Array<Double>>): Array<Double> {
+        val result = Array(x.size) {0.0}
         for ((idx, item) in x.withIndex()) {
             result[idx] = predict(item)
         }
@@ -51,24 +51,19 @@ open class OnlineModel : Model {
      * @param y - array of labels
      * @return prediction score
      */
-    fun score(x: Array<Array<Double>>, y: IntArray): Double {
+    fun score(x: Array<Array<Double>>, y: Array<Double>): Double {
         var correct = 0.0
-        for (i in x.indices) {
-            val output = predict(x[i]).toInt()
-            if (output == y[i]) {
-                correct ++
-            }
-        }
+        for (i in x.indices) if (predict(x[i]) == y[i]) correct ++
         return (correct / x.size)
     }
 
-    open fun update(x: Array<Array<Double>>, y: IntArray) {}
+    open fun update(x: Array<Array<Double>>, y: Array<Double>) {}
 
     open fun predict(x: Array<Double>): Double {
         return 1.0
     }
 
-    open fun update(x: Array<Double>, y: Int) {}
+    open fun update(x: Array<Double>, y: Double) {}
 
     override fun serialize(): String {
         return Json.encodeToString(this)

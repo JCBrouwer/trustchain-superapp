@@ -104,9 +104,9 @@ open class RecommenderStore(
         val trainingData = getLocalSongData()
         if (trainingData.first.isNotEmpty()) {
             if (name == "Pegasos") {
-                (model as Pegasos).update(trainingData.first, trainingData.second)
+                (model as Pegasos).update(trainingData.first, trainingData.second.map{it.toDouble()}.toTypedArray())
             } else if (name == "Adaline") {
-                (model as Adaline).update(trainingData.first, trainingData.second)
+                (model as Adaline).update(trainingData.first, trainingData.second.map{it.toDouble()}.toTypedArray())
             }
         }
         storeModelLocally(model)
@@ -495,30 +495,6 @@ open class RecommenderStore(
         return features
     }
 
-    // positions of scales on the circle of fifths
-    private val majorKeys = mapOf(
-        "C" to 0.0, "G" to 1.0, "D" to 2.0, "A" to 3.0, "E" to 4.0, "B" to 5.0, "Gb" to 6.0,
-        "F#" to 6.0, "Db" to 7.0, "Ab" to 8.0, "Eb" to 9.0, "Bb" to 10.0, "F" to 11.0
-    )
-    private val minorKeys = mapOf(
-        "A" to 0.0, "E" to 1.0, "B" to 2.0, "F#" to 3.0, "C#" to 4.0, "G#" to 5.0, "D#" to 6.0,
-        "Eb" to 6.0, "Bb" to 7.0, "F" to 8.0, "C" to 9.0, "G" to 10.0, "D" to 11.0
-    )
-    private fun scale2label(key: String, mode: String): Array<Double> {
-        val keyCode = (if (mode == "major") majorKeys[key] else minorKeys[key]) ?: -1.0
-        val modeCode = if (mode == "major") 0.0 else 1.0
-        return arrayOf(keyCode, modeCode)
-    }
-    private fun stats(obj: JSONObject): Array<Double> {
-        return arrayOf(
-            obj.getDouble("min"),
-            obj.getDouble("median"),
-            obj.getDouble("mean"),
-            obj.getDouble("max"),
-            obj.getDouble("var"),
-        )
-    }
-
     fun getMyFeatures(): List<Features> {
         return this.database.dbFeaturesQueries.getAllFeatures().executeAsList()
     }
@@ -561,4 +537,28 @@ open class RecommenderStore(
             return instance
         }
     }
+}
+
+// positions of scales on the circle of fifths
+val majorKeys = mapOf(
+    "C" to 0.0, "G" to 1.0, "D" to 2.0, "A" to 3.0, "E" to 4.0, "B" to 5.0, "Gb" to 6.0,
+    "F#" to 6.0, "Db" to 7.0, "Ab" to 8.0, "Eb" to 9.0, "Bb" to 10.0, "F" to 11.0
+)
+val minorKeys = mapOf(
+    "A" to 0.0, "E" to 1.0, "B" to 2.0, "F#" to 3.0, "C#" to 4.0, "G#" to 5.0, "D#" to 6.0,
+    "Eb" to 6.0, "Bb" to 7.0, "F" to 8.0, "C" to 9.0, "G" to 10.0, "D" to 11.0
+)
+fun scale2label(key: String, mode: String): Array<Double> {
+    val keyCode = (if (mode == "major") majorKeys[key] else minorKeys[key]) ?: -1.0
+    val modeCode = if (mode == "major") 0.0 else 1.0
+    return arrayOf(keyCode, modeCode)
+}
+fun stats(obj: JSONObject): Array<Double> {
+    return arrayOf(
+        obj.getDouble("min"),
+        obj.getDouble("median"),
+        obj.getDouble("mean"),
+        obj.getDouble("max"),
+        obj.getDouble("var"),
+    )
 }

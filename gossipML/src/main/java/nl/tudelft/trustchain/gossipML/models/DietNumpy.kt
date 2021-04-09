@@ -1,4 +1,4 @@
-package nl.tudelft.trustchain.gossipML.models.collaborative_filtering
+package nl.tudelft.trustchain.gossipML.models
 
 operator fun Array<Double>.plus(other: Double): Array<Double> {
     return this.map { it + other }.toTypedArray()

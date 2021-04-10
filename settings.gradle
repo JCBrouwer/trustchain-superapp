@@ -1,3 +1,4 @@
+include ':gossipML'
 include ':eurotoken'
 rootProject.name = 'TrustChain'
 

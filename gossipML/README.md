@@ -25,7 +25,9 @@ Local (Essentia) features are gossiped among peers in order to have features for
 Models do random walk around the network and at each peer they are merged and re-trained on peer's local data.
 
 **Model Background**
+
 ***Feature-based models***
+
 Adaline (Adaptive Linear Neuron) is a single layer neural network that uses continuous predicted values from the net input.
 Due to the use of continuous predicted labels taken before activation function, Adaline is capable of measuring the extent by which predictions were right/wrong.
 
@@ -33,7 +35,7 @@ Pegasos (Primal Estimated sub-gradient solver for SVM) - sub-gradient descent al
 
 Pseudocode for Pegasos and Adaline models is shown below:
 <br />
-<img src="docs/imgs/adaline_alg.png" width="200px">
+<img src="docs/imgs/adaline_alg.png" width="400px">
 
 More formally, learning rule for Pegasos is defined as:
 <img src="docs/imgs/pegasos_rule.png" width="200px">
@@ -42,6 +44,7 @@ And learning rule for Adaline is defined as:
 <img src="docs/imgs/ada_rule.png" width="200px">
 
 **Model performance**
+
 So far, MatrixFactorization model showed to be pretty reliable on example tests. Unfortunatelly, feature-based models still lack proper pre-training/fine-tuning.
 We have cherry-picked Essentia features that seem to be most distinct for example test albums in 'src/test/res' folder.
 Nevertheless, prediction are not able to achieve high accuracy and we lack user preference data in order to propelry group music data and tune the models.

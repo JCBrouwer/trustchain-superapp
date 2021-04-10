@@ -19,46 +19,46 @@ add_library(yaml STATIC IMPORTED)
 
 set_target_properties(  essentia
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libessentia.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libessentia.a)
 
 set_target_properties(  avformat
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libavformat.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libavformat.a)
 
 set_target_properties(  avcodec
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libavcodec.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libavcodec.a)
 
 set_target_properties(  avutil
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libavutil.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libavutil.a)
 
 set_target_properties(  avresample
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libavresample.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libavresample.a)
 
 set_target_properties(  samplerate
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libsamplerate.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libsamplerate.a)
 
 set_target_properties(  mp3lame
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libmp3lame.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libmp3lame.a)
 
 set_target_properties(  chromaprint
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libchromaprint.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libchromaprint.a)
 
 set_target_properties(  tag
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libtag.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libtag.a)
 
 set_target_properties(  yaml
                         PROPERTIES IMPORTED_LOCATION
-                        ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI}/libyaml.a)
+                        ${CMAKE_SOURCE_DIR}/../../../superapp-essentia/libs/${ANDROID_ABI}/libyaml.a)
 
-include_directories(${CMAKE_SOURCE_DIR}/../../../include)
-include_directories(${CMAKE_SOURCE_DIR}/../../../include/eigen3)
+include_directories(${CMAKE_SOURCE_DIR}/../../../superapp-essentia/include)
+include_directories(${CMAKE_SOURCE_DIR}/../../../superapp-essentia/include/eigen3)
 
 find_library(log-lib log)
 find_library(math-lib m)

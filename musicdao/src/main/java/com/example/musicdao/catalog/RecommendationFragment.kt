@@ -64,13 +64,20 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
     }
 
+    /**
+     * Given song blocks and corresponding extracted features, make predictions with different
+     * feature-based models and bag them together
+     *
+     * @param data pair of features and corresponding song block
+     * @return array of predicted scores
+     */
     private fun getBaggedPredictions(data: Pair<Array<Array<Double>>, List<TrustChainBlock>>): Array<Double> {
         var jointRelease = Array(data.second.size) { _ -> 0.0 }
         val modelNames = arrayOf("Pegasos")
         for (name in modelNames) {
             Log.w("Recommend", "Getting model $name")
-            var colab = getRecommenderCommunity().recommendStore.getLocalModel(name)
-            var bestRelease = (colab as Pegasos).predict(data.first).toTypedArray()
+            val colab = getRecommenderCommunity().recommendStore.getLocalModel(name)
+            var bestRelease = (colab as Pegasos).predict(data.first)
             val sum = bestRelease.sumByDouble { it }
             bestRelease = bestRelease.indices.map { bestRelease[it] / sum }.toTypedArray()
             jointRelease = jointRelease.indices.map { jointRelease[it] + bestRelease[it] }.toTypedArray()
@@ -119,6 +126,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
                     candidateRecommendations += i
                 }
             }
+            // recommend random song out of the songs with the same scores
             val best = candidateRecommendations.random()
             Log.w("Recommend", "PICKED BLOCK $best with score $bestScore")
             val debugScore = predictions[best].toString()

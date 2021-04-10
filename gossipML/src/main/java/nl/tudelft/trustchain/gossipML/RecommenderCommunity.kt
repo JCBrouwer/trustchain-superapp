@@ -268,7 +268,7 @@ open class RecommenderCommunity(
     ):
         Pair<OnlineModel, OnlineModel> {
             localModel.merge(incomingModel)
-            incomingModel.update(features, labels)
+            incomingModel.update(features, labels.map { it.toDouble() }.toTypedArray())
             return Pair(localModel, incomingModel)
         }
 

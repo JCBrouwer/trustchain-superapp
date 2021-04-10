@@ -10,7 +10,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
-import nl.tudelft.trustchain.gossipML.models.Model
+import nl.tudelft.trustchain.gossipML.models.*
 import java.lang.Double.NEGATIVE_INFINITY
 import java.util.*
 import kotlin.math.abs
@@ -183,11 +183,6 @@ open class MatrixFactorization(
                 val err = ratings[name]!! - rateFeature * feature - rateBias - bias
                 errTotal += abs(err)
 
-//                println("$name $age")
-//                println("song [${feature.joinToString()}]")
-//                println("rate [${rateFeature.joinToString()}]")
-//                println("$err = ${ratings[name]} - ${rateFeature * feature} - $rateBias - $bias")
-
                 val (newSongFeature, newRateFeature) = Pair(
                     (1.0 - lr * lambda) * feature + lr * err * rateFeature,
                     (1.0 - lr * lambda) * rateFeature + lr * err * feature
@@ -200,14 +195,8 @@ open class MatrixFactorization(
 
                 songFeatures[name]!!.bias += lr * err
                 rateBias += lr * err
-
-//                println("song [${songFeatures[name]!!.feature.joinToString()}]")
-//                println("rate [${rateFeature.joinToString()}]")
-//                println("${ratings[name - rateFeature * songFeatures[name]!!.feature - rateBias - songFeatures[name]!!.bias} = ${ratings[name} - ${rateFeature * songFeatures[name]!!.feature} - $rateBias - ${songFeatures[name]!!.bias}")
-//                println()
             }
         }
-//        println(errTotal)
     }
 
     /**
@@ -225,14 +214,6 @@ open class MatrixFactorization(
      * @param peerFeatures
      */
     open fun merge(peerFeatures: SortedMap<String, SongFeature>) {
-//        print("peer songs ")
-//        for ((k,sf) in peerFeatures)
-//            print("$k ${sf.age} ")
-//        println()
-//        print("my songs ")
-//        for ((k,sf) in songFeatures)
-//            print("$k ${sf.age} ")
-//        println()
         if (peerFeatures.keys.toSet() != songFeatures.keys) {
             for (name in peerFeatures.keys.toSet() + songFeatures.keys.toSet()) {
                 // initialize rows not yet present in each map
@@ -247,14 +228,6 @@ open class MatrixFactorization(
                 }
             }
         }
-//        print("peer songs ")
-//        for ((k,sf) in peerFeatures)
-//            print("$k ${sf.age} ")
-//        println()
-//        print("my songs ")
-//        for ((k,sf) in songFeatures)
-//            print("$k ${sf.age} ")
-//        println()
 
         // age weighted average, more weight to rows which have been updated many times
         songFeatures.forEach {
@@ -262,10 +235,6 @@ open class MatrixFactorization(
             val (age, feature, bias) = triple
             val tripleNew = peerFeatures[name]!!
             val (ageNew, featureNew, biasNew) = tripleNew
-//            println(name)
-//            println("$age $feature $bias")
-//            println("$ageNew $featureNew $biasNew")
-//            println("merging with weight ${ageNew / (age + ageNew)} = $ageNew / ($age + $ageNew)")
             if (ageNew != 0.0) {
                 val w = ageNew / (age + ageNew)
                 songFeatures[name] = SongFeature(

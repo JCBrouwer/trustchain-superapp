@@ -33,8 +33,10 @@ open class RecommenderStore(
     lateinit var key: ByteArray
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
-    private val totalAmountFeatures = 225 // 2 block features + 223 essentia features
     lateinit var essentiaJob: Job
+    private var highVarianceFeatureLabels = arrayOf(3, 62, 162, 223, 130, 140)
+    // 2 block features + cherry-picked essentia features
+    private val totalAmountFeatures = highVarianceFeatureLabels.size + 2
 
     /**
      * save local model to the database
@@ -101,12 +103,16 @@ open class RecommenderStore(
                 Log.i("Recommend", model.name)
             }
         }
+        /**
+         * we are trying to 'bias' our model with local preferences such that it is tuned for local user
+         * thus, we re-train it on local dataset every time we load the model
+         */
         val trainingData = getLocalSongData()
         if (trainingData.first.isNotEmpty()) {
             if (name == "Pegasos") {
-                (model as Pegasos).update(trainingData.first, trainingData.second)
+                (model as Pegasos).update(trainingData.first, trainingData.second.map { it.toDouble() }.toTypedArray())
             } else if (name == "Adaline") {
-                (model as Adaline).update(trainingData.first, trainingData.second)
+                (model as Adaline).update(trainingData.first, trainingData.second.map { it.toDouble() }.toTypedArray())
             }
         }
         storeModelLocally(model)
@@ -203,7 +209,7 @@ open class RecommenderStore(
             }
 
             try {
-                // 01/02/2020 case
+                // Ectrat year from string format '01/02/2020'
                 year = Integer.parseInt(
                     (
                         block.transaction["date"] as
@@ -359,7 +365,8 @@ open class RecommenderStore(
 
             if (haveFeature(k)) {
                 val featureText = database.dbFeaturesQueries.getFeature(k).executeAsOneOrNull()
-                    ?.songFeatures ?: database.dbUnseenFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures
+                    ?.songFeatures
+                    ?: database.dbUnseenFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures
                 return Json.decodeFromString<DoubleArray>(featureText!!).toTypedArray()
             }
 
@@ -492,31 +499,20 @@ open class RecommenderStore(
             features[i] = if (feat < 0.0) -log10(-feat) else if (feat > 0.0) log10(feat) else 0.0
         }
         Log.i("Recommend", "Extracted MP3 features")
-        return features
-    }
 
-    // positions of scales on the circle of fifths
-    private val majorKeys = mapOf(
-        "C" to 0.0, "G" to 1.0, "D" to 2.0, "A" to 3.0, "E" to 4.0, "B" to 5.0, "Gb" to 6.0,
-        "F#" to 6.0, "Db" to 7.0, "Ab" to 8.0, "Eb" to 9.0, "Bb" to 10.0, "F" to 11.0
-    )
-    private val minorKeys = mapOf(
-        "A" to 0.0, "E" to 1.0, "B" to 2.0, "F#" to 3.0, "C#" to 4.0, "G#" to 5.0, "D#" to 6.0,
-        "Eb" to 6.0, "Bb" to 7.0, "F" to 8.0, "C" to 9.0, "G" to 10.0, "D" to 11.0
-    )
-    private fun scale2label(key: String, mode: String): Array<Double> {
-        val keyCode = (if (mode == "major") majorKeys[key] else minorKeys[key]) ?: -1.0
-        val modeCode = if (mode == "major") 0.0 else 1.0
-        return arrayOf(keyCode, modeCode)
-    }
-    private fun stats(obj: JSONObject): Array<Double> {
-        return arrayOf(
-            obj.getDouble("min"),
-            obj.getDouble("median"),
-            obj.getDouble("mean"),
-            obj.getDouble("max"),
-            obj.getDouble("var"),
-        )
+        /**
+         * pick most 'promising' Essentia features, read docs for more insight
+         * we still keep 2 block features - year and genre,
+         * in order to have some data for completely unseen features
+         */
+        var finalFeatures = Array<Double>(totalAmountFeatures) { 0.0 }
+        finalFeatures[0] = year
+        finalFeatures[1] = genre
+        for ((idx, fidx) in this.highVarianceFeatureLabels.withIndex()) {
+            finalFeatures[idx] = features[fidx + 2]
+        }
+
+        return finalFeatures
     }
 
     fun getMyFeatures(): List<Features> {
@@ -561,4 +557,28 @@ open class RecommenderStore(
             return instance
         }
     }
+}
+
+// positions of scales on the circle of fifths
+val majorKeys = mapOf(
+    "C" to 0.0, "G" to 1.0, "D" to 2.0, "A" to 3.0, "E" to 4.0, "B" to 5.0, "Gb" to 6.0,
+    "F#" to 6.0, "Db" to 7.0, "Ab" to 8.0, "Eb" to 9.0, "Bb" to 10.0, "F" to 11.0
+)
+val minorKeys = mapOf(
+    "A" to 0.0, "E" to 1.0, "B" to 2.0, "F#" to 3.0, "C#" to 4.0, "G#" to 5.0, "D#" to 6.0,
+    "Eb" to 6.0, "Bb" to 7.0, "F" to 8.0, "C" to 9.0, "G" to 10.0, "D" to 11.0
+)
+fun scale2label(key: String, mode: String): Array<Double> {
+    val keyCode = (if (mode == "major") majorKeys[key] else minorKeys[key]) ?: -1.0
+    val modeCode = if (mode == "major") 0.0 else 1.0
+    return arrayOf(keyCode, modeCode)
+}
+fun stats(obj: JSONObject): Array<Double> {
+    return arrayOf(
+        obj.getDouble("min"),
+        obj.getDouble("median"),
+        obj.getDouble("mean"),
+        obj.getDouble("max"),
+        obj.getDouble("var"),
+    )
 }

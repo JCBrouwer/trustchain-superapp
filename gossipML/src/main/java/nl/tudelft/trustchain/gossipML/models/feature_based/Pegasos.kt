@@ -3,6 +3,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import nl.tudelft.trustchain.gossipML.models.OnlineModel
+import nl.tudelft.trustchain.gossipML.models.*
 import java.util.*
 
 /**
@@ -24,7 +25,7 @@ class Pegasos : OnlineModel {
      * @param x - feature array
      * @param y - label
      */
-    override fun update(x: Array<Double>, y: Int) {
+    override fun update(x: Array<Double>, y: Double) {
         val eta = 1.0 / regularization
         gradientSVM(x, y, eta)
     }
@@ -35,7 +36,7 @@ class Pegasos : OnlineModel {
      * @param x - array of feature arrays
      * @param y - array of labels
      */
-    override fun update(x: Array<Array<Double>>, y: IntArray) {
+    override fun update(x: Array<Array<Double>>, y: Array<Double>) {
         require(x.size == y.size) {
             String.format("Input vector x of size %d not equal to length %d of y", x.size, y.size)
         }
@@ -59,28 +60,13 @@ class Pegasos : OnlineModel {
     }
 
     /**
-     * weighted sum of all features of an instance
-     *
-     * @param x feature array
-     * @return weighted sum of input features of an instance
-     */
-    fun weightedSum(x: Array<Double>): Double {
-        var totalSum = 0.0
-        for (idx in x.indices) {
-            totalSum += this.weights[idx] * x[idx]
-        }
-        return totalSum
-    }
-
-    /**
      * predict score for a given data instance
      *
      * @param x feature array
      * @return predicted score
      */
     override fun predict(x: Array<Double>): Double {
-        val weightedSum = weightedSum(x)
-        return activation(weightedSum)
+        return activation(weights * x)
     }
 
     /**
@@ -90,12 +76,11 @@ class Pegasos : OnlineModel {
      * @param x feature array
      * @return binary predicted label
      */
-    fun classify(x: Array<Double>): Int {
-        val weightedSum = weightedSum(x)
-        return if (activation(weightedSum) >= 0.0) {
-            1
+    fun classify(x: Array<Double>): Double {
+        return if (activation(weights * x) >= 0.0) {
+            1.0
         } else {
-            0
+            0.0
         }
     }
 
@@ -106,16 +91,12 @@ class Pegasos : OnlineModel {
      * @param y - label
      * @param eta - step value
      */
-    private fun gradientSVM(x: Array<Double>, y: Int, eta: Double) {
-        val score = weightedSum(x)
-        if (y * score < 1) {
-            for (idx in 0 until weights.size) {
-                weights[idx] = (1 - eta * regularization) * weights[idx] + eta * y * x[idx]
-            }
+    private fun gradientSVM(x: Array<Double>, y: Double, eta: Double) {
+        val score = weights * x
+        weights = if (y * score < 1.0) {
+            (1.0 - eta * regularization) * weights + eta * y * x
         } else {
-            for (idx in 0 until weights.size) {
-                weights[idx] *= (1 - eta * regularization)
-            }
+            (1.0 - eta * regularization) * weights
         }
     }
 

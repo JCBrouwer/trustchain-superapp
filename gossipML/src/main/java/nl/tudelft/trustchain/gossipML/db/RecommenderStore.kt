@@ -33,8 +33,10 @@ open class RecommenderStore(
     lateinit var key: ByteArray
     @SuppressLint("SdCardPath")
     private val musicDir = File("/data/user/0/nl.tudelft.trustchain/cache/")
-    private val totalAmountFeatures = 225 // 2 block features + 223 essentia features
     lateinit var essentiaJob: Job
+    private var highVarianceFeatureLabels = arrayOf(3, 62, 162, 223, 130, 140)
+    // 2 block features + cherry-picked essentia features
+    private val totalAmountFeatures = highVarianceFeatureLabels.size + 2
 
     /**
      * save local model to the database
@@ -101,6 +103,10 @@ open class RecommenderStore(
                 Log.i("Recommend", model.name)
             }
         }
+        /**
+         * we are trying to 'bias' our model with local preferences such that it is tuned for local user
+         * thus, we re-train it on local dataset every time we load the model
+         */
         val trainingData = getLocalSongData()
         if (trainingData.first.isNotEmpty()) {
             if (name == "Pegasos") {
@@ -203,7 +209,7 @@ open class RecommenderStore(
             }
 
             try {
-                // 01/02/2020 case
+                // Ectrat year from string format '01/02/2020'
                 year = Integer.parseInt(
                     (
                         block.transaction["date"] as
@@ -359,7 +365,8 @@ open class RecommenderStore(
 
             if (haveFeature(k)) {
                 val featureText = database.dbFeaturesQueries.getFeature(k).executeAsOneOrNull()
-                    ?.songFeatures ?: database.dbUnseenFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures
+                    ?.songFeatures
+                    ?: database.dbUnseenFeaturesQueries.getFeature(k).executeAsOneOrNull()?.songFeatures
                 return Json.decodeFromString<DoubleArray>(featureText!!).toTypedArray()
             }
 
@@ -492,7 +499,20 @@ open class RecommenderStore(
             features[i] = if (feat < 0.0) -log10(-feat) else if (feat > 0.0) log10(feat) else 0.0
         }
         Log.i("Recommend", "Extracted MP3 features")
-        return features
+
+        /**
+         * pick most 'promising' Essentia features, read docs for more insight
+         * we still keep 2 block features - year and genre,
+         * in order to have some data for completely unseen features
+         */
+        var finalFeatures = Array<Double>(totalAmountFeatures) { 0.0 }
+        finalFeatures[0] = year
+        finalFeatures[1] = genre
+        for ((idx, fidx) in this.highVarianceFeatureLabels.withIndex()) {
+            finalFeatures[idx] = features[fidx + 2]
+        }
+
+        return finalFeatures
     }
 
     fun getMyFeatures(): List<Features> {

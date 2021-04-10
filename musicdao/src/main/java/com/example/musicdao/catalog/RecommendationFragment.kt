@@ -64,6 +64,13 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
         activity?.runOnUiThread { transaction?.commitAllowingStateLoss() }
     }
 
+    /**
+     * Given song blocks and corresponding extracted features, make predictions with different
+     * feature-based models and bag them together
+     *
+     * @param data pair of features and corresponding song block
+     * @return array of predicted scores
+     */
     private fun getBaggedPredictions(data: Pair<Array<Array<Double>>, List<TrustChainBlock>>): Array<Double> {
         var jointRelease = Array(data.second.size) { _ -> 0.0 }
         val modelNames = arrayOf("Pegasos")
@@ -119,6 +126,7 @@ class RecommendationFragment : MusicBaseFragment(R.layout.fragment_recommendatio
                     candidateRecommendations += i
                 }
             }
+            // recommend random song out of the songs with the same scores
             val best = candidateRecommendations.random()
             Log.w("Recommend", "PICKED BLOCK $best with score $bestScore")
             val debugScore = predictions[best].toString()

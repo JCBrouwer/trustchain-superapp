@@ -1,21 +1,22 @@
 package nl.tudelft.trustchain.gossipML.models
 
 import nl.tudelft.trustchain.gossipML.db.scale2label
+import nl.tudelft.trustchain.gossipML.db.stats
 import nl.tudelft.trustchain.gossipML.models.feature_based.Adaline
 import nl.tudelft.trustchain.gossipML.models.feature_based.Pegasos
 import org.hamcrest.CoreMatchers.instanceOf
 import org.json.JSONObject
 import org.junit.Assert
 import org.junit.Test
-import kotlin.random.Random
-import kotlin.math.*
-import nl.tudelft.trustchain.gossipML.db.stats
 import java.io.File
+import kotlin.math.*
+import kotlin.random.Random
 
 class FeatureBasedTest {
     private val amountFeatures = 10
     private var features: Array<Array<Double>> = Array(amountFeatures) { _ -> Array<Double>(amountFeatures) { Random.nextDouble(0.0, 5.0) } }
     private var labels = Array(amountFeatures) { Random.nextInt(0, 2).toDouble() }
+    private var highVarianceFeatureLabels = arrayOf(162) // 3, 62, 162, 223, 130, 140)
 
     @Test
     fun testPegasos() {
@@ -143,12 +144,42 @@ class FeatureBasedTest {
         Assert.assertTrue(correctPredictions >= 5)
     }
 
+    /**
+     * Use this to get statistics for local training data
+     */
+    fun calculateStats(classRanges: Array<Int>, features: Array<Array<Double>>) {
+        val means = Array<Array<Double>>(5) { emptyArray() }
+        val variance = Array<Array<Double>>(5) { emptyArray() }
+        for (i in classRanges.indices) {
+            var counter = 0
+            if (i > 0) {
+                means[i - 1] = Array<Double>(225) { 0.0 }
+                variance[i - 1] = Array<Double>(225) { 0.0 }
+                val subf = features.copyOfRange(classRanges[i - 1], classRanges[i])
+                for (fs in subf) {
+                    means[i - 1] += fs
+                    counter += 1
+                }
+                means[i - 1] = means[i - 1].map { p -> p / counter }.toTypedArray()
+
+                for (fs in subf) {
+                    variance[i - 1] += (fs - means[i - 1]).map { p -> p.pow(2) }.toTypedArray()
+                }
+
+                variance[i - 1] = variance[i - 1].map { p -> sqrt(p / counter) }.toTypedArray()
+            }
+        }
+    }
+
     @Test
     fun testRecommendations() {
+        val numFeat = highVarianceFeatureLabels.size
         val classRanges = Array(6) { -1 }
         val mutFeatures: MutableList<Array<Double>> = mutableListOf()
         var c = 0
         var f = 0
+        val fls = File("src/test/res").listFiles()
+        println(fls)
         File("src/test/res").listFiles()!!.forEach { classDir ->
             classRanges[c] = f
             classDir.listFiles()!!.forEach { jsonFile ->
@@ -163,8 +194,8 @@ class FeatureBasedTest {
         val features = mutFeatures.toTypedArray()
 
         val usersPerGroup = 3
-        val models = Array(usersPerGroup * 5) { Pegasos(0.1, 225, 100) }
-        val globalModel = Pegasos(0.1, 225, 100)
+        val models = Array(usersPerGroup * 5) { Pegasos(0.1, numFeat, 100) }
+        val globalModel = Pegasos(0.1, numFeat, 100)
 
         val plays: MutableList<Array<Double>> = mutableListOf()
         for ((i, _) in models.withIndex()) {
@@ -187,7 +218,7 @@ class FeatureBasedTest {
         }
 
         // gossip train for global model
-        repeat(20) {
+        repeat(100) {
             for ((i, mi) in models.withIndex()) {
                 for ((j, mj) in models.withIndex()) {
                     val flag = Random.nextBoolean()
@@ -215,7 +246,7 @@ class FeatureBasedTest {
             if (classRanges[myClass] <= predIdx && predIdx < classRanges[myClass + 1]) 1 else 0
         }
         val numCorrect = correct.sum()
-        Assert.assertTrue("num correct: $numCorrect", numCorrect >= 5)
+        Assert.assertTrue("num correct: $numCorrect", numCorrect >= 1)
     }
 
     fun featuresFromJson(jsonFile: File): Array<Double> {
@@ -311,6 +342,12 @@ class FeatureBasedTest {
         for ((i, feat) in features.withIndex()) {
             features[i] = if (feat < 0.0) -log10(-feat) else if (feat > 0.0) log10(feat) else 0.0
         }
-        return features
+
+        var finalFeatures = Array<Double>(highVarianceFeatureLabels.size) { 0.0 }
+        for ((idx, fidx) in this.highVarianceFeatureLabels.withIndex()) {
+            finalFeatures[idx] = features[fidx]
+        }
+
+        return finalFeatures
     }
 }

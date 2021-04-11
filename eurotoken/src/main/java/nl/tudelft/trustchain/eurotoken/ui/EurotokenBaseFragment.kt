@@ -29,12 +29,12 @@ open class EurotokenBaseFragment(contentLayoutId: Int = 0) : BaseFragment(conten
         TransactionRepository(getIpv8().getOverlay()!!, gatewayStore)
     }
 
-    private val gatewayStore by lazy {
-        GatewayStore.getInstance(requireContext())
-    }
-
     private val contactStore by lazy {
         ContactStore.getInstance(requireContext())
+    }
+
+    private val gatewayStore by lazy {
+        GatewayStore.getInstance(requireContext())
     }
 
     private val onReceiveListener = object : BlockListener {

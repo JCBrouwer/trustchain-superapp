@@ -8,7 +8,6 @@ import nl.tudelft.ipv8.keyvault.defaultCryptoProvider
 import nl.tudelft.ipv8.util.hexToBytes
 import nl.tudelft.ipv8.util.toHex
 import nl.tudelft.trustchain.common.contacts.ContactStore
-import nl.tudelft.trustchain.common.eurotoken.GatewayStore
 import nl.tudelft.trustchain.common.eurotoken.TransactionRepository
 import nl.tudelft.trustchain.common.util.viewBinding
 import nl.tudelft.trustchain.eurotoken.R
@@ -20,10 +19,6 @@ class SendMoneyFragment : EurotokenBaseFragment(R.layout.fragment_send_money) {
     private var addContact = false
 
     private val binding by viewBinding(FragmentSendMoneyBinding::bind)
-
-    private val gatewayStore by lazy {
-        GatewayStore.getInstance(requireContext())
-    }
 
     private val ownPublicKey by lazy {
         defaultCryptoProvider.keyFromPublicBin(
@@ -82,19 +77,17 @@ class SendMoneyFragment : EurotokenBaseFragment(R.layout.fragment_send_money) {
                 ContactStore.getInstance(requireContext())
                     .addContact(key, newName)
             }
-            transactionRepository.sendTransferProposal(publicKey.hexToBytes(), amount)
-                ?: return@setOnClickListener Toast.makeText(
+            val success = transactionRepository.sendTransferProposal(publicKey.hexToBytes(), amount)
+            if(!success) {
+                return@setOnClickListener Toast.makeText(
                     requireContext(),
                     "Insufficient balance",
                     Toast.LENGTH_LONG
                 ).show()
+            }
             findNavController().navigate(R.id.action_sendMoneyFragment_to_transactionsFragment)
         }
 
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
     }
 
     companion object {

@@ -9,14 +9,17 @@ import org.json.JSONObject
 import org.junit.Assert
 import org.junit.Test
 import java.io.File
-import kotlin.math.*
+import kotlin.math.absoluteValue
+import kotlin.math.log10
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 class FeatureBasedTest {
     private val amountFeatures = 10
     private var features: Array<Array<Double>> = Array(amountFeatures) { _ -> Array<Double>(amountFeatures) { Random.nextDouble(0.0, 5.0) } }
     private var labels = Array(amountFeatures) { Random.nextInt(0, 2).toDouble() }
-    private var highVarianceFeatureLabels = arrayOf(162) // 3, 62, 162, 223, 130, 140)
+    private var highVarianceFeatureLabels = arrayOf(3, 62, 162, 223, 130, 140)
 
     @Test
     fun testPegasos() {
@@ -178,8 +181,6 @@ class FeatureBasedTest {
         val mutFeatures: MutableList<Array<Double>> = mutableListOf()
         var c = 0
         var f = 0
-        val fls = File("src/test/res").listFiles()
-        println(fls)
         File("src/test/res").listFiles()!!.forEach { classDir ->
             classRanges[c] = f
             classDir.listFiles()!!.forEach { jsonFile ->

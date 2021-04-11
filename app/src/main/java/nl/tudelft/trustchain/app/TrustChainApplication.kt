@@ -86,7 +86,6 @@ class TrustChainApplication : Application() {
     private fun initTrustChain() {
         val ipv8 = IPv8Android.getInstance()
         val trustchain = ipv8.getOverlay<TrustChainCommunity>()!!
-
         val tr = TransactionRepository(trustchain, GatewayStore.getInstance(this))
         tr.initTrustChainCommunity() // register eurotoken listners
         val euroTokenCommunity = ipv8.getOverlay<EuroTokenCommunity>()!!
@@ -191,7 +190,7 @@ class TrustChainApplication : Application() {
         val randomWalk = RandomWalk.Factory()
         val store = GatewayStore.getInstance(this)
         return OverlayConfiguration(
-            EuroTokenCommunity.Factory(this, store),
+            EuroTokenCommunity.Factory(store),
             listOf(randomWalk)
         )
     }
@@ -261,19 +260,11 @@ class TrustChainApplication : Application() {
     }
 
     private fun createRecommenderCommunity(): OverlayConfiguration<RecommenderCommunity> {
-        // TODO: for debugging, remove later
-        // this.applicationContext.deleteDatabase("federated_ml.db")
-
         val settings = TrustChainSettings()
         val musicDriver = AndroidSqliteDriver(Database.Schema, this, "music.db")
         val musicStore = TrustChainSQLiteStore(Database(musicDriver))
         val driver = AndroidSqliteDriver(MLDatabase.Schema, this, "federated_ml.db")
         val database = MLDatabase(driver)
-
-        // TODO: for debugging, remove later
-        // database.dbFeaturesQueries.deleteAllFeatures()
-        // database.dbUnseenFeaturesQueries.deleteAllFeatures()
-        // database.dbModelQueries.deleteAll()
 
         val recommendStore = RecommenderStore.getInstance(musicStore, database)
         recommendStore.essentiaJob = GlobalScope.launch { recommendStore.addAllLocalFeatures() }

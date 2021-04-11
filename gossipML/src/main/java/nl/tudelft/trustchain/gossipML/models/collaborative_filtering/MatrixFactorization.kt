@@ -10,7 +10,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
-import nl.tudelft.trustchain.gossipML.models.*
+import nl.tudelft.trustchain.gossipML.models.Model
+import nl.tudelft.trustchain.gossipML.models.plus
+import nl.tudelft.trustchain.gossipML.models.times
 import java.lang.Double.NEGATIVE_INFINITY
 import java.util.*
 import kotlin.math.abs

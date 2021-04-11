@@ -127,7 +127,7 @@ open class RecommenderStore(
      */
     fun getPlaycounts(): Array<Double> {
         val songBlocks = musicStore.getBlocksWithType("publish_release")
-        val playcounts = Array(globalSongCount()) { _ -> 0.0 }
+        val playcounts = Array(globalSongCount()) { 0.0 }
         for ((i, block) in songBlocks.withIndex()) {
             if (block.transaction["title"] != null && block.transaction["artist"] != null) {
                 playcounts[i] = database.dbFeaturesQueries.getFeature(
@@ -224,7 +224,7 @@ open class RecommenderStore(
             genre = block.transaction["genre"] as Double
         }
 
-        return arrayOf(year, genre) + Array(223) { _ -> -1.0 }
+        return arrayOf(year, genre) + Array(223) { -1.0 }
     }
 
     /**
@@ -233,12 +233,11 @@ open class RecommenderStore(
      * @return amount of test songs
      */
     fun globalSongCount(): Int {
-        val s = getSongBlockMetadata(musicStore.getBlocksWithType("publish_release")).size
-        return s
+        return getSongBlockMetadata(musicStore.getBlocksWithType("publish_release")).size
     }
 
     private fun getSongBlockMetadata(songsHistory: List<TrustChainBlock>): Array<Array<Double>> {
-        val features = Array(songsHistory.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
+        val features = Array(songsHistory.size) { Array(totalAmountFeatures) { 0.0 } }
         for (i in songsHistory.indices) {
             features[i] = blockMetadata(songsHistory[i])
         }
@@ -323,8 +322,8 @@ open class RecommenderStore(
             )
             return Pair(emptyArray(), emptyArray<Int>().toIntArray())
         }
-        val features = Array(batch.size) { _ -> Array(totalAmountFeatures) { _ -> 0.0 } }
-        val playcounts = Array(batch.size) { _ -> 0 }.toIntArray()
+        val features = Array(batch.size) { Array(totalAmountFeatures) { 0.0 } }
+        val playcounts = Array(batch.size) { 0 }.toIntArray()
         for (i in batch.indices) {
             features[i] = Json.decodeFromString<DoubleArray>(batch[i].songFeatures!!).toTypedArray()
             playcounts[i] = batch[i].count.toInt()
@@ -350,7 +349,7 @@ open class RecommenderStore(
      * @return features
      */
     private fun extractMP3Features(mp3File: Mp3File): Array<Double> {
-        var features = Array<Double>(225) { -1.0 }
+        var features = Array(225) { -1.0 }
         val year = (mp3File.id3v2Tag ?: mp3File.id3v1Tag)?.year?.toDouble() ?: -1.0
         val genre = (mp3File.id3v2Tag ?: mp3File.id3v1Tag)?.genre?.toDouble() ?: -1.0
         try {
@@ -396,7 +395,7 @@ open class RecommenderStore(
             var loudness_range = 0.0
             var momentary = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
             var short_term = arrayOf(0.0, 0.0, 0.0, 0.0, 0.0)
-            var lowlevelStats = Array(keys.size) { Array(5) { -1.0 } }
+            val lowlevelStats = Array(keys.size) { Array(5) { -1.0 } }
 
             if (essentiaFeatures.has("lowlevel")) {
                 val lowlevel = essentiaFeatures.getJSONObject("lowlevel")
@@ -505,11 +504,11 @@ open class RecommenderStore(
          * we still keep 2 block features - year and genre,
          * in order to have some data for completely unseen features
          */
-        var finalFeatures = Array<Double>(totalAmountFeatures) { 0.0 }
+        val finalFeatures = Array(totalAmountFeatures) { 0.0 }
         finalFeatures[0] = year
         finalFeatures[1] = genre
         for ((idx, fidx) in this.highVarianceFeatureLabels.withIndex()) {
-            finalFeatures[idx] = features[fidx + 2]
+            finalFeatures[idx] = features[fidx + 1]
         }
 
         return finalFeatures

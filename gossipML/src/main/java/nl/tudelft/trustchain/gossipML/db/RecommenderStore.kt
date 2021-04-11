@@ -505,11 +505,11 @@ open class RecommenderStore(
          * we still keep 2 block features - year and genre,
          * in order to have some data for completely unseen features
          */
-        var finalFeatures = Array<Double>(totalAmountFeatures) { 0.0 }
+        val finalFeatures = Array<Double>(totalAmountFeatures) { 0.0 }
         finalFeatures[0] = year
         finalFeatures[1] = genre
         for ((idx, fidx) in this.highVarianceFeatureLabels.withIndex()) {
-            finalFeatures[idx] = features[fidx + 2]
+            finalFeatures[idx] = features[fidx + 1]
         }
 
         return finalFeatures

@@ -1,6 +1,8 @@
 package nl.tudelft.trustchain.gossipML.models
 
-import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.*
+import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.MatrixFactorization
+import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.PublicMatrixFactorization
+import nl.tudelft.trustchain.gossipML.models.collaborative_filtering.SongFeature
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert
 import org.junit.Test

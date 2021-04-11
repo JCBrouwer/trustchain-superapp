@@ -9,7 +9,10 @@ import org.json.JSONObject
 import org.junit.Assert
 import org.junit.Test
 import java.io.File
-import kotlin.math.*
+import kotlin.math.absoluteValue
+import kotlin.math.log10
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 class FeatureBasedTest {

@@ -3,7 +3,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import nl.tudelft.trustchain.gossipML.models.OnlineModel
-import nl.tudelft.trustchain.gossipML.models.*
+import nl.tudelft.trustchain.gossipML.models.plus
+import nl.tudelft.trustchain.gossipML.models.times
 import java.util.*
 
 /**

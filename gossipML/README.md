@@ -11,7 +11,7 @@ This repository contains a collection of Online models built on top of [IPv8](ht
 
 Every time a user open music dao, they are asked to realod the page in order to get recommendations. This is done with the sole purpose of getting recommendations on request and avoid recommending meaningless data when there is a lack of local songs (training data).
 <br />
-<img src="docs/etc/recording.gif" width="200">
+<img src="docs/etc/recording.gif" width="200px">
 
 **Overview**
 

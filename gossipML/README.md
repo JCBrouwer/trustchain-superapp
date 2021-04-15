@@ -49,7 +49,7 @@ Matrix Factorization model is collaborative filtering model that bases recommend
 In the private model, every matrix row corresponds to some user private information on music history.
 This private matrix is then approximatelly decomposed inti X and Y transpose matrices with Y shared among the users.
 The general error that the model tries to minimize is:
-<img src="docs/imgs/mf.png" width="200px">
+<img src="docs/imgs/mf.png" width="400px">
 where bias represents average scores, and X and Y represent relative differences.
 
 **Model performance**
@@ -64,4 +64,4 @@ Essentia feature statistics for test albums in src/test/res can be found under d
 
 **Code diagram**
 
- <img src="docs/imgs/gossipML_diagram.png" width="400px">
+ <img src="docs/imgs/gossipML_diagram.png" width="800px">

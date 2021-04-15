@@ -43,7 +43,7 @@ More formally, learning rule for Pegasos is defined as:
 And learning rule for Adaline is defined as:
 <img src="docs/imgs/ada_rule.png" width="200px">
 
-***Feature-based models***
+***Collaborative filtering models***
 
 Matrix Factorization model is collaborative filtering model that bases recommendations on private logs of user activity (song history) by means of low-rank matrix decomposition
 In the private model, every matrix row corresponds to some user private information on music history.

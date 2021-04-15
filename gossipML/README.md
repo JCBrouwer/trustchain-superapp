@@ -2,16 +2,16 @@
 
 This repository contains a collection of Online models built on top of [IPv8](https://github.com/MattSkala/kotlin-ipv8)
 
-**First Time Launch Screens**
-
-Every time a user open music dao, they are asked to realod the page in order to get recommendations. This is done with the sole purpose of getting recommendations on request and avoid recommending meaningless data when there is a lack of local songs (training data).
-<br />
-<img src="docs/imgs/start_recommendations.png" width="200px">
-
 **Recommendations**
 
 <br />
 <img src="docs/imgs/recommendations.png" width="200px">
+
+**Short Presentation**
+
+Every time a user open music dao, they are asked to realod the page in order to get recommendations. This is done with the sole purpose of getting recommendations on request and avoid recommending meaningless data when there is a lack of local songs (training data).
+<br />
+<img src="docs/etc/recording.gif" width="200">
 
 **Overview**
 
